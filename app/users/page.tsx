@@ -1,7 +1,7 @@
 export default function UsersPage() {
   return (
     <div>
-      <h1 className="text-3xl font-light text-text-primary">User Management</h1>
+      <h1 className="text-3xl font-semibold text-text-primary">User Management</h1>
       <p className="text-sm text-text-secondary mt-1">
         Manage users and role-based access
       </p>

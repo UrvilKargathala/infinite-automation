@@ -65,7 +65,7 @@ export default function QuotePage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-light text-text-primary">Quotes</h1>
+      <h1 className="text-3xl font-semibold text-text-primary">Quotes</h1>
       <p className="text-sm text-text-secondary mt-1">Manage and track all quotations</p>
 
       <div className="grid grid-cols-4 gap-4 mt-8">

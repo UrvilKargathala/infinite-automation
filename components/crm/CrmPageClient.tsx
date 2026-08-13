@@ -69,7 +69,7 @@ export function CrmPageClient() {
 
   return (
     <div>
-      <h1 className="text-3xl font-light text-text-primary">CRM</h1>
+      <h1 className="text-3xl font-semibold text-text-primary">CRM</h1>
       <p className="text-sm text-text-secondary mt-1">Lead pipeline — drag cards between stages</p>
 
       {/* Segment summary cards */}
@@ -98,12 +98,6 @@ export function CrmPageClient() {
             <div className="text-lg text-text-primary">Lead Pipeline</div>
             <div className="text-xs text-text-muted">{leads.length} leads</div>
           </div>
-
-          <AssigneeStack
-            assignees={assignees}
-            selected={assigneeFilter}
-            onToggle={(name) => setAssigneeFilter(assigneeFilter === name ? null : name)}
-          />
 
           <div className="flex items-center gap-2">
             <button

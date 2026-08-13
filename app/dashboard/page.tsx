@@ -111,7 +111,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-light text-text-primary">Dashboard</h1>
+      <h1 className="text-3xl font-semibold text-text-primary">Dashboard</h1>
       <p className="text-sm text-text-secondary mt-1">Overview of your business operations</p>
 
       {/* Row 1 — KPI cards */}

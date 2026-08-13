@@ -130,7 +130,7 @@ export default function MasterPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-light text-text-primary">Master File</h1>
+      <h1 className="text-3xl font-semibold text-text-primary">Master File</h1>
       <p className="text-sm text-text-secondary mt-1">Product catalog and master data</p>
 
       {/* Stat cards */}

@@ -38,7 +38,7 @@ export function KanbanBoard({
 
   if (!mounted) {
     return (
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <div className="flex gap-4 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {stages.map((stage) => (
           <div key={stage} className="w-80 shrink-0 min-h-[560px] rounded-2xl p-3 bg-surface-alt" />
         ))}
@@ -48,7 +48,7 @@ export function KanbanBoard({
 
   return (
     <DndContext id={dndId} sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      <div className="flex gap-4 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {stages.map((stage) => (
           <KanbanColumn
             key={stage}

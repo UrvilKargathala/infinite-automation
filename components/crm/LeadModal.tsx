@@ -8,7 +8,7 @@ import type { Lead, CustomerSegment, LeadStage } from "@/types";
 
 const segments: CustomerSegment[] = ["Residential", "Commercial", "Short Term Rentals", "Agriculture"];
 const stages: LeadStage[] = ["New", "Qualified", "Quoted", "Won", "Lost"];
-const salesTeam = ["Priya", "Arjun", "Neha", "Rohan", "Sam"];
+const salesTeam = ["Urvil", "Henil", "Chirag"];
 
 interface Props {
   open: boolean;
