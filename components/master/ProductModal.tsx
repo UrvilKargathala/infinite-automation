@@ -51,7 +51,7 @@ export function ProductModal({ open, onClose, product }: Props) {
     }
   }, [open, product]);
 
-  const categories = brand && !addingNewBrand ? categoriesByBrand(brand) : [];
+  const categories = brand ? categoriesByBrand(brand) : [];
   const canSave = name.trim() && brand.trim() && category.trim();
 
   function handleSave() {
