@@ -10,27 +10,68 @@ The overall feel to aim for: **premium, airy, modern SaaS**. Think Linear or a p
 
 ## Typography
 
-**Font family:** Barlow — loaded via `next/font/google`.
+**Primary font family:** Fredoka — loaded via `next/font/google`. Used for all text (headings, body, labels, buttons, nav, everything).
 
-Only two weights are used across the entire app:
-- **Light — weight 300** — for large display numbers, page titles, hero copy.
-- **Regular — weight 400** — default weight for everything else.
+**Numeric font family:** Montserrat — loaded via `next/font/google`, weight **500 (Medium) only**. Used exclusively for numbers where numeric precision reads better in a crisp neutral face: KPI values, currency amounts, quote totals, table numeric cells, chart axes and tooltips, badge counts, stat card numbers. Never use Montserrat for prose or labels.
 
-No other weights (no 500, 600, 700).
+Fredoka weights used: **300 (Light)** and **400 (Regular)**.
+Montserrat weight used: **500 (Medium)** only.
 
-Fallback stack: `Barlow, system-ui, -apple-system, sans-serif`.
+No other weights of either font (no 500/600/700 of Fredoka, no 300/400/600 of Montserrat).
+
+Fallback stacks:
+- Fredoka: `Fredoka, system-ui, -apple-system, sans-serif`
+- Montserrat: `Montserrat, ui-monospace, system-ui, sans-serif`
+
+Fredoka has slightly rounded, friendly geometry. Because of its softness, avoid packing it too tight — use the default line-height and letter-spacing everywhere unless a spec below says otherwise. Montserrat Medium sits well next to Fredoka because its neutrality lets the numbers do the work without competing.
+
+### When to use Montserrat (rules — not preferences)
+Use Montserrat Medium for:
+- Dashboard KPI values (the big `text-3xl` numbers)
+- Any monetary amount rendered by `formatINR` (in tables, cards, modals, quote totals, PDF totals)
+- Stat card numeric values (Total products, Active count, etc.)
+- Quote subtotal, GST, grand total lines
+- Table cells that are purely numeric: Sr No, Qty, Discount %, Line total, HSN Code, Value, Count columns
+- Chart axis tick labels and tooltip numeric values
+- Badge count numbers (e.g., column count pill on Kanban, "+3" avatar overflow, notification indicator when it shows a number)
+- Section number pill in quote sections (the "1", "2", "3" pills)
+- Auto-generated Sr. No (1.1, 1.2, 2.1) inside quote sections
+
+Do NOT use Montserrat for:
+- Product names, category names, brand names (Fredoka)
+- Labels above numbers like "Revenue Pipeline", "Total value" (Fredoka)
+- Any prose, sentence, or descriptive text (Fredoka)
+- Buttons, nav items, badges' text portion (Fredoka)
+- Dates rendered as text like "2 hours ago", "Mar", "Aug" chart axis month labels — these are text, use Fredoka. (Pure date columns like "2026-08-13" can go either way; default to Fredoka unless it reads clumsily beside Montserrat numbers nearby, in which case use Montserrat for date consistency in that column.)
+
+### How to apply Montserrat in code
+Expose Montserrat as a Tailwind font family alias `font-numeric`:
+
+```ts
+// tailwind.config.ts
+fontFamily: {
+  sans: ['var(--font-fredoka)', 'system-ui', 'sans-serif'],
+  numeric: ['var(--font-montserrat)', 'ui-monospace', 'system-ui', 'sans-serif'],
+}
+```
+
+Then wherever a number belongs, add the class `font-numeric font-medium` (Tailwind `font-medium` maps to weight 500).
+
+Prefer a small `<Num>` component at `/components/ui/Num.tsx` that renders `<span className="font-numeric font-medium tabular-nums">{children}</span>` so number columns line up nicely (tabular-nums keeps digit widths equal — important for tables and totals). Update `formatINR` callers to wrap their output in `<Num>`, or better — have `formatINR` return a React element rather than a string (rename to `<INR value={n} />` component if a refactor is easy). Either approach is acceptable; pick one and be consistent.
 
 ### Typographic scale (Tailwind)
-| Use | Class | Weight |
+| Use | Class | Font & weight |
 |---|---|---|
-| Page title (big, bold-looking) | `text-3xl` | 300 (light) — Barlow at 300 with large size reads as premium heading |
-| KPI value / large number | `text-3xl` | 300 (light) |
-| Section title (inside cards) | `text-lg` | 400 (regular) |
-| Card title | `text-base` | 400 (regular) |
-| Body | `text-sm` | 400 (regular) |
-| Small / meta / footnote | `text-xs` | 400 (regular) |
-| Table header | `text-xs uppercase tracking-wider` | 400 (regular) |
-| Nav item | `text-sm` | 400 (regular) |
+| Page title (big, bold-looking) | `text-3xl` | Fredoka 300 (light) — reads as friendly premium heading |
+| KPI value / large number | `text-3xl` | **Montserrat 500 (font-numeric font-medium)** |
+| Section title (inside cards) | `text-lg` | Fredoka 400 (regular) |
+| Card title | `text-base` | Fredoka 400 (regular) |
+| Body | `text-sm` | Fredoka 400 (regular) |
+| Small / meta / footnote | `text-xs` | Fredoka 400 (regular) |
+| Table header | `text-xs uppercase tracking-wider` | Fredoka 400 (regular) |
+| Table numeric cell | `text-sm` | **Montserrat 500 tabular-nums** |
+| Nav item | `text-sm` | Fredoka 400 (regular) |
+| Chart axis label | 12px | **Montserrat 500** |
 
 Letter spacing default. Line height default.
 
@@ -303,7 +344,7 @@ Standard Badge component with the role color from the table above. Rounded-full 
 - Pie/donut: `innerRadius={50} outerRadius={85} paddingAngle={3}`.
 
 ### PDF (print view)
-- Font: `'Barlow', Arial, sans-serif` (include Google Fonts link with weights 300 and 400).
+- Fonts: `'Fredoka', Arial, sans-serif` for prose; `'Montserrat', ui-monospace, sans-serif` for all numeric content (Subtotal, GST, Grand total, Qty, Rate, Discount, Line total, Sr. No). Include a Google Fonts link tag loading Fredoka weights 300 and 400, and Montserrat weight 500. Wrap numeric cells and totals in a `<span class="num">` and style `.num { font-family: 'Montserrat', ui-monospace, sans-serif; font-weight: 500; font-variant-numeric: tabular-nums; }`.
 - Header bottom border: **solid `#3A90C3` 3px** (no gradient — print engines unreliable).
 - Section header rows in items table: solid `#3A90C3`, white text.
 - Grand total: solid `#44BE4A`, weight 400, larger size.
@@ -319,7 +360,8 @@ Under `theme.extend`:
 theme: {
   extend: {
     fontFamily: {
-      sans: ['var(--font-barlow)', 'system-ui', 'sans-serif'],
+      sans: ['var(--font-fredoka)', 'system-ui', 'sans-serif'],
+      numeric: ['var(--font-montserrat)', 'ui-monospace', 'system-ui', 'sans-serif'],
     },
     fontWeight: {
       light: '300',
@@ -371,18 +413,27 @@ theme: {
 
 Font loading (`app/layout.tsx`):
 ```ts
-import { Barlow } from 'next/font/google';
-const barlow = Barlow({
+import { Fredoka, Montserrat } from 'next/font/google';
+
+const fredoka = Fredoka({
   subsets: ['latin'],
   weight: ['300', '400'],
-  variable: '--font-barlow',
+  variable: '--font-fredoka',
 });
+
+const montserrat = Montserrat({
+  subsets: ['latin'],
+  weight: ['500'],
+  variable: '--font-montserrat',
+});
+
+// on <html>: className={`${fredoka.variable} ${montserrat.variable}`}
 ```
 
 `globals.css`:
 ```css
 body {
-  font-family: var(--font-barlow), system-ui, sans-serif;
+  font-family: var(--font-fredoka), system-ui, sans-serif;
   font-weight: 400;
   background: #FFFFFF;
   color: #0F172A;
@@ -399,7 +450,9 @@ body {
 - Do NOT use dark backgrounds anywhere.
 - Do NOT use orange, red, or any color outside this file's tokens (except semantic colors for their intended purpose).
 - Do NOT use font weights other than 300 and 400.
-- Do NOT use any font other than Barlow.
+- Do NOT use any font other than Fredoka (prose) and Montserrat (numbers).
+- Do NOT use Montserrat for labels, prose, or any non-numeric text.
+- Do NOT use Fredoka for KPI values, totals, or table numeric cells — those are Montserrat 500.
 - Do NOT apply gradients to full page or full card backgrounds. Gradients are reserved for: logo mark, primary buttons, active nav pill, section number pills, print-header accent.
 - Do NOT use emojis in UI copy.
 - Do NOT use rounded-full on rectangular content containers (only on avatars, badges-when-specified, and pill buttons/inputs).

@@ -8,11 +8,13 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-barlow)", "system-ui", "sans-serif"],
+        sans: ["var(--font-fredoka)", "system-ui", "sans-serif"],
+        numeric: ["var(--font-montserrat)", "ui-monospace", "system-ui", "sans-serif"],
       },
       fontWeight: {
         light: "300",
         normal: "400",
+        medium: "500",
       },
       colors: {
         brand: {

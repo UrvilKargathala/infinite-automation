@@ -13,6 +13,8 @@ import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { IconTile } from "@/components/ui/IconTile";
 import { formatINR } from "@/lib/utils/format";
+import { INR } from "@/components/ui/INR";
+import { Num } from "@/components/ui/Num";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import type { Quote } from "@/types";
 
@@ -48,7 +50,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-          <span>{entry.name}: {entry.name === "Revenue" ? formatINR(entry.value) : entry.value}</span>
+          <span>{entry.name}: {entry.name === "Revenue" ? <INR value={entry.value} /> : <Num>{entry.value}</Num>}</span>
         </div>
       ))}
     </div>
@@ -60,7 +62,7 @@ function BarTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
   return (
     <div className="bg-white rounded-xl shadow-dropdown p-3 text-xs text-text-primary" style={{ border: "none" }}>
       <div className="text-text-muted mb-1">{label}</div>
-      <div>{payload[0].value} leads</div>
+      <div><Num>{payload[0].value}</Num> leads</div>
     </div>
   );
 }
@@ -103,10 +105,10 @@ export default function DashboardPage() {
   }, [leads]);
 
   const kpis = [
-    { label: "Revenue Pipeline", value: formatINR(pipelineRevenue), delta: "+18.2%", up: true, icon: DollarSign, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
-    { label: "Active Leads", value: activeLeads, delta: "+3", up: true, icon: Users, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
-    { label: "Active Quotes", value: activeQuotes, delta: "+2", up: true, icon: FileText, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
-    { label: "Won This Month", value: formatINR(wonValue), delta: "-4.1%", up: false, icon: TrendingUp, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
+    { label: "Revenue Pipeline", value: <INR value={pipelineRevenue} />, delta: "+18.2%", up: true, icon: DollarSign, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
+    { label: "Active Leads", value: <Num>{activeLeads}</Num>, delta: "+3", up: true, icon: Users, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
+    { label: "Active Quotes", value: <Num>{activeQuotes}</Num>, delta: "+2", up: true, icon: FileText, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
+    { label: "Won This Month", value: <INR value={wonValue} />, delta: "-4.1%", up: false, icon: TrendingUp, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
   ];
 
   return (
@@ -127,7 +129,7 @@ export default function DashboardPage() {
                 ) : (
                   <TrendingDown size={14} className="text-danger" />
                 )}
-                <span className={k.up ? "text-success" : "text-danger"}>{k.delta}</span>
+                <Num className={k.up ? "text-success" : "text-danger"}>{k.delta}</Num>
                 <span className="text-text-muted">vs last month</span>
               </div>
             </div>
@@ -147,8 +149,8 @@ export default function DashboardPage() {
             <LineChart data={MONTHS_DATA}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
               <XAxis dataKey="month" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="left" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis yAxisId="right" orientation="right" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${(v / 100000).toFixed(0)}L`} />
+              <YAxis yAxisId="left" tick={{ fill: "#94A3B8", fontSize: 12, fontFamily: "var(--font-montserrat), ui-monospace, system-ui, sans-serif" }} axisLine={false} tickLine={false} />
+              <YAxis yAxisId="right" orientation="right" tick={{ fill: "#94A3B8", fontSize: 12, fontFamily: "var(--font-montserrat), ui-monospace, system-ui, sans-serif" }} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${(v / 100000).toFixed(0)}L`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend wrapperStyle={{ fontSize: 12, color: "#64748B" }} iconType="circle" />
               <Line yAxisId="left" type="monotone" dataKey="quotes" name="Quotes" stroke="#3A90C3" strokeWidth={2.5} dot={{ r: 4, fill: "#3A90C3" }} />
@@ -172,7 +174,7 @@ export default function DashboardPage() {
                   const d = payload[0];
                   return (
                     <div className="bg-white rounded-xl shadow-dropdown p-3 text-xs text-text-primary" style={{ border: "none" }}>
-                      <div>{String(d.name)}: {formatINR(d.value as number)}</div>
+                      <div>{String(d.name)}: <INR value={d.value as number} /></div>
                     </div>
                   );
                 }}
@@ -186,7 +188,7 @@ export default function DashboardPage() {
                   <span className="w-2 h-2 rounded-full" style={{ backgroundColor: SEGMENT_COLORS[s.name] || "#64748B" }} />
                   <span className="text-xs text-text-secondary">{s.name}</span>
                 </div>
-                <span className="text-xs text-text-primary">{formatINR(s.value)}</span>
+                <INR value={s.value} className="text-xs" />
               </div>
             ))}
           </div>
@@ -201,7 +203,7 @@ export default function DashboardPage() {
             <BarChart data={stageData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
               <XAxis dataKey="stage" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} allowDecimals={false} />
+              <YAxis tick={{ fill: "#94A3B8", fontSize: 12, fontFamily: "var(--font-montserrat), ui-monospace, system-ui, sans-serif" }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={<BarTooltip />} />
               <Bar dataKey="count" fill="#3A90C3" radius={[8, 8, 0, 0]} />
             </BarChart>

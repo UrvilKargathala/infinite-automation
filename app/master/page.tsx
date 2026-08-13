@@ -7,6 +7,7 @@ import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
 import { ProductTable } from "@/components/master/ProductTable";
 import { ProductModal } from "@/components/master/ProductModal";
+import { Num } from "@/components/ui/Num";
 import type { Product } from "@/types";
 import * as XLSX from "xlsx";
 
@@ -140,7 +141,7 @@ export default function MasterPage() {
             <div>
               <div className="text-xs text-text-muted">{s.label}</div>
               <div className={`text-3xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}>
-                {s.value}
+                <Num>{s.value}</Num>
               </div>
             </div>
             <IconTile icon={s.icon} />

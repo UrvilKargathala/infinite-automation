@@ -2,7 +2,7 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { Avatar } from "@/components/ui/Avatar";
-import { formatINR } from "@/lib/utils/format";
+import { INR } from "@/components/ui/INR";
 import type { Lead, CustomerSegment } from "@/types";
 
 const segmentColors: Record<CustomerSegment, string> = {
@@ -57,7 +57,7 @@ export function LeadCard({ lead, onClick }: { lead: Lead; onClick: () => void })
 
       {/* Row 3: value + date */}
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-sm text-text-primary">{formatINR(lead.value)}</span>
+        <INR value={lead.value} className="text-sm text-text-primary" />
         <span className="text-[10px] text-text-muted bg-[#F9FAFB] rounded-full px-2 py-0.5">
           {lead.lastContact}
         </span>

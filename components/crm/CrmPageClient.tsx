@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react";
 import { Home, Building2, Hotel, Sprout, Search, Plus, Download, SlidersHorizontal } from "lucide-react";
 import { useLeadStore } from "@/lib/store/useLeadStore";
-import { formatINR } from "@/lib/utils/format";
+import { INR } from "@/components/ui/INR";
+import { Num } from "@/components/ui/Num";
 import { IconTile } from "@/components/ui/IconTile";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
@@ -81,8 +82,8 @@ export function CrmPageClient() {
             <div key={segment} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${bg}`} style={{ borderLeft: `3px solid ${accent}` }}>
               <div>
                 <div className="text-xs uppercase tracking-wider text-text-muted">{segment}</div>
-                <div className="text-3xl font-light text-text-primary mt-1">{segLeads.length}</div>
-                <div className="text-xs text-text-secondary mt-1">{formatINR(totalValue)}</div>
+                <div className="text-3xl font-light text-text-primary mt-1"><Num>{segLeads.length}</Num></div>
+                <div className="text-xs text-text-secondary mt-1"><INR value={totalValue} /></div>
               </div>
               <IconTile icon={icon} />
             </div>
@@ -96,7 +97,7 @@ export function CrmPageClient() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <div className="text-lg text-text-primary">Lead Pipeline</div>
-            <div className="text-xs text-text-muted">{leads.length} leads</div>
+            <div className="text-xs text-text-muted"><Num>{leads.length}</Num> leads</div>
           </div>
 
           <div className="flex items-center gap-2">

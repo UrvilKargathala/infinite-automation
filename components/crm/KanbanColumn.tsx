@@ -3,6 +3,7 @@
 import { useDroppable } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
 import { LeadCard } from "./LeadCard";
+import { Num } from "@/components/ui/Num";
 import type { Lead, LeadStage } from "@/types";
 
 const stageColors: Record<LeadStage, string> = {
@@ -42,7 +43,7 @@ export function KanbanColumn({
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
           <span className="text-sm text-text-primary">{stage}</span>
           <span className="text-[10px] text-text-muted bg-white rounded-full px-2 py-0.5 ml-1">
-            {leads.length}
+            <Num>{leads.length}</Num>
           </span>
         </div>
         <button

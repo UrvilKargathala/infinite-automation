@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Num } from "@/components/ui/Num";
 
 interface Props {
   page: number;
@@ -27,7 +28,7 @@ export function Pagination({ page, totalPages, totalItems, pageSize, onPageChang
   if (totalPages <= 1) {
     return (
       <div className="px-4 py-3 border-t border-border">
-        <span className="text-xs text-text-muted">Showing {totalItems} of {totalItems} items</span>
+        <span className="text-xs text-text-muted">Showing <Num>{totalItems}</Num> of <Num>{totalItems}</Num> items</span>
       </div>
     );
   }
@@ -35,7 +36,7 @@ export function Pagination({ page, totalPages, totalItems, pageSize, onPageChang
   return (
     <div className="px-4 py-3 border-t border-border flex items-center justify-between flex-wrap gap-2">
       <span className="text-xs text-text-muted">
-        Showing {start}–{end} of {totalItems}
+        Showing <Num>{start}</Num>–<Num>{end}</Num> of <Num>{totalItems}</Num>
       </span>
       <div className="flex items-center gap-1">
         <button
@@ -58,7 +59,7 @@ export function Pagination({ page, totalPages, totalItems, pageSize, onPageChang
                   : "text-text-secondary hover:bg-[#F9FAFB]"
               }`}
             >
-              {p}
+              <Num>{p}</Num>
             </button>
           )
         )}

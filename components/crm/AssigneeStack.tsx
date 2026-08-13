@@ -1,6 +1,7 @@
 "use client";
 
 import { Avatar } from "@/components/ui/Avatar";
+import { Num } from "@/components/ui/Num";
 
 interface Props {
   assignees: { name: string; count: number }[];
@@ -30,15 +31,15 @@ export function AssigneeStack({ assignees, selected, onToggle }: Props) {
                 size="sm"
                 className={`ring-2 ${isSelected ? "ring-brand-blue" : "ring-white"}`}
               />
-              <span className="text-[10px] text-text-secondary font-normal">
+              <Num className="text-[10px] text-text-secondary">
                 {a.count}
-              </span>
+              </Num>
             </button>
           );
         })}
         {extra > 0 && (
           <div className="-ml-2 w-8 h-8 rounded-full bg-surface-alt text-text-secondary text-xs flex items-center justify-center ring-2 ring-white">
-            +{extra}
+            <Num>+{extra}</Num>
           </div>
         )}
       </div>

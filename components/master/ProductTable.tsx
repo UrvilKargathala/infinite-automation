@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
-import { formatINR } from "@/lib/utils/format";
+import { INR } from "@/components/ui/INR";
+import { Num } from "@/components/ui/Num";
 import { Pagination } from "@/components/ui/Pagination";
 import type { Product } from "@/types";
 
@@ -51,15 +52,15 @@ export function ProductTable({ products, total, onEdit, onDelete }: Props) {
             ) : (
               paged.map((p, i) => (
                 <tr key={p.id} className="border-t border-border hover:bg-[#F9FAFB]/60">
-                  <td className={tdClass}>{(safePage - 1) * PAGE_SIZE + i + 1}</td>
+                  <td className={tdClass}><Num>{(safePage - 1) * PAGE_SIZE + i + 1}</Num></td>
                   <td className={`${tdClass} text-text-primary`}>{p.name}</td>
                   <td className={`${tdClass} font-mono text-xs text-brand-blue`}>{p.sku}</td>
                   <td className={tdClass}>{p.brand}</td>
                   <td className={tdClass}>{p.category}</td>
-                  <td className={`${tdClass} font-mono text-xs text-text-secondary`}>{p.hsn || "—"}</td>
+                  <td className={`${tdClass} font-mono text-xs text-text-secondary`}><Num>{p.hsn || "—"}</Num></td>
                   <td className={tdClass}>
                     {p.price != null ? (
-                      formatINR(p.price)
+                      <INR value={p.price} />
                     ) : (
                       <span className="text-warning">Not set</span>
                     )}

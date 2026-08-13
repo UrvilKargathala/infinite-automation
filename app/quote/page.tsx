@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/Badge";
 import { QuoteModal } from "@/components/quote/QuoteModal";
 import { Pagination } from "@/components/ui/Pagination";
 import { formatINR } from "@/lib/utils/format";
+import { INR } from "@/components/ui/INR";
+import { Num } from "@/components/ui/Num";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import type { Quote, QuoteStatus } from "@/types";
 
@@ -82,7 +84,7 @@ export default function QuotePage() {
           <div key={s.label} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
             <div>
               <div className="text-xs text-text-muted">{s.label}</div>
-              <div className={`text-3xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}>{s.value}</div>
+              <div className={`text-3xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}><Num>{s.value}</Num></div>
             </div>
             <IconTile icon={s.icon} />
           </div>
@@ -146,7 +148,7 @@ export default function QuotePage() {
                     <td className="px-4 py-3 text-sm text-text-primary">{q.client}</td>
                     <td className="px-4 py-3 text-sm text-text-secondary">{q.date}</td>
                     <td className="px-4 py-3 text-sm text-text-secondary">{q.validUntil}</td>
-                    <td className="px-4 py-3 text-sm text-text-primary">{formatINR(grandTotal)}</td>
+                    <td className="px-4 py-3 text-sm text-text-primary"><INR value={grandTotal} /></td>
                     <td className="px-4 py-3"><Badge color={sc.color}>{q.status}</Badge></td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-1">

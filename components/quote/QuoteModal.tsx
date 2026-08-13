@@ -26,6 +26,8 @@ import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useLeadStore } from "@/lib/store/useLeadStore";
 import { formatINR } from "@/lib/utils/format";
+import { INR } from "@/components/ui/INR";
+import { Num } from "@/components/ui/Num";
 import { calcLineTotal, calcSectionSubtotal, calcQuoteTotal } from "@/lib/utils/quote";
 import type { Quote, Section, QuoteItem, QuoteStatus } from "@/types";
 
@@ -151,22 +153,22 @@ export function QuoteModal({
     let sectionRows = "";
     q.sections.forEach((sec, si) => {
       const sn = si + 1;
-      sectionRows += `<tr class="sec-header"><td colspan="6" style="background:#3A90C3;color:#fff;padding:10px 12px;font-weight:400;">${sn}. ${sec.name || "Untitled Section"}</td></tr>`;
+      sectionRows += `<tr class="sec-header"><td colspan="6" style="background:#3A90C3;color:#fff;padding:10px 12px;font-weight:400;"><span class="num">${sn}.</span> ${sec.name || "Untitled Section"}</td></tr>`;
       sec.items.forEach((item, ii) => {
         const lt = calcLineTotal(item.qty, item.price, item.discount);
         sectionRows += `<tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;">${sn}.${ii + 1}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;">${item.name} - ${products.find((p) => p.id === item.productId)?.sku ?? "N/A"} (${item.qty} PCS)</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;">${formatINR(item.price)}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;">${item.qty}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;">${item.discount}%</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;">${formatINR(lt)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;" class="num">${sn}.${ii + 1}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;">${item.name} - ${products.find((p) => p.id === item.productId)?.sku ?? "N/A"} (<span class="num">${item.qty}</span> PCS)</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;" class="num">${formatINR(item.price)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;" class="num">${item.qty}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;" class="num">${item.discount}%</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;" class="num">${formatINR(lt)}</td>
         </tr>`;
       });
     });
     const html = `<!DOCTYPE html><html><head><title>Quote ${q.number}</title>
-<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400&display=swap" rel="stylesheet">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Barlow',Arial,sans-serif;font-weight:400;color:#0F172A;padding:40px}
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400&family=Montserrat:wght@500&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Fredoka',Arial,sans-serif;font-weight:400;color:#0F172A;padding:40px}.num{font-family:'Montserrat',ui-monospace,system-ui,sans-serif;font-weight:500;font-variant-numeric:tabular-nums}
 .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #3A90C3;margin-bottom:24px}
 table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;padding:10px 12px;text-align:left;font-weight:400;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;color:#64748B}
 .totals{margin-top:24px;text-align:right}.totals .row{margin:4px 0;font-size:14px}.totals .grand{font-size:20px;font-weight:300;color:#44BE4A;margin-top:8px}
@@ -175,7 +177,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
 <div style="text-align:right"><div style="font-size:18px;font-weight:300">${q.number}</div><div style="font-size:12px;color:#64748B;margin-top:4px">Date: ${q.date}</div><div style="font-size:12px;color:#64748B">Valid until: ${q.validUntil}</div></div></div>
 <div style="margin-bottom:24px"><div style="font-size:12px;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Client</div><div style="font-size:16px">${q.client}</div></div>
 <table><thead><tr><th>Sr.</th><th>Description</th><th style="text-align:right">Price</th><th style="text-align:center">Qty</th><th style="text-align:center">Disc.</th><th style="text-align:right">Total</th></tr></thead><tbody>${sectionRows}</tbody></table>
-<div class="totals"><div class="row">Subtotal: ${formatINR(t.subtotal)}</div><div class="row">GST (18%): ${formatINR(t.gst)}</div><div class="grand">Grand Total: ${formatINR(t.grandTotal)}</div></div>
+<div class="totals"><div class="row">Subtotal: <span class="num">${formatINR(t.subtotal)}</span></div><div class="row">GST (<span class="num">18</span>%): <span class="num">${formatINR(t.gst)}</span></div><div class="grand">Grand Total: <span class="num">${formatINR(t.grandTotal)}</span></div></div>
 <script>window.onload=function(){window.print()}<\/script></body></html>`;
     const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); }
@@ -297,13 +299,13 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
       <div className="mt-6 flex justify-end">
         <div className="w-72 space-y-2">
           <div className="flex justify-between text-sm text-text-secondary">
-            <span>Subtotal</span><span className="text-text-primary">{formatINR(totals.subtotal)}</span>
+            <span>Subtotal</span><INR value={totals.subtotal} className="text-text-primary" />
           </div>
           <div className="flex justify-between text-sm text-text-secondary">
-            <span>GST (18%)</span><span className="text-text-primary">{formatINR(totals.gst)}</span>
+            <span>GST (18%)</span><INR value={totals.gst} className="text-text-primary" />
           </div>
           <div className="border-t border-border pt-2 flex justify-between text-lg text-text-primary">
-            <span>Grand Total</span><span className="font-light">{formatINR(totals.grandTotal)}</span>
+            <span>Grand Total</span><INR value={totals.grandTotal} />
           </div>
         </div>
       </div>
@@ -385,7 +387,7 @@ function SortableSection({
           </button>
         )}
         <div className="w-8 h-8 rounded-full bg-brand-gradient grid place-items-center text-white text-sm shrink-0">
-          {sn}
+          <Num>{sn}</Num>
         </div>
         {isEditing ? (
           <input
@@ -397,7 +399,7 @@ function SortableSection({
         ) : (
           <span className="flex-1 text-lg text-text-primary">{section.name || "Untitled Section"}</span>
         )}
-        <span className="text-sm text-text-secondary">{formatINR(subtotal)}</span>
+        <INR value={subtotal} className="text-sm text-text-secondary" />
         {isEditing && (
           <button
             onClick={onRemoveSection}
@@ -469,7 +471,7 @@ function SortableSection({
               const lt = calcLineTotal(item.qty, item.price, item.discount);
               return (
                 <tr key={item.id} className="border-t border-border">
-                  <td className="px-3 py-2 text-sm text-text-muted">{sn}.{ii + 1}</td>
+                  <td className="px-3 py-2 text-sm text-text-muted"><Num>{sn}.{ii + 1}</Num></td>
                   <td className="px-3 py-2 text-sm text-text-primary">{item.name}</td>
                   <td className="px-3 py-2 text-xs text-text-secondary">{item.brand}</td>
                   <td className="px-3 py-2 text-right">
@@ -481,7 +483,7 @@ function SortableSection({
                         onChange={(e) => onUpdateItem(item.id, { price: Number(e.target.value) || 0 })}
                       />
                     ) : (
-                      <span className="text-sm">{formatINR(item.price)}</span>
+                      <INR value={item.price} className="text-sm" />
                     )}
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -494,7 +496,7 @@ function SortableSection({
                         onChange={(e) => onUpdateItem(item.id, { qty: Math.max(1, Number(e.target.value) || 1) })}
                       />
                     ) : (
-                      <span className="text-sm">{item.qty}</span>
+                      <Num className="text-sm">{item.qty}</Num>
                     )}
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -508,10 +510,10 @@ function SortableSection({
                         onChange={(e) => onUpdateItem(item.id, { discount: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
                       />
                     ) : (
-                      <span className="text-sm">{item.discount}%</span>
+                      <Num className="text-sm">{item.discount}%</Num>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right text-sm text-text-primary">{formatINR(lt)}</td>
+                  <td className="px-3 py-2 text-right text-sm text-text-primary"><INR value={lt} /></td>
                   {isEditing && (
                     <td className="px-1 py-2">
                       <button onClick={() => onRemoveItem(item.id)} className="p-1 rounded text-text-muted hover:text-danger transition-colors">
