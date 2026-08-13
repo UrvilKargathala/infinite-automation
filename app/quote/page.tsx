@@ -84,7 +84,7 @@ export default function QuotePage() {
           <div key={s.label} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
             <div>
               <div className="text-xs text-text-muted">{s.label}</div>
-              <div className={`text-3xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}><Num>{s.value}</Num></div>
+              <div className={`text-2xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}><Num>{s.value}</Num></div>
             </div>
             <IconTile icon={s.icon} />
           </div>

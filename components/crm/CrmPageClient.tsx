@@ -82,7 +82,7 @@ export function CrmPageClient() {
             <div key={segment} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${bg}`} style={{ borderLeft: `3px solid ${accent}` }}>
               <div>
                 <div className="text-xs uppercase tracking-wider text-text-muted">{segment}</div>
-                <div className="text-3xl font-light text-text-primary mt-1"><Num>{segLeads.length}</Num></div>
+                <div className="text-2xl font-light text-text-primary mt-1"><Num>{segLeads.length}</Num></div>
                 <div className="text-xs text-text-secondary mt-1"><INR value={totalValue} /></div>
               </div>
               <IconTile icon={icon} />

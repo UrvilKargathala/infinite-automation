@@ -122,7 +122,7 @@ export default function DashboardPage() {
           <div key={k.label} className={`rounded-2xl shadow-card p-5 flex items-start justify-between ${k.bg}`} style={{ borderLeft: `3px solid ${k.accent}` }}>
             <div>
               <div className="text-xs uppercase tracking-wider text-text-muted">{k.label}</div>
-              <div className="text-3xl font-light text-text-primary mt-1">{k.value}</div>
+              <div className="text-2xl font-light text-text-primary mt-1">{k.value}</div>
               <div className="flex items-center gap-1 mt-2 text-xs">
                 {k.up ? (
                   <TrendingUp size={14} className="text-success" />
