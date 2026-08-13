@@ -12,6 +12,9 @@ const barlow = Barlow({
 export const metadata: Metadata = {
   title: "Infinite Automation Dashboard",
   description: "Internal operations dashboard for Infinite Automation",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
 export default function RootLayout({

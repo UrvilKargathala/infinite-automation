@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import { Search, Bell } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { UserMenu } from "@/components/layout/UserMenu";
@@ -24,9 +25,7 @@ export function TopNav() {
       <div className="max-w-[1860px] mx-auto px-8 h-full flex items-center justify-between">
         {/* LEFT — Logo */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-brand-gradient-diag flex items-center justify-center text-white text-lg font-normal">
-            IA
-          </div>
+          <Image src="/logo.png" alt="Infinite Automation" width={36} height={36} className="rounded-xl" />
           <span className="text-base font-normal text-text-primary whitespace-nowrap">
             Infinite Automation
           </span>
