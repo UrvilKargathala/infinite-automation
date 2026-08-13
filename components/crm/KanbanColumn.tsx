@@ -30,7 +30,7 @@ export function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`w-80 shrink-0 min-h-[560px] rounded-2xl p-3 transition-colors ${
+      className={`w-[260px] sm:w-72 lg:w-80 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl p-3 transition-colors ${
         isOver
           ? "bg-[#3A90C315] border-2 border-dashed border-brand-blue"
           : "bg-surface-alt"

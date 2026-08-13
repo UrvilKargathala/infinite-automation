@@ -106,7 +106,7 @@ export function LeadModal({ open, onClose, lead, defaultStage, onSave, onDelete 
         </>
       }
     >
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className={labelClass}>Name</label>
           <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
@@ -145,7 +145,7 @@ export function LeadModal({ open, onClose, lead, defaultStage, onSave, onDelete 
             {salesTeam.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
-        <div className="col-span-2">
+        <div className="sm:col-span-2">
           <label className={labelClass}>Last contact</label>
           <input className={inputClass} type="date" value={lastContact} onChange={(e) => setLastContact(e.target.value)} />
         </div>

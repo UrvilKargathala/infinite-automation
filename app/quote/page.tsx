@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Search, FileText, Send, CheckCircle, XCircle, Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { QuoteModal } from "@/components/quote/QuoteModal";
+import { Pagination } from "@/components/ui/Pagination";
 import { formatINR } from "@/lib/utils/format";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import type { Quote, QuoteStatus } from "@/types";
@@ -25,6 +26,7 @@ export default function QuotePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editQuote, setEditQuote] = useState<Quote | null>(null);
   const [viewMode, setViewMode] = useState(false);
+  const [page, setPage] = useState(1);
 
   const filtered = useMemo(() => {
     let list = quotes;
@@ -39,6 +41,13 @@ export default function QuotePage() {
     }
     return list;
   }, [quotes, statusFilter, search]);
+
+  const PAGE_SIZE = 10;
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const safePage = Math.min(page, totalPages || 1);
+  const paged = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  useEffect(() => setPage(1), [search, statusFilter]);
 
   const stats = [
     { label: "Total quotes", value: quotes.length, icon: FileText, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
@@ -68,7 +77,7 @@ export default function QuotePage() {
       <h1 className="text-3xl font-semibold text-text-primary">Quotes</h1>
       <p className="text-sm text-text-secondary mt-1">Manage and track all quotations</p>
 
-      <div className="grid grid-cols-4 gap-4 mt-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {stats.map((s) => (
           <div key={s.label} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
             <div>
@@ -81,11 +90,11 @@ export default function QuotePage() {
       </div>
 
       <div className="bg-white rounded-2xl shadow-card overflow-hidden mt-6">
-        <div className="p-4 border-b border-border flex items-center gap-3 flex-wrap">
-          <div className="relative">
+        <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
+          <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
-              className="w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              className="w-full sm:w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search quotes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -109,7 +118,8 @@ export default function QuotePage() {
           </div>
         </div>
 
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[700px]">
           <thead>
             <tr className="bg-surface-alt">
               <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-text-muted font-normal">Quote #</th>
@@ -122,12 +132,12 @@ export default function QuotePage() {
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {paged.length === 0 ? (
               <tr>
                 <td colSpan={7} className="text-center text-text-muted py-12">No quotes found</td>
               </tr>
             ) : (
-              filtered.map((q) => {
+              paged.map((q) => {
                 const { grandTotal } = calcQuoteTotal(q);
                 const sc = statusConfig[q.status];
                 return (
@@ -157,6 +167,14 @@ export default function QuotePage() {
             )}
           </tbody>
         </table>
+        </div>
+        <Pagination
+          page={safePage}
+          totalPages={totalPages}
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+        />
       </div>
 
       <QuoteModal

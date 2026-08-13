@@ -40,7 +40,7 @@ export function KanbanBoard({
     return (
       <div className="flex gap-4 overflow-x-auto pb-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {stages.map((stage) => (
-          <div key={stage} className="w-80 shrink-0 min-h-[560px] rounded-2xl p-3 bg-surface-alt" />
+          <div key={stage} className="w-[260px] sm:w-72 lg:w-80 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl p-3 bg-surface-alt" />
         ))}
       </div>
     );

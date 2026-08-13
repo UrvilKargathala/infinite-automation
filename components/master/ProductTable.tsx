@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { formatINR } from "@/lib/utils/format";
+import { Pagination } from "@/components/ui/Pagination";
 import type { Product } from "@/types";
+
+const PAGE_SIZE = 10;
 
 interface Props {
   products: Product[];
@@ -12,13 +16,18 @@ interface Props {
 }
 
 export function ProductTable({ products, total, onEdit, onDelete }: Props) {
+  const [page, setPage] = useState(1);
+  const totalPages = Math.ceil(products.length / PAGE_SIZE);
+  const safePage = Math.min(page, totalPages || 1);
+  const paged = products.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
   const thClass = "px-4 py-3 text-xs uppercase tracking-wider text-text-muted font-normal text-left";
   const tdClass = "px-4 py-3 text-sm";
 
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <table className="w-full min-w-[800px]">
           <thead>
             <tr className="bg-surface-alt">
               <th className={thClass}>Sr.</th>
@@ -33,16 +42,16 @@ export function ProductTable({ products, total, onEdit, onDelete }: Props) {
             </tr>
           </thead>
           <tbody>
-            {products.length === 0 ? (
+            {paged.length === 0 ? (
               <tr>
                 <td colSpan={9} className="text-center text-text-muted py-12">
                   No products found
                 </td>
               </tr>
             ) : (
-              products.map((p, i) => (
+              paged.map((p, i) => (
                 <tr key={p.id} className="border-t border-border hover:bg-[#F9FAFB]/60">
-                  <td className={tdClass}>{i + 1}</td>
+                  <td className={tdClass}>{(safePage - 1) * PAGE_SIZE + i + 1}</td>
                   <td className={`${tdClass} text-text-primary`}>{p.name}</td>
                   <td className={`${tdClass} font-mono text-xs text-brand-blue`}>{p.sku}</td>
                   <td className={tdClass}>{p.brand}</td>
@@ -90,11 +99,13 @@ export function ProductTable({ products, total, onEdit, onDelete }: Props) {
           </tbody>
         </table>
       </div>
-      <div className="px-4 py-3 border-t border-border">
-        <span className="text-xs text-text-muted">
-          Showing {products.length} of {total} products
-        </span>
-      </div>
+      <Pagination
+        page={safePage}
+        totalPages={totalPages}
+        totalItems={products.length}
+        pageSize={PAGE_SIZE}
+        onPageChange={setPage}
+      />
     </>
   );
 }

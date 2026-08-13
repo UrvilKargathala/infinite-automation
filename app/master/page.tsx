@@ -134,7 +134,7 @@ export default function MasterPage() {
       <p className="text-sm text-text-secondary mt-1">Product catalog and master data</p>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-4 gap-4 mt-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {stats.map((s) => (
           <div key={s.label} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
             <div>
@@ -151,11 +151,11 @@ export default function MasterPage() {
       {/* Table card */}
       <div className="bg-white rounded-2xl shadow-card overflow-hidden mt-6">
         {/* Toolbar */}
-        <div className="p-4 border-b border-border flex items-center gap-3 flex-wrap">
-          <div className="relative">
+        <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
+          <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
-              className="w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              className="w-full sm:w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}

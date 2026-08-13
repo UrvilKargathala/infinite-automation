@@ -73,7 +73,7 @@ export function CrmPageClient() {
       <p className="text-sm text-text-secondary mt-1">Lead pipeline — drag cards between stages</p>
 
       {/* Segment summary cards */}
-      <div className="grid grid-cols-4 gap-4 mt-8 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
         {segmentMeta.map(({ segment, icon, bg, accent }) => {
           const segLeads = leads.filter((l) => l.segment === segment);
           const totalValue = segLeads.reduce((s, l) => s + l.value, 0);
@@ -91,7 +91,7 @@ export function CrmPageClient() {
       </div>
 
       {/* Kanban board wrapper card */}
-      <div className="bg-white rounded-2xl shadow-card p-6">
+      <div className="bg-white rounded-2xl shadow-card p-3 sm:p-6">
         {/* Board header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -113,11 +113,11 @@ export function CrmPageClient() {
         </div>
 
         {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-4">
-          <div className="relative">
+        <div className="flex flex-wrap items-center gap-3 mb-4">
+          <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
-              className="w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              className="w-full sm:w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search leads..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}

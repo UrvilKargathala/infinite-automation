@@ -26,7 +26,7 @@ export default function RootLayout({
     <html lang="en" className={barlow.variable}>
       <body>
         <TopNav />
-        <main className="max-w-[1860px] mx-auto px-8 py-8">{children}</main>
+        <main className="max-w-[1860px] mx-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">{children}</main>
       </body>
     </html>
   );

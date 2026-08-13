@@ -115,7 +115,7 @@ export default function DashboardPage() {
       <p className="text-sm text-text-secondary mt-1">Overview of your business operations</p>
 
       {/* Row 1 — KPI cards */}
-      <div className="grid grid-cols-4 gap-4 mt-8 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
         {kpis.map((k) => (
           <div key={k.label} className={`rounded-2xl shadow-card p-5 flex items-start justify-between ${k.bg}`} style={{ borderLeft: `3px solid ${k.accent}` }}>
             <div>
@@ -137,8 +137,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 2 — Line chart + Donut */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
-        <div className="col-span-2 bg-white rounded-2xl shadow-card p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-card p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg text-text-primary">Quotes and revenue</h2>
             <span className="text-xs text-text-muted">Last 6 months</span>
@@ -157,7 +157,7 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="col-span-1 bg-white rounded-2xl shadow-card p-6">
+        <div className="lg:col-span-1 bg-white rounded-2xl shadow-card p-4 sm:p-6">
           <h2 className="text-lg text-text-primary mb-4">Pipeline by segment</h2>
           <ResponsiveContainer width="100%" height={190}>
             <PieChart>
@@ -194,8 +194,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Row 3 — Bar chart + Activity */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="col-span-2 bg-white rounded-2xl shadow-card p-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 bg-white rounded-2xl shadow-card p-4 sm:p-6">
           <h2 className="text-lg text-text-primary mb-4">Leads by stage</h2>
           <ResponsiveContainer width="100%" height={256}>
             <BarChart data={stageData}>
@@ -208,7 +208,7 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="col-span-1 bg-white rounded-2xl shadow-card p-6">
+        <div className="lg:col-span-1 bg-white rounded-2xl shadow-card p-4 sm:p-6">
           <h2 className="text-lg text-text-primary mb-4">Recent activity</h2>
           <div className="space-y-4">
             {ACTIVITIES.map((a, i) => (
