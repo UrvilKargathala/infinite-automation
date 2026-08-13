@@ -176,7 +176,6 @@ export function ProductModal({ open, onClose, product }: Props) {
                   setCategory(e.target.value);
                 }
               }}
-              disabled={!brand}
             >
               <option value="">Choose category</option>
               {categories.map((c) => (
