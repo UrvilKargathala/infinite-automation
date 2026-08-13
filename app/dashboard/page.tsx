@@ -103,10 +103,10 @@ export default function DashboardPage() {
   }, [leads]);
 
   const kpis = [
-    { label: "Revenue Pipeline", value: formatINR(pipelineRevenue), delta: "+18.2%", up: true, icon: DollarSign },
-    { label: "Active Leads", value: activeLeads, delta: "+3", up: true, icon: Users },
-    { label: "Active Quotes", value: activeQuotes, delta: "+2", up: true, icon: FileText },
-    { label: "Won This Month", value: formatINR(wonValue), delta: "-4.1%", up: false, icon: TrendingUp },
+    { label: "Revenue Pipeline", value: formatINR(pipelineRevenue), delta: "+18.2%", up: true, icon: DollarSign, bg: "bg-[#3A90C308]", accent: "#3A90C3" },
+    { label: "Active Leads", value: activeLeads, delta: "+3", up: true, icon: Users, bg: "bg-[#8B5CF608]", accent: "#8B5CF6" },
+    { label: "Active Quotes", value: activeQuotes, delta: "+2", up: true, icon: FileText, bg: "bg-[#44BE4A08]", accent: "#44BE4A" },
+    { label: "Won This Month", value: formatINR(wonValue), delta: "-4.1%", up: false, icon: TrendingUp, bg: "bg-[#F59E0B08]", accent: "#F59E0B" },
   ];
 
   return (
@@ -117,7 +117,7 @@ export default function DashboardPage() {
       {/* Row 1 — KPI cards */}
       <div className="grid grid-cols-4 gap-4 mt-8 mb-6">
         {kpis.map((k) => (
-          <div key={k.label} className="bg-white rounded-2xl shadow-card p-5 flex items-start justify-between">
+          <div key={k.label} className={`rounded-2xl shadow-card p-5 flex items-start justify-between ${k.bg}`} style={{ borderLeft: `3px solid ${k.accent}` }}>
             <div>
               <div className="text-xs uppercase tracking-wider text-text-muted">{k.label}</div>
               <div className="text-3xl font-light text-text-primary mt-1">{k.value}</div>
