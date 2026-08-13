@@ -103,10 +103,10 @@ export default function DashboardPage() {
   }, [leads]);
 
   const kpis = [
-    { label: "Revenue Pipeline", value: formatINR(pipelineRevenue), delta: "+18.2%", up: true, icon: DollarSign, bg: "bg-[#3A90C308]", accent: "#3A90C3" },
-    { label: "Active Leads", value: activeLeads, delta: "+3", up: true, icon: Users, bg: "bg-[#8B5CF608]", accent: "#8B5CF6" },
-    { label: "Active Quotes", value: activeQuotes, delta: "+2", up: true, icon: FileText, bg: "bg-[#44BE4A08]", accent: "#44BE4A" },
-    { label: "Won This Month", value: formatINR(wonValue), delta: "-4.1%", up: false, icon: TrendingUp, bg: "bg-[#F59E0B08]", accent: "#F59E0B" },
+    { label: "Revenue Pipeline", value: formatINR(pipelineRevenue), delta: "+18.2%", up: true, icon: DollarSign, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
+    { label: "Active Leads", value: activeLeads, delta: "+3", up: true, icon: Users, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
+    { label: "Active Quotes", value: activeQuotes, delta: "+2", up: true, icon: FileText, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
+    { label: "Won This Month", value: formatINR(wonValue), delta: "-4.1%", up: false, icon: TrendingUp, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
   ];
 
   return (

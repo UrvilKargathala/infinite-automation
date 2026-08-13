@@ -122,10 +122,10 @@ export default function MasterPage() {
   }
 
   const stats = [
-    { label: "Total products", value: products.length, icon: Package },
-    { label: "Active", value: totalActive, icon: CheckCircle, valueClass: "text-success" },
-    { label: "Brands", value: totalBrands, icon: Layers },
-    { label: "Missing price", value: missingPrice, icon: AlertCircle, valueClass: "text-warning" },
+    { label: "Total products", value: products.length, icon: Package, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
+    { label: "Active", value: totalActive, icon: CheckCircle, valueClass: "text-success", bg: "bg-[#10B98118]", accent: "#10B981" },
+    { label: "Brands", value: totalBrands, icon: Layers, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
+    { label: "Missing price", value: missingPrice, icon: AlertCircle, valueClass: "text-warning", bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
   ];
 
   return (
@@ -136,7 +136,7 @@ export default function MasterPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-4 gap-4 mt-8">
         {stats.map((s) => (
-          <div key={s.label} className="bg-white rounded-2xl shadow-card p-5 flex items-center justify-between">
+          <div key={s.label} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
             <div>
               <div className="text-xs text-text-muted">{s.label}</div>
               <div className={`text-3xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}>

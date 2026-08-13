@@ -41,10 +41,10 @@ export default function QuotePage() {
   }, [quotes, statusFilter, search]);
 
   const stats = [
-    { label: "Total quotes", value: quotes.length, icon: FileText },
-    { label: "Draft", value: quotes.filter((q) => q.status === "Draft").length, icon: FileText },
-    { label: "Accepted", value: quotes.filter((q) => q.status === "Accepted").length, icon: CheckCircle, valueClass: "text-success" },
-    { label: "Rejected", value: quotes.filter((q) => q.status === "Rejected").length, icon: XCircle, valueClass: "text-danger" },
+    { label: "Total quotes", value: quotes.length, icon: FileText, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
+    { label: "Draft", value: quotes.filter((q) => q.status === "Draft").length, icon: FileText, bg: "bg-[#64748B18]", accent: "#64748B" },
+    { label: "Accepted", value: quotes.filter((q) => q.status === "Accepted").length, icon: CheckCircle, valueClass: "text-success", bg: "bg-[#10B98118]", accent: "#10B981" },
+    { label: "Rejected", value: quotes.filter((q) => q.status === "Rejected").length, icon: XCircle, valueClass: "text-danger", bg: "bg-[#EF444418]", accent: "#EF4444" },
   ];
 
   function openEdit(q: Quote) {
@@ -70,7 +70,7 @@ export default function QuotePage() {
 
       <div className="grid grid-cols-4 gap-4 mt-8">
         {stats.map((s) => (
-          <div key={s.label} className="bg-white rounded-2xl shadow-card p-5 flex items-center justify-between">
+          <div key={s.label} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
             <div>
               <div className="text-xs text-text-muted">{s.label}</div>
               <div className={`text-3xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}>{s.value}</div>

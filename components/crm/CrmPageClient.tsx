@@ -12,11 +12,11 @@ import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { LeadModal } from "@/components/crm/LeadModal";
 import type { Lead, LeadStage, CustomerSegment } from "@/types";
 
-const segmentMeta: { segment: CustomerSegment; icon: typeof Home }[] = [
-  { segment: "Residential", icon: Home },
-  { segment: "Commercial", icon: Building2 },
-  { segment: "Short Term Rentals", icon: Hotel },
-  { segment: "Agriculture", icon: Sprout },
+const segmentMeta: { segment: CustomerSegment; icon: typeof Home; bg: string; accent: string }[] = [
+  { segment: "Residential", icon: Home, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
+  { segment: "Commercial", icon: Building2, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
+  { segment: "Short Term Rentals", icon: Hotel, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
+  { segment: "Agriculture", icon: Sprout, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
 ];
 
 export function CrmPageClient() {
@@ -74,11 +74,11 @@ export function CrmPageClient() {
 
       {/* Segment summary cards */}
       <div className="grid grid-cols-4 gap-4 mt-8 mb-6">
-        {segmentMeta.map(({ segment, icon }) => {
+        {segmentMeta.map(({ segment, icon, bg, accent }) => {
           const segLeads = leads.filter((l) => l.segment === segment);
           const totalValue = segLeads.reduce((s, l) => s + l.value, 0);
           return (
-            <div key={segment} className="bg-white rounded-2xl shadow-card p-5 flex items-center justify-between">
+            <div key={segment} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${bg}`} style={{ borderLeft: `3px solid ${accent}` }}>
               <div>
                 <div className="text-xs uppercase tracking-wider text-text-muted">{segment}</div>
                 <div className="text-3xl font-light text-text-primary mt-1">{segLeads.length}</div>
