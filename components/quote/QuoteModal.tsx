@@ -29,7 +29,7 @@ import { formatINR } from "@/lib/utils/format";
 import { INR } from "@/components/ui/INR";
 import { Num } from "@/components/ui/Num";
 import { calcLineTotal, calcSectionSubtotal, calcQuoteTotal } from "@/lib/utils/quote";
-import type { Quote, Section, QuoteItem, QuoteStatus } from "@/types";
+import type { Quote, Section, QuoteItem, QuoteStatus, Product } from "@/types";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10);
@@ -59,8 +59,8 @@ export function QuoteModal({
   const { add, update } = useQuoteStore();
   const products = useProductStore((s) => s.products);
   const leads = useLeadStore((s) => s.leads);
-  const brands = useProductStore((s) => s.brands);
-  const categoriesByBrand = useProductStore((s) => s.categoriesByBrand);
+  const allCategories = useProductStore((s) => s.categories);
+  const brandsByCategory = useProductStore((s) => s.brandsByCategory);
   const productsByBrandCategory = useProductStore((s) => s.productsByBrandCategory);
 
   const [draft, setDraft] = useState<Omit<Quote, "id" | "number">>(emptyQuoteDraft());
@@ -272,8 +272,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
                 section={section}
                 sectionIndex={si}
                 isEditing={isEditing}
-                allBrands={brands()}
-                categoriesByBrand={categoriesByBrand}
+                allCategories={allCategories()}
+                brandsByCategory={brandsByCategory}
                 productsByBrandCategory={productsByBrandCategory}
                 onUpdateSection={(p) => updateSection(section.id, p)}
                 onRemoveSection={() => removeSection(section.id)}
@@ -323,58 +323,71 @@ const STATUS_COLORS: Record<QuoteStatus, string> = {
 function statusColor(s: QuoteStatus) { return STATUS_COLORS[s]; }
 function statusConfig(s: QuoteStatus) { return STATUS_COLORS[s]; }
 
+interface SortableSectionProps {
+  section: Section;
+  sectionIndex: number;
+  isEditing: boolean;
+  allCategories: string[];
+  brandsByCategory: (c: string) => string[];
+  productsByBrandCategory: (b: string, c: string) => Product[];
+  onUpdateSection: (p: Partial<Section>) => void;
+  onRemoveSection: () => void;
+  onAddItem: (item: QuoteItem) => void;
+  onUpdateItem: (itemId: string, p: Partial<QuoteItem>) => void;
+  onRemoveItem: (itemId: string) => void;
+}
+
 function SortableSection({
   section,
   sectionIndex,
   isEditing,
-  allBrands,
-  categoriesByBrand,
+  allCategories,
+  brandsByCategory,
   productsByBrandCategory,
   onUpdateSection,
   onRemoveSection,
   onAddItem,
   onUpdateItem,
   onRemoveItem,
-}: {
-  section: Section;
-  sectionIndex: number;
-  isEditing: boolean;
-  allBrands: string[];
-  categoriesByBrand: (b: string) => string[];
-  productsByBrandCategory: (b: string, c: string) => import("@/types").Product[];
-  onUpdateSection: (p: Partial<Section>) => void;
-  onRemoveSection: () => void;
-  onAddItem: (item: QuoteItem) => void;
-  onUpdateItem: (itemId: string, p: Partial<QuoteItem>) => void;
-  onRemoveItem: (itemId: string) => void;
-}) {
+}: SortableSectionProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
 
-  const [pickerBrand, setPickerBrand] = useState("");
   const [pickerCat, setPickerCat] = useState("");
-  const [pickerProduct, setPickerProduct] = useState("");
+  const [pickerBrand, setPickerBrand] = useState("");
+  const [selectedProductIds, setSelectedProductIds] = useState(() => new Set<number>());
+  const [showProductPopup, setShowProductPopup] = useState(false);
 
   const sn = sectionIndex + 1;
   const subtotal = calcSectionSubtotal(section);
-  const cats = pickerBrand ? categoriesByBrand(pickerBrand) : [];
-  const prods = pickerBrand && pickerCat ? productsByBrandCategory(pickerBrand, pickerCat).filter((p) => p.status === "Active") : [];
+  const availableBrands = pickerCat ? brandsByCategory(pickerCat) : [];
+  const prods = pickerCat && pickerBrand ? productsByBrandCategory(pickerBrand, pickerCat).filter((p) => p.status === "Active") : [];
+
+  function toggleProduct(id: number) {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
 
   function handleAdd() {
-    const prod = prods.find((p) => String(p.id) === pickerProduct);
-    if (!prod) return;
-    onAddItem({
-      id: uid(),
-      productId: prod.id,
-      name: prod.name,
-      brand: prod.brand,
-      qty: 1,
-      price: prod.price ?? 0,
-      discount: 0,
+    const selected = prods.filter((p) => selectedProductIds.has(p.id));
+    selected.forEach((prod) => {
+      onAddItem({
+        id: uid(),
+        productId: prod.id,
+        name: prod.name,
+        brand: prod.brand,
+        qty: 1,
+        price: prod.price ?? 0,
+        discount: 0,
+      });
     });
-    setPickerBrand("");
     setPickerCat("");
-    setPickerProduct("");
+    setPickerBrand("");
+    setSelectedProductIds(new Set());
+    setShowProductPopup(false);
   }
 
   return (
@@ -412,43 +425,68 @@ function SortableSection({
 
       {/* Cascading picker */}
       {isEditing && (
-        <div className="flex gap-2 items-end mb-4">
-          <div className="flex-1">
-            <select
-              className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
-              value={pickerBrand}
-              onChange={(e) => { setPickerBrand(e.target.value); setPickerCat(""); setPickerProduct(""); }}
-            >
-              <option value="">Choose brand</option>
-              {allBrands.map((b) => <option key={b} value={b}>{b}</option>)}
-            </select>
+        <>
+          <div className="flex gap-2 items-end mb-4">
+            <div className="flex-1">
+              <select
+                className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
+                value={pickerCat}
+                onChange={(e) => { setPickerCat(e.target.value); setPickerBrand(""); setSelectedProductIds(new Set()); setShowProductPopup(false); }}
+              >
+                <option value="">Choose category</option>
+                {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="flex-1">
+              <select
+                className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors disabled:opacity-50"
+                value={pickerBrand}
+                onChange={(e) => { setPickerBrand(e.target.value); setSelectedProductIds(new Set()); setShowProductPopup(e.target.value !== ""); }}
+                disabled={!pickerCat}
+              >
+                <option value="">Choose brand</option>
+                {availableBrands.map((b) => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+            <Button icon={Plus} disabled={selectedProductIds.size === 0} onClick={handleAdd} className="shrink-0">
+              Add ({selectedProductIds.size})
+            </Button>
           </div>
-          <div className="flex-1">
-            <select
-              className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors disabled:opacity-50"
-              value={pickerCat}
-              onChange={(e) => { setPickerCat(e.target.value); setPickerProduct(""); }}
-              disabled={!pickerBrand}
-            >
-              <option value="">Choose category</option>
-              {cats.map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
-          </div>
-          <div className="flex-1">
-            <select
-              className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors disabled:opacity-50"
-              value={pickerProduct}
-              onChange={(e) => setPickerProduct(e.target.value)}
-              disabled={!pickerCat}
-            >
-              <option value="">Choose product</option>
-              {prods.map((p) => (
-                <option key={p.id} value={p.id}>{p.name} — {formatINR(p.price)}</option>
-              ))}
-            </select>
-          </div>
-          <Button icon={Plus} disabled={!pickerProduct} onClick={handleAdd} className="shrink-0">Add</Button>
-        </div>
+          {showProductPopup && prods.length > 0 && (
+            <div className="mb-4 border border-border rounded-xl p-3 bg-surface-alt max-h-56 overflow-y-auto">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-text-muted uppercase tracking-wider">Select products</span>
+                <button
+                  className="text-xs text-brand-blue hover:underline"
+                  onClick={() => {
+                    if (selectedProductIds.size === prods.length) {
+                      setSelectedProductIds(new Set());
+                    } else {
+                      setSelectedProductIds(new Set(prods.map((p) => p.id)));
+                    }
+                  }}
+                >
+                  {selectedProductIds.size === prods.length ? "Deselect all" : "Select all"}
+                </button>
+              </div>
+              <div className="space-y-1">
+                {prods.map((p) => (
+                  <label key={p.id} className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white cursor-pointer transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={selectedProductIds.has(p.id)}
+                      onChange={() => toggleProduct(p.id)}
+                      className="w-4 h-4 rounded border-border text-brand-blue focus:ring-brand-blue accent-[#3A90C3]"
+                    />
+                    <span className="flex-1 text-sm text-text-primary">{p.name}</span>
+                    <span className="text-xs text-text-muted font-mono">{p.sku}</span>
+                    <INR value={p.price} className="text-xs" />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Items table */}

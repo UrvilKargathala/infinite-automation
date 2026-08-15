@@ -52,7 +52,9 @@ interface ProductStore {
   bulkAdd: (items: Omit<Product, "id">[]) => void;
   setAll: (items: Product[]) => void;
   brands: () => string[];
+  categories: () => string[];
   categoriesByBrand: (brand: string) => string[];
+  brandsByCategory: (category: string) => string[];
   productsByBrandCategory: (brand: string, category: string) => Product[];
 }
 
@@ -75,8 +77,11 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     }),
   setAll: (items) => set({ products: items }),
   brands: () => [...new Set(get().products.map((p) => p.brand))].sort(),
+  categories: () => [...new Set(get().products.map((p) => p.category))].sort(),
   categoriesByBrand: (brand) =>
     [...new Set(get().products.filter((p) => p.brand === brand).map((p) => p.category))].sort(),
+  brandsByCategory: (category) =>
+    [...new Set(get().products.filter((p) => p.category === category).map((p) => p.brand))].sort(),
   productsByBrandCategory: (brand, category) =>
     get().products.filter((p) => p.brand === brand && p.category === category && p.status === "Active"),
 }));
