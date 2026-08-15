@@ -378,6 +378,7 @@ function SortableSection({
         id: uid(),
         productId: prod.id,
         name: prod.name,
+        category: prod.category,
         brand: prod.brand,
         qty: 1,
         price: prod.price ?? 0,
@@ -496,7 +497,7 @@ function SortableSection({
             <tr className="bg-surface-alt">
               <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-text-muted font-normal w-16">Sr.</th>
               <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-text-muted font-normal">Product</th>
-              <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-text-muted font-normal w-20">Brand</th>
+              <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-text-muted font-normal w-28">Brand</th>
               <th className="px-3 py-2 text-right text-xs uppercase tracking-wider text-text-muted font-normal w-24">Price</th>
               <th className="px-3 py-2 text-center text-xs uppercase tracking-wider text-text-muted font-normal w-16">Qty</th>
               <th className="px-3 py-2 text-center text-xs uppercase tracking-wider text-text-muted font-normal w-20">Disc %</th>
@@ -510,8 +511,8 @@ function SortableSection({
               return (
                 <tr key={item.id} className="border-t border-border">
                   <td className="px-3 py-2 text-sm text-text-muted"><Num>{sn}.{ii + 1}</Num></td>
-                  <td className="px-3 py-2 text-sm text-text-primary">{item.name}</td>
-                  <td className="px-3 py-2 text-xs text-text-secondary">{item.brand}</td>
+                  <td className="px-3 py-2 text-sm text-text-primary">{item.category || item.name}</td>
+                  <td className="px-3 py-2 text-xs text-text-secondary whitespace-nowrap">{item.brand}</td>
                   <td className="px-3 py-2 text-right">
                     {isEditing ? (
                       <input

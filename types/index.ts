@@ -42,6 +42,7 @@ export interface QuoteItem {
   id: string;
   productId: number;
   name: string;
+  category: string;
   brand: string;
   qty: number;
   price: number;

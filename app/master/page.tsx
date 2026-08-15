@@ -18,6 +18,15 @@ function normalizeBrand(raw: string): string {
   return v;
 }
 
+function normalizeCategory(raw: string): string {
+  let v = raw.trim();
+  v = v.replace(/Garrage/g, "Garage");
+  v = v.replace(/Contoller/g, "Controller");
+  v = v.replace(/Conroller/g, "Controller");
+  v = v.replace(/Alarams/g, "Alarms");
+  return v;
+}
+
 export default function MasterPage() {
   const { products, brands, categoriesByBrand, remove, bulkAdd } = useProductStore();
   const allBrands = brands();
@@ -82,7 +91,7 @@ export default function MasterPage() {
       const items = rows
         .map((row) => {
           const name = col(row, "Product Name");
-          const brandRaw = col(row, "Product Group/Brand");
+          const brandRaw = col(row, "Product Group/Brand", "Brand");
           if (!name || !brandRaw) return null;
           const priceStr = col(row, "Price ( INR )", "Price (INR)", "Price");
           const priceNum = priceStr ? Number(priceStr) : null;
@@ -90,7 +99,7 @@ export default function MasterPage() {
             name,
             sku: col(row, "SKU"),
             brand: normalizeBrand(brandRaw),
-            category: col(row, "Product Category"),
+            category: normalizeCategory(col(row, "Product Category", "Product Category ")),
             hsn: col(row, "Hsn Code", "HSN Code"),
             price: priceNum != null && !isNaN(priceNum) ? priceNum : null,
             status: "Active" as const,
