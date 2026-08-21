@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Fredoka, Montserrat } from "next/font/google";
-import { TopNav } from "@/components/layout/TopNav";
 import "./globals.css";
+import { LayoutShell } from "@/components/layout/LayoutShell";
 
 const fredoka = Fredoka({
   subsets: ["latin"],
@@ -31,8 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${fredoka.variable} ${montserrat.variable}`}>
       <body>
-        <TopNav />
-        <main className="max-w-[1860px] mx-auto px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">{children}</main>
+        <LayoutShell>{children}</LayoutShell>
       </body>
     </html>
   );
