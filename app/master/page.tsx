@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef } from "react";
 import { Search, Package, CheckCircle, Layers, AlertCircle, Upload, Download, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
@@ -67,7 +68,10 @@ export default function MasterPage() {
   }
 
   function handleDelete(id: number) {
-    if (window.confirm("Delete this product?")) remove(id);
+    if (window.confirm("Delete this product?")) {
+      remove(id);
+      toast.success("Product deleted");
+    }
   }
 
   function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -101,14 +105,19 @@ export default function MasterPage() {
             brand: normalizeBrand(brandRaw),
             category: normalizeCategory(col(row, "Product Category", "Product Category ")),
             hsn: col(row, "Hsn Code", "HSN Code"),
+            description: col(row, "Description"),
             price: priceNum != null && !isNaN(priceNum) ? priceNum : null,
             status: "Active" as const,
           };
         })
         .filter((x): x is NonNullable<typeof x> => x !== null);
 
-      bulkAdd(items);
-      alert(`${items.length} products imported.`);
+      if (items.length === 0) {
+        toast.error("No valid products found in file");
+      } else {
+        bulkAdd(items);
+        toast.success(`${items.length} products imported`);
+      }
     };
     reader.readAsArrayBuffer(file);
     e.target.value = "";
@@ -122,6 +131,7 @@ export default function MasterPage() {
       Brand: p.brand,
       "Product Category": p.category,
       "HSN Code": p.hsn,
+      Description: p.description || "",
       "Price (INR)": p.price ?? "",
       Status: p.status,
     }));
@@ -129,6 +139,7 @@ export default function MasterPage() {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Products");
     XLSX.writeFile(wb, "infinite_products_export.xlsx");
+    toast.success("Products exported");
   }
 
   const stats = [

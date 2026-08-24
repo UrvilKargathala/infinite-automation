@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { User, Settings, LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { RoleBadge } from "@/components/users/RoleBadge";
 
 export function UserMenu({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  function handleSignOut() {
+    localStorage.removeItem("ia_logged_in");
+    router.push("/login");
+  }
 
   useEffect(() => {
     function handle(e: MouseEvent) {
@@ -60,7 +67,10 @@ export function UserMenu({ onClose }: { onClose: () => void }) {
 
       <div className="my-2 border-t border-border" />
 
-      <button className="w-full px-3 py-2 rounded-lg text-sm text-danger hover:bg-[#F9FAFB] flex items-center gap-2">
+      <button
+        onClick={handleSignOut}
+        className="w-full px-3 py-2 rounded-lg text-sm text-danger hover:bg-[#F9FAFB] flex items-center gap-2"
+      >
         <LogOut size={16} />
         Sign out
       </button>

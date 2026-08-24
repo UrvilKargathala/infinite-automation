@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Search, FileText, Send, CheckCircle, XCircle, Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
@@ -71,7 +72,10 @@ export default function QuotePage() {
   }
 
   function handleDelete(id: number) {
-    if (window.confirm("Delete this quote?")) remove(id);
+    if (window.confirm("Delete this quote?")) {
+      remove(id);
+      toast.success("Quote deleted");
+    }
   }
 
   return (

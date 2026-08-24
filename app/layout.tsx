@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Fredoka, Montserrat } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 
@@ -32,6 +33,14 @@ export default function RootLayout({
     <html lang="en" className={`${fredoka.variable} ${montserrat.variable}`}>
       <body>
         <LayoutShell>{children}</LayoutShell>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            classNames: {
+              toast: "!font-sans",
+            },
+          }}
+        />
       </body>
     </html>
   );

@@ -1,11 +1,27 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { TopNav } from "./TopNav";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isLogin = pathname === "/login";
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    const loggedIn = localStorage.getItem("ia_logged_in") === "true";
+    if (!loggedIn && !isLogin) {
+      router.replace("/login");
+    } else if (loggedIn && isLogin) {
+      router.replace("/dashboard");
+    } else {
+      setReady(true);
+    }
+  }, [isLogin, pathname, router]);
+
+  if (!ready) return null;
 
   if (isLogin) return <>{children}</>;
 

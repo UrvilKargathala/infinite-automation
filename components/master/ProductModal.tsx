@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useProductStore } from "@/lib/store/useProductStore";
@@ -22,6 +23,7 @@ export function ProductModal({ open, onClose, product }: Props) {
   const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("");
   const [hsn, setHsn] = useState("");
+  const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [status, setStatus] = useState<"Active" | "Inactive">("Active");
   const [addingNewBrand, setAddingNewBrand] = useState(false);
@@ -35,6 +37,7 @@ export function ProductModal({ open, onClose, product }: Props) {
         setBrand(product.brand);
         setCategory(product.category);
         setHsn(product.hsn);
+        setDescription(product.description || "");
         setPrice(product.price != null ? String(product.price) : "");
         setStatus(product.status);
       } else {
@@ -43,6 +46,7 @@ export function ProductModal({ open, onClose, product }: Props) {
         setBrand("");
         setCategory("");
         setHsn("");
+        setDescription("");
         setPrice("");
         setStatus("Active");
       }
@@ -61,13 +65,16 @@ export function ProductModal({ open, onClose, product }: Props) {
       brand: brand.trim(),
       category: category.trim(),
       hsn: hsn.trim(),
+      description: description.trim(),
       price: price.trim() ? Number(price) : null,
       status,
     };
     if (product) {
       update(product.id, data);
+      toast.success("Product updated");
     } else {
       add(data);
+      toast.success("Product added");
     }
     onClose();
   }
@@ -189,6 +196,11 @@ export function ProductModal({ open, onClose, product }: Props) {
         <div>
           <label className={labelClass}>HSN Code</label>
           <input className={inputClass} value={hsn} onChange={(e) => setHsn(e.target.value)} />
+        </div>
+
+        <div className="col-span-2">
+          <label className={labelClass}>Description</label>
+          <textarea className={`${inputClass} resize-none`} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Product description" />
         </div>
 
         <div>

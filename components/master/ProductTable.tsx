@@ -28,7 +28,7 @@ export function ProductTable({ products, total, onEdit, onDelete }: Props) {
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[800px]">
+        <table className="w-full min-w-[1000px]">
           <thead>
             <tr className="bg-surface-alt">
               <th className={thClass}>Sr.</th>
@@ -36,6 +36,7 @@ export function ProductTable({ products, total, onEdit, onDelete }: Props) {
               <th className={thClass}>SKU</th>
               <th className={thClass}>Brand</th>
               <th className={thClass}>Category</th>
+              <th className={thClass}>Description</th>
               <th className={thClass}>HSN Code</th>
               <th className={thClass}>Price (INR)</th>
               <th className={thClass}>Status</th>
@@ -45,7 +46,7 @@ export function ProductTable({ products, total, onEdit, onDelete }: Props) {
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={9} className="text-center text-text-muted py-12">
+                <td colSpan={10} className="text-center text-text-muted py-12">
                   No products found
                 </td>
               </tr>
@@ -57,6 +58,7 @@ export function ProductTable({ products, total, onEdit, onDelete }: Props) {
                   <td className={`${tdClass} font-mono text-xs text-brand-blue`}>{p.sku}</td>
                   <td className={tdClass}>{p.brand}</td>
                   <td className={tdClass}>{p.category}</td>
+                  <td className={`${tdClass} text-text-secondary text-xs max-w-[200px] truncate`} title={p.description}>{p.description || "—"}</td>
                   <td className={`${tdClass} font-mono text-xs text-text-secondary`}><Num>{p.hsn || "—"}</Num></td>
                   <td className={tdClass}>
                     {p.price != null ? (

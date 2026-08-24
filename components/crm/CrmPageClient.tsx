@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Home, Building2, Hotel, Sprout, Search, Plus, Download, SlidersHorizontal } from "lucide-react";
+import { toast } from "sonner";
 import { useLeadStore } from "@/lib/store/useLeadStore";
 import { INR } from "@/components/ui/INR";
 import { Num } from "@/components/ui/Num";
@@ -63,9 +64,16 @@ export function CrmPageClient() {
   function handleSave(data: Omit<Lead, "id">) {
     if (editLead) {
       update(editLead.id, data);
+      toast.success("Lead updated");
     } else {
       add(data);
+      toast.success("Lead added");
     }
+  }
+
+  function handleDelete(id: number) {
+    remove(id);
+    toast.success("Lead deleted");
   }
 
   return (
@@ -154,7 +162,7 @@ export function CrmPageClient() {
         lead={editLead}
         defaultStage={defaultStage}
         onSave={handleSave}
-        onDelete={remove}
+        onDelete={handleDelete}
       />
     </div>
   );

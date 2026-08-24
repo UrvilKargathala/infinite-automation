@@ -21,6 +21,7 @@ export interface Product {
   brand: string;
   category: string;
   hsn: string;
+  description: string;
   price: number | null;
   status: ProductStatus;
 }

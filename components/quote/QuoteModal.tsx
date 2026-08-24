@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Plus, Trash2, GripVertical, Printer } from "lucide-react";
+import { toast } from "sonner";
 import {
   DndContext,
   closestCenter,
@@ -141,8 +142,10 @@ export function QuoteModal({
     if (!draft.client.trim()) return;
     if (quote) {
       update(quote.id, draft);
+      toast.success("Quote updated");
     } else {
       add(draft);
+      toast.success("Quote created");
     }
     onClose();
   }
