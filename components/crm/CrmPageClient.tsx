@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Home, Building2, Hotel, Sprout, Search, Plus, Download, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useLeadStore } from "@/lib/store/useLeadStore";
@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/Button";
 import { AssigneeStack } from "@/components/crm/AssigneeStack";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { LeadModal } from "@/components/crm/LeadModal";
+import { CrmSkeleton } from "@/components/crm/CrmSkeleton";
 import type { Lead, LeadStage, CustomerSegment } from "@/types";
 
 const segmentMeta: { segment: CustomerSegment; icon: typeof Home; bg: string; accent: string }[] = [
@@ -23,6 +24,12 @@ const segmentMeta: { segment: CustomerSegment; icon: typeof Home; bg: string; ac
 
 export function CrmPageClient() {
   const { leads, add, update, remove, moveStage } = useLeadStore();
+
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(t);
+  }, []);
 
   const [search, setSearch] = useState("");
   const [segFilter, setSegFilter] = useState("");
@@ -75,6 +82,8 @@ export function CrmPageClient() {
     remove(id);
     toast.success("Lead deleted");
   }
+
+  if (loading) return <CrmSkeleton />;
 
   return (
     <div>

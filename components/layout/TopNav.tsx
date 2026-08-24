@@ -7,8 +7,10 @@ import Image from "next/image";
 import { Search, Bell, Menu, X } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { can } from "@/lib/utils/permissions";
 
-const navItems = [
+const allNavItems = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "CRM", href: "/crm" },
   { label: "Quote", href: "/quote" },
@@ -18,8 +20,11 @@ const navItems = [
 
 export function TopNav() {
   const pathname = usePathname();
+  const role = useAuthStore((s) => s.user.role);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
+
+  const navItems = allNavItems.filter((item) => item.href !== "/users" || can(role, "viewUsers"));
 
   return (
     <nav className="sticky top-0 z-40 bg-white shadow-card w-full">

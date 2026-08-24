@@ -5,14 +5,21 @@ import { useRouter } from "next/navigation";
 import { User, Settings, LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { RoleBadge } from "@/components/users/RoleBadge";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 
 export function UserMenu({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const user = useAuthStore((s) => s.user);
 
   function handleSignOut() {
     localStorage.removeItem("ia_logged_in");
     router.push("/login");
+  }
+
+  function goTo(href: string) {
+    router.push(href);
+    onClose();
   }
 
   useEffect(() => {
@@ -31,8 +38,8 @@ export function UserMenu({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   const items = [
-    { label: "Profile", icon: User },
-    { label: "Settings", icon: Settings },
+    { label: "Profile", icon: User, href: "/profile" },
+    { label: "Settings", icon: Settings, href: "/settings" },
   ] as const;
 
   return (
@@ -42,22 +49,21 @@ export function UserMenu({ onClose }: { onClose: () => void }) {
     >
       <div className="px-3 py-3 border-b border-border mb-2">
         <div className="flex items-center gap-3">
-          <Avatar name="Urvil" size="md" />
+          <Avatar name={user.fullName} size="md" />
           <div>
-            <div className="text-sm text-text-primary">Urvil</div>
-            <div className="text-xs text-text-muted">
-              urvil@infiniteautomation.com
-            </div>
+            <div className="text-sm text-text-primary">{user.fullName}</div>
+            <div className="text-xs text-text-muted">{user.email}</div>
           </div>
         </div>
         <div className="mt-2">
-          <RoleBadge role="Super Admin" />
+          <RoleBadge role={user.role} />
         </div>
       </div>
 
-      {items.map(({ label, icon: Icon }) => (
+      {items.map(({ label, icon: Icon, href }) => (
         <button
           key={label}
+          onClick={() => goTo(href)}
           className="w-full px-3 py-2 rounded-lg text-sm text-text-primary hover:bg-[#F9FAFB] flex items-center gap-2"
         >
           <Icon size={16} />

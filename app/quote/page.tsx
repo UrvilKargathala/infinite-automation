@@ -1,9 +1,12 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
+import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import { Search, FileText, Send, CheckCircle, XCircle, Plus, Eye, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { can } from "@/lib/utils/permissions";
 import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -24,6 +27,15 @@ const statusConfig: Record<QuoteStatus, { color: string; icon: typeof FileText }
 
 export default function QuotePage() {
   const { quotes, remove } = useQuoteStore();
+  const role = useAuthStore((s) => s.user.role);
+  const canDeleteQuote = can(role, "deleteQuote");
+
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(t);
+  }, []);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -77,6 +89,8 @@ export default function QuotePage() {
       toast.success("Quote deleted");
     }
   }
+
+  if (loading) return <TablePageSkeleton statCards={4} />;
 
   return (
     <div>
@@ -162,9 +176,11 @@ export default function QuotePage() {
                         <button onClick={() => openEdit(q)} className="p-1.5 rounded-lg text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary transition-colors" title="Edit">
                           <Pencil size={16} />
                         </button>
-                        <button onClick={() => handleDelete(q.id)} className="p-1.5 rounded-lg text-text-secondary hover:bg-[#F9FAFB] hover:text-danger transition-colors" title="Delete">
-                          <Trash2 size={16} />
-                        </button>
+                        {canDeleteQuote && (
+                          <button onClick={() => handleDelete(q.id)} className="p-1.5 rounded-lg text-text-secondary hover:bg-[#F9FAFB] hover:text-danger transition-colors" title="Delete">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

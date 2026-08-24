@@ -14,9 +14,10 @@ interface Props {
   total: number;
   onEdit: (p: Product) => void;
   onDelete: (id: number) => void;
+  canManage?: boolean;
 }
 
-export function ProductTable({ products, total, onEdit, onDelete }: Props) {
+export function ProductTable({ products, total, onEdit, onDelete, canManage = true }: Props) {
   const [page, setPage] = useState(1);
   const totalPages = Math.ceil(products.length / PAGE_SIZE);
   const safePage = Math.min(page, totalPages || 1);
@@ -40,13 +41,13 @@ export function ProductTable({ products, total, onEdit, onDelete }: Props) {
               <th className={thClass}>HSN Code</th>
               <th className={thClass}>Price (INR)</th>
               <th className={thClass}>Status</th>
-              <th className={`${thClass} text-right`}>Actions</th>
+              {canManage && <th className={`${thClass} text-right`}>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={10} className="text-center text-text-muted py-12">
+                <td colSpan={canManage ? 10 : 9} className="text-center text-text-muted py-12">
                   No products found
                 </td>
               </tr>
@@ -78,24 +79,26 @@ export function ProductTable({ products, total, onEdit, onDelete }: Props) {
                       {p.status}
                     </span>
                   </td>
-                  <td className={`${tdClass} text-right`}>
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => onEdit(p)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-[#F9FAFB] transition-colors"
-                        aria-label="Edit"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        onClick={() => onDelete(p.id)}
-                        className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-danger hover:bg-[#F9FAFB] transition-colors"
-                        aria-label="Delete"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
+                  {canManage && (
+                    <td className={`${tdClass} text-right`}>
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => onEdit(p)}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-[#F9FAFB] transition-colors"
+                          aria-label="Edit"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          onClick={() => onDelete(p.id)}
+                          className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-danger hover:bg-[#F9FAFB] transition-colors"
+                          aria-label="Delete"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))
             )}

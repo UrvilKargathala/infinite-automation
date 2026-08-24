@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { Search, Package, CheckCircle, Layers, AlertCircle, Upload, Download, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useProductStore } from "@/lib/store/useProductStore";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { can } from "@/lib/utils/permissions";
 import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
 import { ProductTable } from "@/components/master/ProductTable";
 import { ProductModal } from "@/components/master/ProductModal";
 import { Num } from "@/components/ui/Num";
+import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import type { Product } from "@/types";
 import * as XLSX from "xlsx";
 
@@ -30,7 +33,16 @@ function normalizeCategory(raw: string): string {
 
 export default function MasterPage() {
   const { products, brands, categoriesByBrand, remove, bulkAdd } = useProductStore();
+  const role = useAuthStore((s) => s.user.role);
+  const canManage = can(role, "editProducts");
+  const canImport = can(role, "excelImport");
   const allBrands = brands();
+
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(t);
+  }, []);
 
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
@@ -149,6 +161,8 @@ export default function MasterPage() {
     { label: "Missing price", value: missingPrice, icon: AlertCircle, valueClass: "text-warning", bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
   ];
 
+  if (loading) return <TablePageSkeleton statCards={4} />;
+
   return (
     <div>
       <h1 className="text-3xl font-semibold text-text-primary">Master File</h1>
@@ -205,16 +219,22 @@ export default function MasterPage() {
           </select>
 
           <div className="ml-auto flex items-center gap-2">
-            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
-            <Button variant="secondary" icon={Upload} onClick={() => fileRef.current?.click()}>
-              Import Excel
-            </Button>
+            {canImport && (
+              <>
+                <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+                <Button variant="secondary" icon={Upload} onClick={() => fileRef.current?.click()}>
+                  Import Excel
+                </Button>
+              </>
+            )}
             <Button variant="secondary" icon={Download} onClick={handleExport}>
               Export
             </Button>
-            <Button icon={Plus} onClick={() => { setEditProduct(null); setModalOpen(true); }}>
-              Add product
-            </Button>
+            {canManage && (
+              <Button icon={Plus} onClick={() => { setEditProduct(null); setModalOpen(true); }}>
+                Add product
+              </Button>
+            )}
           </div>
         </div>
 
@@ -223,6 +243,7 @@ export default function MasterPage() {
           total={products.length}
           onEdit={handleEdit}
           onDelete={handleDelete}
+          canManage={canManage}
         />
       </div>
 

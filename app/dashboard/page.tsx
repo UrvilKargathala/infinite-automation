@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   DollarSign, Users, FileText, TrendingUp, TrendingDown,
 } from "lucide-react";
@@ -16,6 +16,7 @@ import { formatINR } from "@/lib/utils/format";
 import { INR } from "@/components/ui/INR";
 import { Num } from "@/components/ui/Num";
 import { calcQuoteTotal } from "@/lib/utils/quote";
+import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import type { Quote } from "@/types";
 
 const CHART_COLORS = ["#3A90C3", "#44BE4A", "#8B5CF6", "#F59E0B", "#EF4444", "#64748B"];
@@ -68,6 +69,12 @@ function BarTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 }
 
 export default function DashboardPage() {
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const t = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(t);
+  }, []);
+
   const leads = useLeadStore((s) => s.leads);
   const quotes = useQuoteStore((s) => s.quotes);
 
@@ -110,6 +117,8 @@ export default function DashboardPage() {
     { label: "Active Quotes", value: <Num>{activeQuotes}</Num>, delta: "+2", up: true, icon: FileText, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
     { label: "Won This Month", value: <INR value={wonValue} />, delta: "-4.1%", up: false, icon: TrendingUp, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
   ];
+
+  if (loading) return <DashboardSkeleton />;
 
   return (
     <div>
