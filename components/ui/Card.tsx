@@ -6,7 +6,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <div className={`bg-white rounded-2xl shadow-card p-6 ${className}`}>
+    <div className={`bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-6 ${className}`}>
       {children}
     </div>
   );

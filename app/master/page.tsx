@@ -111,11 +111,12 @@ export default function MasterPage() {
           if (!name || !brandRaw) return null;
           const priceStr = col(row, "Price ( INR )", "Price (INR)", "Price");
           const priceNum = priceStr ? Number(priceStr) : null;
+          const category = normalizeCategory(col(row, "Product Category", "Product Category "));
           return {
             name,
             sku: col(row, "SKU"),
             brand: normalizeBrand(brandRaw),
-            category: normalizeCategory(col(row, "Product Category", "Product Category ")),
+            category,
             hsn: col(row, "Hsn Code", "HSN Code"),
             description: col(row, "Description"),
             price: priceNum != null && !isNaN(priceNum) ? priceNum : null,
@@ -169,9 +170,9 @@ export default function MasterPage() {
       <p className="text-sm text-text-secondary mt-1">Product catalog and master data</p>
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {stats.map((s) => (
-          <div key={s.label} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
+          <div key={s.label} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
             <div>
               <div className="text-xs text-text-muted">{s.label}</div>
               <div className={`text-2xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}>
@@ -184,7 +185,7 @@ export default function MasterPage() {
       </div>
 
       {/* Table card */}
-      <div className="bg-white rounded-2xl shadow-card overflow-hidden mt-6">
+      <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 overflow-hidden mt-6">
         {/* Toolbar */}
         <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
           <div className="relative w-full sm:w-auto">

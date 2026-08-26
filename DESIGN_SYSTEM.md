@@ -171,9 +171,25 @@ Never use `shadow-lg` / `shadow-xl` presets from Tailwind — they are too harsh
 
 ---
 
+## Glassmorphism (cards)
+
+Content cards use a frosted-glass treatment instead of flat opaque white. This applies to: the generic `Card` component, KPI/stat cards (dashboard, CRM, Master File, Quote, Users), table/board wrapper cards, and dashboard widget cards (charts, Quote expiry alerts, Sales leaderboard).
+
+```
+bg-white/70 backdrop-blur-xl shadow-card border border-white/60
+```
+
+Tinted stat cards (which already use a translucent hex background like `bg-[#3A90C318]`) keep their tint color and layer `backdrop-blur-xl border border-white/40` on top — the blur is what reads as "glass," the tint stays the accent color.
+
+**Do NOT apply glass to:** the top nav bar, dropdowns (UserMenu, NotificationPanel, SearchPanel), or modals — these stay solid `bg-white` per the Borders/Shadows rules below, so floating overlays remain crisp and legible above scrolling content.
+
+For the blur to actually read as glass there must be something soft behind the cards to blur — `LayoutShell` renders three large, low-opacity (`/10`), heavily blurred (`blur-3xl`) brand-color circles fixed behind the page content (`-z-10`), one each in blue, green, and purple. Do not remove these; without them the glass cards look identical to flat white.
+
+---
+
 ## Layout
 
-- **Page background:** `#FFFFFF` (pure white — everywhere).
+- **Page background:** `#FFFFFF` (pure white), with three fixed, low-opacity blurred brand-color circles behind content (see Glassmorphism above) so glass cards have depth to blur against.
 - **Top nav:** `72px` tall, white background, no bottom border, `shadow-card` (subtle bottom shadow to lift off page).
 - **Content padding:** `p-8` (32px). On larger screens, cap main content width at `max-w-[1600px] mx-auto`.
 - **Grid gap:** `gap-4` (16px) between cards, `gap-3` (12px) for tight rows, `gap-6` (24px) between major sections.
@@ -189,7 +205,7 @@ Never use `shadow-lg` / `shadow-xl` presets from Tailwind — they are too harsh
 - Logo mark: `rounded-xl` (12px).
 
 ### Borders (used sparingly)
-- Cards: **NO border**. Rely on shadow.
+- Cards: `border-white/60` (or `/40` for tinted stat cards) as part of the glass treatment — see Glassmorphism above. Non-card surfaces (nav, dropdowns, modals) stay borderless, relying on shadow.
 - Inputs, selects: 1px border in `#E5E7EB`; on focus, transition to `#3A90C3`.
 - Table dividers (row-to-row): 1px `#E5E7EB` — kept because tables need row separation.
 - Circular icon buttons: 1px `#E5E7EB` — very subtle to define the shape on white background.
@@ -250,7 +266,7 @@ Never use `shadow-lg` / `shadow-xl` presets from Tailwind — they are too harsh
 - Search input in top nav uses `rounded-full` and slightly larger padding.
 
 ### Cards
-- `bg-white`, **no border**, `rounded-2xl`, `shadow-card`, `p-6` default. Compact stat cards may use `p-5`.
+- Glass treatment (`bg-white/70 backdrop-blur-xl border border-white/60`), `rounded-2xl`, `shadow-card`, `p-6` default. Compact stat cards may use `p-5`. See Glassmorphism section above.
 - Hover on interactive cards (e.g., LeadCard, KpiCard when clickable): `shadow-cardHover`, no border change.
 - Non-interactive cards stay static on hover.
 

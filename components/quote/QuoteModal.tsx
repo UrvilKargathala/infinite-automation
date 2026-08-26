@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Plus, Trash2, GripVertical, Printer } from "lucide-react";
+import { Plus, Trash2, GripVertical, Printer, Copy } from "lucide-react";
 import { toast } from "sonner";
 import {
   DndContext,
@@ -26,6 +26,8 @@ import { Badge } from "@/components/ui/Badge";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useLeadStore } from "@/lib/store/useLeadStore";
+import { useSettingsStore } from "@/lib/store/useSettingsStore";
+import { useNotificationStore } from "@/lib/store/useNotificationStore";
 import { formatINR } from "@/lib/utils/format";
 import { INR } from "@/components/ui/INR";
 import { Num } from "@/components/ui/Num";
@@ -60,6 +62,8 @@ export function QuoteModal({
   const { add, update } = useQuoteStore();
   const products = useProductStore((s) => s.products);
   const leads = useLeadStore((s) => s.leads);
+  const quoteAlerts = useSettingsStore((s) => s.quoteAlerts);
+  const notify = useNotificationStore((s) => s.add);
   const allCategories = useProductStore((s) => s.categories);
   const brandsByCategory = useProductStore((s) => s.brandsByCategory);
   const productsByBrandCategory = useProductStore((s) => s.productsByBrandCategory);
@@ -96,6 +100,23 @@ export function QuoteModal({
       ...d,
       sections: d.sections.filter((s) => s.id !== sectionId),
     }));
+  }
+
+  function duplicateSection(sectionId: string) {
+    setDraft((d) => {
+      const idx = d.sections.findIndex((s) => s.id === sectionId);
+      if (idx === -1) return d;
+      const original = d.sections[idx];
+      const copy: Section = {
+        id: uid(),
+        name: original.name,
+        items: original.items.map((item) => ({ ...item, id: uid() })),
+      };
+      const sections = [...d.sections];
+      sections.splice(idx + 1, 0, copy);
+      return { ...d, sections };
+    });
+    toast.success("Section duplicated");
   }
 
   function addItemToSection(sectionId: string, item: QuoteItem) {
@@ -143,6 +164,9 @@ export function QuoteModal({
     if (quote) {
       update(quote.id, draft);
       toast.success("Quote updated");
+      if (quoteAlerts && draft.status !== quote.status && (draft.status === "Accepted" || draft.status === "Rejected")) {
+        notify(`Quote ${quote.number} for ${draft.client} was ${draft.status.toLowerCase()}`, draft.status === "Accepted" ? "#10B981" : "#EF4444");
+      }
     } else {
       add(draft);
       toast.success("Quote created");
@@ -222,7 +246,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
       }
     >
       {/* Header fields */}
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <div>
           <label className="block text-sm text-text-primary mb-1">Client</label>
           {isEditing ? (
@@ -280,6 +304,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
                 productsByBrandCategory={productsByBrandCategory}
                 onUpdateSection={(p) => updateSection(section.id, p)}
                 onRemoveSection={() => removeSection(section.id)}
+                onDuplicateSection={() => duplicateSection(section.id)}
                 onAddItem={(item) => addItemToSection(section.id, item)}
                 onUpdateItem={(itemId, p) => updateItem(section.id, itemId, p)}
                 onRemoveItem={(itemId) => removeItem(section.id, itemId)}
@@ -335,6 +360,7 @@ interface SortableSectionProps {
   productsByBrandCategory: (b: string, c: string) => Product[];
   onUpdateSection: (p: Partial<Section>) => void;
   onRemoveSection: () => void;
+  onDuplicateSection: () => void;
   onAddItem: (item: QuoteItem) => void;
   onUpdateItem: (itemId: string, p: Partial<QuoteItem>) => void;
   onRemoveItem: (itemId: string) => void;
@@ -349,6 +375,7 @@ function SortableSection({
   productsByBrandCategory,
   onUpdateSection,
   onRemoveSection,
+  onDuplicateSection,
   onAddItem,
   onUpdateItem,
   onRemoveItem,
@@ -419,8 +446,19 @@ function SortableSection({
         <INR value={subtotal} className="text-sm text-text-secondary" />
         {isEditing && (
           <button
+            onClick={onDuplicateSection}
+            className="p-1.5 rounded-lg text-text-muted hover:text-text-primary transition-colors"
+            aria-label="Duplicate section"
+            title="Duplicate section"
+          >
+            <Copy size={16} />
+          </button>
+        )}
+        {isEditing && (
+          <button
             onClick={onRemoveSection}
             className="p-1.5 rounded-lg text-text-muted hover:text-danger transition-colors"
+            aria-label="Delete section"
           >
             <Trash2 size={16} />
           </button>
@@ -430,7 +468,7 @@ function SortableSection({
       {/* Cascading picker */}
       {isEditing && (
         <>
-          <div className="flex gap-2 items-end mb-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-end mb-4">
             <div className="flex-1">
               <select
                 className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
@@ -452,7 +490,7 @@ function SortableSection({
                 {availableBrands.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
-            <Button icon={Plus} disabled={selectedProductIds.size === 0} onClick={handleAdd} className="shrink-0">
+            <Button icon={Plus} disabled={selectedProductIds.size === 0} onClick={handleAdd} className="shrink-0 w-full sm:w-auto justify-center">
               Add ({selectedProductIds.size})
             </Button>
           </div>
@@ -482,9 +520,11 @@ function SortableSection({
                       onChange={() => toggleProduct(p.id)}
                       className="w-4 h-4 rounded border-border text-brand-blue focus:ring-brand-blue accent-[#3A90C3]"
                     />
-                    <span className="flex-1 text-sm text-text-primary">{p.name}</span>
-                    <span className="text-xs text-text-muted font-mono">{p.sku}</span>
-                    <INR value={p.price} className="text-xs" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm text-text-primary">{p.name}</div>
+                      <div className="text-xs text-text-muted truncate" title={p.description}>{p.description || "—"}</div>
+                    </div>
+                    <INR value={p.price} className="text-xs shrink-0" />
                   </label>
                 ))}
               </div>
@@ -495,7 +535,8 @@ function SortableSection({
 
       {/* Items table */}
       {section.items.length > 0 ? (
-        <table className="w-full">
+        <div className="overflow-x-auto">
+        <table className="w-full min-w-[600px]">
           <thead>
             <tr className="bg-surface-alt">
               <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-text-muted font-normal w-16">Sr.</th>
@@ -568,6 +609,7 @@ function SortableSection({
             })}
           </tbody>
         </table>
+        </div>
       ) : (
         <div className="text-center text-text-muted text-sm py-8">
           {isEditing ? "Add products using the picker above" : "No items in this section"}

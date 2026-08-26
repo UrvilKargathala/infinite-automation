@@ -183,8 +183,8 @@ Do not build features from a later phase during an earlier one. If a prompt asks
 - Typical deal sizes (INR): Residential 1L-3L, Commercial 5L-25L, STR 2L-5L, Agriculture 1L-3L.
 - Sales team names for seed data: Priya, Arjun, Neha, Rohan, Sam.
 - Contact names in seed leads: mix Indian and Australian names for realism.
-- Brand naming rule: drop the "Unifi " prefix from imported brand names. The clean brand list is: Infinite AUS, Automation Products, Electrical Product, Wifi, Camera, Video Door Phone, Sensors & Alarms, Advance Hosting, Managed VoIP.
-- Excel import in Master must auto-normalize brand names: strip a leading "Unifi " prefix, trim trailing/leading whitespace, and correct known source typos ("Alarams" -> "Alarms"). This applies to every Excel import going forward, not just the initial seed.
+- Brand naming rule: the clean brand list is: Infinite AUS, Automation Products, Electrical Product, Unifi. Products imported under the Unifi brand keep `brand: "Unifi"` — their sub-line (Wifi, Camera, Video Door Phone, Sensors & Alarms, Advance Hosting, Managed VoIP) is the **category**, not the brand. If the source brand column has a "Unifi " prefix followed by more text (e.g. "Unifi Wifi"), strip the prefix down to "Unifi".
+- Excel import in Master must auto-normalize brand names: strip a leading "Unifi " prefix down to "Unifi", trim trailing/leading whitespace, and correct known source typos ("Alarams" -> "Alarms"). This applies to every Excel import going forward, not just the initial seed.
 
 ---
 

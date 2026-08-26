@@ -3,11 +3,19 @@ import { Skeleton } from "@/components/ui/Skeleton";
 export function DashboardSkeleton() {
   return (
     <div>
-      <Skeleton className="h-9 w-48" />
-      <Skeleton className="h-4 w-72 mt-2" />
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-4 w-72 mt-2" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-10 w-28" />
+          <Skeleton className="h-10 w-28" />
+        </div>
+      </div>
 
       {/* Row 1 — KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="rounded-2xl shadow-card p-5 bg-white">
             <Skeleton className="h-3 w-24" />
@@ -56,6 +64,20 @@ export function DashboardSkeleton() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Row 4 — Quote expiry + leaderboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <div key={i} className="bg-white rounded-2xl shadow-card p-4 sm:p-6">
+            <Skeleton className="h-5 w-40 mb-4" />
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, j) => (
+                <Skeleton key={j} className="h-12 w-full" />
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

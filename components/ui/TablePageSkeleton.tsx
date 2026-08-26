@@ -6,7 +6,7 @@ export function TablePageSkeleton({ statCards = 4, rows = 6 }: { statCards?: num
       <Skeleton className="h-9 w-56" />
       <Skeleton className="h-4 w-72 mt-2" />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {Array.from({ length: statCards }).map((_, i) => (
           <div key={i} className="rounded-2xl shadow-card p-5 bg-white">
             <Skeleton className="h-3 w-20" />

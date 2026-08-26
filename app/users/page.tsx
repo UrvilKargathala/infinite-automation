@@ -43,7 +43,7 @@ export default function UsersPage() {
     return (
       <div>
         <h1 className="text-3xl font-semibold text-text-primary">User Management</h1>
-        <div className="mt-8 bg-white rounded-2xl shadow-card p-12 text-center text-text-secondary">
+        <div className="mt-8 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-12 text-center text-text-secondary">
           You don&apos;t have permission to view this page.
         </div>
       </div>
@@ -101,9 +101,9 @@ export default function UsersPage() {
       <h1 className="text-3xl font-semibold text-text-primary">User Management</h1>
       <p className="text-sm text-text-secondary mt-1">Manage users and role-based access</p>
 
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {stats.map((s) => (
-          <div key={s.label} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
+          <div key={s.label} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
             <div>
               <div className="text-xs text-text-muted">{s.label}</div>
               <div className={`text-2xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}>
@@ -115,7 +115,7 @@ export default function UsersPage() {
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-card overflow-hidden mt-6">
+      <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 overflow-hidden mt-6">
         <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
           <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />

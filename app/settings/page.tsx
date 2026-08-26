@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { LogOut } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { useSettingsStore } from "@/lib/store/useSettingsStore";
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -27,12 +27,10 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function SettingsPage() {
   const router = useRouter();
-  const [emailNotifs, setEmailNotifs] = useState(true);
-  const [leadAlerts, setLeadAlerts] = useState(true);
-  const [quoteAlerts, setQuoteAlerts] = useState(false);
+  const { emailNotifs, leadAlerts, quoteAlerts, setSetting } = useSettingsStore();
 
-  function handleToggle(setter: (v: boolean) => void, value: boolean, label: string) {
-    setter(value);
+  function handleToggle(key: "emailNotifs" | "leadAlerts" | "quoteAlerts", value: boolean, label: string) {
+    setSetting(key, value);
     toast.success(`${label} ${value ? "enabled" : "disabled"}`);
   }
 
@@ -42,9 +40,9 @@ export default function SettingsPage() {
   }
 
   const rows = [
-    { label: "Email notifications", desc: "Receive a daily summary by email", value: emailNotifs, setter: setEmailNotifs },
-    { label: "New lead alerts", desc: "Notify me when a new lead is created", value: leadAlerts, setter: setLeadAlerts },
-    { label: "Quote status alerts", desc: "Notify me when a quote is accepted or rejected", value: quoteAlerts, setter: setQuoteAlerts },
+    { key: "emailNotifs" as const, label: "Email notifications", desc: "Receive a daily summary by email", value: emailNotifs },
+    { key: "leadAlerts" as const, label: "New lead alerts", desc: "Notify me when a new lead is created", value: leadAlerts },
+    { key: "quoteAlerts" as const, label: "Quote status alerts", desc: "Notify me when a quote is accepted or rejected", value: quoteAlerts },
   ];
 
   return (
@@ -56,13 +54,13 @@ export default function SettingsPage() {
         <Card className="lg:col-span-2">
           <h2 className="text-lg text-text-primary mb-4">Notifications</h2>
           <div className="space-y-4">
-            {rows.map(({ label, desc, value, setter }) => (
-              <div key={label} className="flex items-center justify-between gap-4">
+            {rows.map(({ key, label, desc, value }) => (
+              <div key={key} className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-sm text-text-primary">{label}</div>
                   <div className="text-xs text-text-muted mt-0.5">{desc}</div>
                 </div>
-                <Toggle checked={value} onChange={(v) => handleToggle(setter, v, label)} />
+                <Toggle checked={value} onChange={(v) => handleToggle(key, v, label)} />
               </div>
             ))}
           </div>

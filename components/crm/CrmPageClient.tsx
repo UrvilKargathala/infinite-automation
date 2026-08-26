@@ -4,6 +4,8 @@ import { useState, useMemo, useEffect } from "react";
 import { Home, Building2, Hotel, Sprout, Search, Plus, Download, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useLeadStore } from "@/lib/store/useLeadStore";
+import { useSettingsStore } from "@/lib/store/useSettingsStore";
+import { useNotificationStore } from "@/lib/store/useNotificationStore";
 import { INR } from "@/components/ui/INR";
 import { Num } from "@/components/ui/Num";
 import { IconTile } from "@/components/ui/IconTile";
@@ -14,6 +16,7 @@ import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { LeadModal } from "@/components/crm/LeadModal";
 import { CrmSkeleton } from "@/components/crm/CrmSkeleton";
 import type { Lead, LeadStage, CustomerSegment } from "@/types";
+import * as XLSX from "xlsx";
 
 const segmentMeta: { segment: CustomerSegment; icon: typeof Home; bg: string; accent: string }[] = [
   { segment: "Residential", icon: Home, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
@@ -24,6 +27,8 @@ const segmentMeta: { segment: CustomerSegment; icon: typeof Home; bg: string; ac
 
 export function CrmPageClient() {
   const { leads, add, update, remove, moveStage } = useLeadStore();
+  const leadAlerts = useSettingsStore((s) => s.leadAlerts);
+  const notify = useNotificationStore((s) => s.add);
 
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -37,6 +42,15 @@ export function CrmPageClient() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editLead, setEditLead] = useState<Lead | null>(null);
   const [defaultStage, setDefaultStage] = useState<LeadStage>("New");
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("new") === "1") {
+      setEditLead(null);
+      setDefaultStage("New");
+      setModalOpen(true);
+      window.history.replaceState(null, "", "/crm");
+    }
+  }, []);
 
   const assignees = useMemo(() => {
     const map = new Map<string, number>();
@@ -75,7 +89,28 @@ export function CrmPageClient() {
     } else {
       add(data);
       toast.success("Lead added");
+      if (leadAlerts) notify(`New lead: ${data.name}`, "#3A90C3");
     }
+  }
+
+  function handleExport() {
+    const data = filtered.map((l, i) => ({
+      "Sr. No": i + 1,
+      Name: l.name,
+      Company: l.company,
+      Email: l.email,
+      Phone: l.phone,
+      Segment: l.segment,
+      Stage: l.stage,
+      "Value (INR)": l.value,
+      "Assigned To": l.assigned,
+      "Last Contact": l.lastContact,
+    }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Leads");
+    XLSX.writeFile(wb, "infinite_leads_export.xlsx");
+    toast.success("Leads exported");
   }
 
   function handleDelete(id: number) {
@@ -91,12 +126,12 @@ export function CrmPageClient() {
       <p className="text-sm text-text-secondary mt-1">Lead pipeline — drag cards between stages</p>
 
       {/* Segment summary cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
         {segmentMeta.map(({ segment, icon, bg, accent }) => {
           const segLeads = leads.filter((l) => l.segment === segment);
           const totalValue = segLeads.reduce((s, l) => s + l.value, 0);
           return (
-            <div key={segment} className={`rounded-2xl shadow-card p-5 flex items-center justify-between ${bg}`} style={{ borderLeft: `3px solid ${accent}` }}>
+            <div key={segment} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between ${bg}`} style={{ borderLeft: `3px solid ${accent}` }}>
               <div>
                 <div className="text-xs uppercase tracking-wider text-text-muted">{segment}</div>
                 <div className="text-2xl font-light text-text-primary mt-1"><Num>{segLeads.length}</Num></div>
@@ -109,7 +144,7 @@ export function CrmPageClient() {
       </div>
 
       {/* Kanban board wrapper card */}
-      <div className="bg-white rounded-2xl shadow-card p-3 sm:p-6">
+      <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-3 sm:p-6">
         {/* Board header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -125,7 +160,7 @@ export function CrmPageClient() {
             >
               <Plus size={18} />
             </button>
-            <IconButton icon={Download} ariaLabel="Export" />
+            <IconButton icon={Download} ariaLabel="Export" onClick={handleExport} />
             <IconButton icon={SlidersHorizontal} ariaLabel="Filter" />
           </div>
         </div>

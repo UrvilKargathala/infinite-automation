@@ -7,7 +7,10 @@ import Image from "next/image";
 import { Search, Bell, Menu, X } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { UserMenu } from "@/components/layout/UserMenu";
+import { NotificationPanel } from "@/components/layout/NotificationPanel";
+import { SearchPanel } from "@/components/layout/SearchPanel";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useNotificationStore } from "@/lib/store/useNotificationStore";
 import { can } from "@/lib/utils/permissions";
 
 const allNavItems = [
@@ -21,8 +24,15 @@ const allNavItems = [
 export function TopNav() {
   const pathname = usePathname();
   const role = useAuthStore((s) => s.user.role);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [mobileNav, setMobileNav] = useState(false);
+  const [openPanel, setOpenPanel] = useState<"search" | "notifications" | "user" | null>(null);
+  const menuOpen = openPanel === "user";
+  const searchOpen = openPanel === "search";
+  const notifOpen = openPanel === "notifications";
+  function togglePanel(panel: "search" | "notifications" | "user") {
+    setOpenPanel((p) => (p === panel ? null : panel));
+  }
+  const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.read).length);
 
   const navItems = allNavItems.filter((item) => item.href !== "/users" || can(role, "viewUsers"));
 
@@ -66,16 +76,22 @@ export function TopNav() {
 
         {/* RIGHT — Actions */}
         <div className="flex items-center gap-1 sm:gap-2">
-          <IconButton icon={Search} ariaLabel="Search" />
-          <IconButton icon={Bell} ariaLabel="Notifications" indicator />
+          <div className="relative">
+            <IconButton icon={Search} ariaLabel="Search" onClick={() => togglePanel("search")} />
+            {searchOpen && <SearchPanel onClose={() => setOpenPanel(null)} />}
+          </div>
+          <div className="relative">
+            <IconButton icon={Bell} ariaLabel="Notifications" indicator={unreadCount > 0} onClick={() => togglePanel("notifications")} />
+            {notifOpen && <NotificationPanel onClose={() => setOpenPanel(null)} />}
+          </div>
           <div className="relative">
             <button
-              onClick={() => setMenuOpen(!menuOpen)}
+              onClick={() => togglePanel("user")}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-brand-blue flex items-center justify-center text-white text-xs font-normal"
             >
               UR
             </button>
-            {menuOpen && <UserMenu onClose={() => setMenuOpen(false)} />}
+            {menuOpen && <UserMenu onClose={() => setOpenPanel(null)} />}
           </div>
         </div>
       </div>

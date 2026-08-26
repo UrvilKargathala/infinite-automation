@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import Link from "next/link";
 import {
-  DollarSign, Users, FileText, TrendingUp, TrendingDown,
+  DollarSign, Users, FileText, TrendingUp, TrendingDown, UserPlus, Plus,
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -12,11 +13,14 @@ import { useLeadStore } from "@/lib/store/useLeadStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { IconTile } from "@/components/ui/IconTile";
+import { Button } from "@/components/ui/Button";
 import { formatINR } from "@/lib/utils/format";
 import { INR } from "@/components/ui/INR";
 import { Num } from "@/components/ui/Num";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
+import { QuoteExpiryAlerts } from "@/components/dashboard/QuoteExpiryAlerts";
+import { SalesLeaderboard } from "@/components/dashboard/SalesLeaderboard";
 import type { Quote } from "@/types";
 
 const CHART_COLORS = ["#3A90C3", "#44BE4A", "#8B5CF6", "#F59E0B", "#EF4444", "#64748B"];
@@ -122,13 +126,25 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-text-primary">Dashboard</h1>
-      <p className="text-sm text-text-secondary mt-1">Overview of your business operations</p>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-semibold text-text-primary">Dashboard</h1>
+          <p className="text-sm text-text-secondary mt-1">Overview of your business operations</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href="/crm?new=1">
+            <Button variant="secondary" icon={UserPlus}>New lead</Button>
+          </Link>
+          <Link href="/quote?new=1">
+            <Button icon={Plus}>New quote</Button>
+          </Link>
+        </div>
+      </div>
 
       {/* Row 1 — KPI cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
         {kpis.map((k) => (
-          <div key={k.label} className={`rounded-2xl shadow-card p-5 flex items-start justify-between ${k.bg}`} style={{ borderLeft: `3px solid ${k.accent}` }}>
+          <div key={k.label} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-start justify-between ${k.bg}`} style={{ borderLeft: `3px solid ${k.accent}` }}>
             <div>
               <div className="text-xs uppercase tracking-wider text-text-muted">{k.label}</div>
               <div className="text-2xl font-light text-text-primary mt-1">{k.value}</div>
@@ -149,7 +165,7 @@ export default function DashboardPage() {
 
       {/* Row 2 — Line chart + Donut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-card p-4 sm:p-6">
+        <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg text-text-primary">Quotes and revenue</h2>
             <span className="text-xs text-text-muted">Last 6 months</span>
@@ -168,7 +184,7 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="lg:col-span-1 bg-white rounded-2xl shadow-card p-4 sm:p-6">
+        <div className="lg:col-span-1 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
           <h2 className="text-lg text-text-primary mb-4">Pipeline by segment</h2>
           <ResponsiveContainer width="100%" height={190}>
             <PieChart>
@@ -206,7 +222,7 @@ export default function DashboardPage() {
 
       {/* Row 3 — Bar chart + Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-card p-4 sm:p-6">
+        <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
           <h2 className="text-lg text-text-primary mb-4">Leads by stage</h2>
           <ResponsiveContainer width="100%" height={256}>
             <BarChart data={stageData}>
@@ -219,7 +235,7 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </div>
 
-        <div className="lg:col-span-1 bg-white rounded-2xl shadow-card p-4 sm:p-6">
+        <div className="lg:col-span-1 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
           <h2 className="text-lg text-text-primary mb-4">Recent activity</h2>
           <div className="space-y-4">
             {ACTIVITIES.map((a, i) => (
@@ -233,6 +249,12 @@ export default function DashboardPage() {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Row 4 — Quote expiry alerts + Sales leaderboard */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <QuoteExpiryAlerts quotes={quotes} />
+        <SalesLeaderboard leads={leads} />
       </div>
     </div>
   );
