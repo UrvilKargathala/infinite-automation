@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Search, Users as UsersIcon, CheckCircle, Shield, Plus } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
@@ -15,18 +15,14 @@ import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import type { Role, User } from "@/types";
 
 export default function UsersPage() {
-  const { users, add, update, remove } = useUserStore();
-  const currentRole = useAuthStore((s) => s.user.role);
+  const { users, add, update, remove, loaded } = useUserStore();
+  const currentRole = useAuthStore((s) => s.user?.role ?? "Staff");
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editUser, setEditUser] = useState<User | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
-  }, []);
+  const loading = !loaded;
 
   const filtered = useMemo(() => {
     if (!search.trim()) return users;

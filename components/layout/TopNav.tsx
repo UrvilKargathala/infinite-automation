@@ -12,6 +12,7 @@ import { SearchPanel } from "@/components/layout/SearchPanel";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useNotificationStore } from "@/lib/store/useNotificationStore";
 import { can } from "@/lib/utils/permissions";
+import { initials } from "@/lib/utils/initials";
 
 const allNavItems = [
   { label: "Dashboard", href: "/dashboard" },
@@ -23,7 +24,8 @@ const allNavItems = [
 
 export function TopNav() {
   const pathname = usePathname();
-  const role = useAuthStore((s) => s.user.role);
+  const role = useAuthStore((s) => s.user?.role ?? "Staff");
+  const myName = useAuthStore((s) => s.user?.fullName ?? "");
   const [mobileNav, setMobileNav] = useState(false);
   const [openPanel, setOpenPanel] = useState<"search" | "notifications" | "user" | null>(null);
   const menuOpen = openPanel === "user";
@@ -89,7 +91,7 @@ export function TopNav() {
               onClick={() => togglePanel("user")}
               className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-brand-blue flex items-center justify-center text-white text-xs font-normal"
             >
-              UR
+              {myName ? initials(myName) : ""}
             </button>
             {menuOpen && <UserMenu onClose={() => setOpenPanel(null)} />}
           </div>

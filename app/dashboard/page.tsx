@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   DollarSign, Users, FileText, TrendingUp, TrendingDown, UserPlus, Plus,
@@ -73,14 +73,11 @@ function BarTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 }
 
 export default function DashboardPage() {
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
-  }, []);
-
   const leads = useLeadStore((s) => s.leads);
   const quotes = useQuoteStore((s) => s.quotes);
+  const leadsLoaded = useLeadStore((s) => s.loaded);
+  const quotesLoaded = useQuoteStore((s) => s.loaded);
+  const loading = !leadsLoaded || !quotesLoaded;
 
   const pipelineRevenue = useMemo(
     () => leads.filter((l) => l.stage !== "Won" && l.stage !== "Lost").reduce((s, l) => s + l.value, 0),

@@ -26,15 +26,11 @@ const segmentMeta: { segment: CustomerSegment; icon: typeof Home; bg: string; ac
 ];
 
 export function CrmPageClient() {
-  const { leads, add, update, remove, moveStage } = useLeadStore();
+  const { leads, add, update, remove, moveStage, loaded } = useLeadStore();
   const leadAlerts = useSettingsStore((s) => s.leadAlerts);
   const notify = useNotificationStore((s) => s.add);
 
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
-  }, []);
+  const loading = !loaded;
 
   const [search, setSearch] = useState("");
   const [segFilter, setSegFilter] = useState("");

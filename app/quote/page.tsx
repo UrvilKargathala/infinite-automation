@@ -26,15 +26,11 @@ const statusConfig: Record<QuoteStatus, { color: string; icon: typeof FileText }
 };
 
 export default function QuotePage() {
-  const { quotes, remove } = useQuoteStore();
-  const role = useAuthStore((s) => s.user.role);
+  const { quotes, remove, loaded } = useQuoteStore();
+  const role = useAuthStore((s) => s.user?.role ?? "Staff");
   const canDeleteQuote = can(role, "deleteQuote");
 
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
-  }, []);
+  const loading = !loaded;
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");

@@ -12,17 +12,19 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 
 export default function ProfilePage() {
   const { user, updateProfile } = useAuthStore();
-  const [fullName, setFullName] = useState(user.fullName);
+  const [fullName, setFullName] = useState(user?.fullName ?? "");
 
   useEffect(() => {
-    setFullName(user.fullName);
-  }, [user.fullName]);
+    setFullName(user?.fullName ?? "");
+  }, [user?.fullName]);
 
   function handleSave() {
     if (!fullName.trim()) return;
     updateProfile({ fullName: fullName.trim() });
     toast.success("Profile updated");
   }
+
+  if (!user) return null;
 
   return (
     <div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { LogOut } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -27,6 +28,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { signOut } = useClerk();
   const { emailNotifs, leadAlerts, quoteAlerts, setSetting } = useSettingsStore();
 
   function handleToggle(key: "emailNotifs" | "leadAlerts" | "quoteAlerts", value: boolean, label: string) {
@@ -35,8 +37,7 @@ export default function SettingsPage() {
   }
 
   function handleSignOut() {
-    localStorage.removeItem("ia_logged_in");
-    router.push("/login");
+    signOut(() => router.push("/sign-in"));
   }
 
   const rows = [

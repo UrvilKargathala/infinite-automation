@@ -32,17 +32,16 @@ function normalizeCategory(raw: string): string {
 }
 
 export default function MasterPage() {
-  const { products, brands, categoriesByBrand, remove, bulkAdd } = useProductStore();
-  const role = useAuthStore((s) => s.user.role);
+  const { products, brands, categoriesByBrand, remove, bulkAdd, fetchAll, loaded } = useProductStore();
+  const role = useAuthStore((s) => s.user?.role ?? "Staff");
   const canManage = can(role, "editProducts");
   const canImport = can(role, "excelImport");
   const allBrands = brands();
 
-  const [loading, setLoading] = useState(true);
+  const loading = !loaded;
   useEffect(() => {
-    const t = setTimeout(() => setLoading(false), 500);
-    return () => clearTimeout(t);
-  }, []);
+    fetchAll();
+  }, [fetchAll]);
 
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState("");

@@ -1,29 +1,50 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 import { TopNav } from "./TopNav";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useProductStore } from "@/lib/store/useProductStore";
+import { useLeadStore } from "@/lib/store/useLeadStore";
+import { useQuoteStore } from "@/lib/store/useQuoteStore";
+import { useUserStore } from "@/lib/store/useUserStore";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const isLogin = pathname === "/login";
-  const [ready, setReady] = useState(false);
+  const isAuthRoute = pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up");
+  const { isLoaded, isSignedIn } = useUser();
+
+  const { fetchMe, user: me, error: meError, loaded: meLoaded } = useAuthStore();
+  const fetchProducts = useProductStore((s) => s.fetchAll);
+  const fetchLeads = useLeadStore((s) => s.fetchAll);
+  const fetchQuotes = useQuoteStore((s) => s.fetchAll);
+  const fetchUsers = useUserStore((s) => s.fetchAll);
 
   useEffect(() => {
-    const loggedIn = localStorage.getItem("ia_logged_in") === "true";
-    if (!loggedIn && !isLogin) {
-      router.replace("/login");
-    } else if (loggedIn && isLogin) {
-      router.replace("/dashboard");
-    } else {
-      setReady(true);
+    if (isLoaded && isSignedIn) {
+      fetchMe();
+      fetchProducts();
+      fetchLeads();
+      fetchQuotes();
+      fetchUsers();
     }
-  }, [isLogin, pathname, router]);
+  }, [isLoaded, isSignedIn, fetchMe, fetchProducts, fetchLeads, fetchQuotes, fetchUsers]);
 
-  if (!ready) return null;
+  if (isAuthRoute) return <>{children}</>;
 
-  if (isLogin) return <>{children}</>;
+  if (!isLoaded || (isSignedIn && !meLoaded)) return null;
+
+  if (isSignedIn && meError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6">
+        <div className="max-w-sm text-center">
+          <h1 className="text-xl text-text-primary mb-2">Access pending</h1>
+          <p className="text-sm text-text-secondary">{meError}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

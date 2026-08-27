@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useClerk } from "@clerk/nextjs";
 import { User, Settings, LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { RoleBadge } from "@/components/users/RoleBadge";
@@ -10,11 +11,11 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 export function UserMenu({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { signOut } = useClerk();
   const user = useAuthStore((s) => s.user);
 
   function handleSignOut() {
-    localStorage.removeItem("ia_logged_in");
-    router.push("/login");
+    signOut(() => router.push("/sign-in"));
   }
 
   function goTo(href: string) {
@@ -41,6 +42,8 @@ export function UserMenu({ onClose }: { onClose: () => void }) {
     { label: "Profile", icon: User, href: "/profile" },
     { label: "Settings", icon: Settings, href: "/settings" },
   ] as const;
+
+  if (!user) return null;
 
   return (
     <div
