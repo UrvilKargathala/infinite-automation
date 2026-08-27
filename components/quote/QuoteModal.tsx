@@ -42,6 +42,9 @@ function emptySection(): Section {
   return { id: uid(), name: "", items: [] };
 }
 
+const numberInputClass =
+  "bg-white border border-border rounded py-1 px-2 text-sm focus:border-brand-blue focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
+
 function emptyQuoteDraft(): Omit<Quote, "id" | "number"> {
   const today = new Date().toISOString().slice(0, 10);
   const valid = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
@@ -410,6 +413,7 @@ function SortableSection({
         name: prod.name,
         category: prod.category,
         brand: prod.brand,
+        description: prod.description,
         qty: 1,
         price: prod.price ?? 0,
         discount: 0,
@@ -555,14 +559,20 @@ function SortableSection({
               return (
                 <tr key={item.id} className="border-t border-border">
                   <td className="px-3 py-2 text-sm text-text-muted"><Num>{sn}.{ii + 1}</Num></td>
-                  <td className="px-3 py-2 text-sm text-text-primary">{item.category || item.name}</td>
+                  <td className="px-3 py-2">
+                    <div className="text-sm text-text-primary">{item.name}</div>
+                    {item.description && (
+                      <div className="text-xs text-text-muted truncate max-w-[220px]" title={item.description}>{item.description}</div>
+                    )}
+                  </td>
                   <td className="px-3 py-2 text-xs text-text-secondary whitespace-nowrap">{item.brand}</td>
                   <td className="px-3 py-2 text-right">
                     {isEditing ? (
                       <input
                         type="number"
-                        className="w-20 text-right bg-white border border-border rounded py-1 px-2 text-sm focus:border-brand-blue focus:outline-none"
+                        className={`${numberInputClass} w-20 text-right`}
                         value={item.price}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => onUpdateItem(item.id, { price: Number(e.target.value) || 0 })}
                       />
                     ) : (
@@ -573,9 +583,10 @@ function SortableSection({
                     {isEditing ? (
                       <input
                         type="number"
-                        className="w-14 text-center bg-white border border-border rounded py-1 px-2 text-sm focus:border-brand-blue focus:outline-none"
+                        className={`${numberInputClass} w-14 text-center`}
                         value={item.qty}
                         min={1}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => onUpdateItem(item.id, { qty: Math.max(1, Number(e.target.value) || 1) })}
                       />
                     ) : (
@@ -586,10 +597,11 @@ function SortableSection({
                     {isEditing ? (
                       <input
                         type="number"
-                        className="w-16 text-center bg-white border border-border rounded py-1 px-2 text-sm focus:border-brand-blue focus:outline-none"
+                        className={`${numberInputClass} w-16 text-center`}
                         value={item.discount}
                         min={0}
                         max={100}
+                        onFocus={(e) => e.target.select()}
                         onChange={(e) => onUpdateItem(item.id, { discount: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
                       />
                     ) : (

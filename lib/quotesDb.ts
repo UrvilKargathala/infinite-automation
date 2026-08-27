@@ -22,6 +22,7 @@ export async function assembleQuotes(quoteRows: Record<string, unknown>[]): Prom
       name: it.name as string,
       category: it.category as string,
       brand: it.brand as string,
+      description: (it.description as string) ?? "",
       qty: it.qty as number,
       price: Number(it.price),
       discount: Number(it.discount),
@@ -57,8 +58,8 @@ export async function replaceQuoteSections(quoteId: number, sections: Section[])
     for (let ii = 0; ii < s.items.length; ii++) {
       const it = s.items[ii];
       await sql`
-        INSERT INTO quote_items (id, section_id, product_id, name, category, brand, qty, price, discount, position)
-        VALUES (${it.id}, ${s.id}, ${it.productId}, ${it.name}, ${it.category}, ${it.brand}, ${it.qty}, ${it.price}, ${it.discount}, ${ii})
+        INSERT INTO quote_items (id, section_id, product_id, name, category, brand, description, qty, price, discount, position)
+        VALUES (${it.id}, ${s.id}, ${it.productId}, ${it.name}, ${it.category}, ${it.brand}, ${it.description}, ${it.qty}, ${it.price}, ${it.discount}, ${ii})
       `;
     }
   }

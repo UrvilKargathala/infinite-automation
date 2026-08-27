@@ -135,9 +135,10 @@ async function main() {
       );
       for (let ii = 0; ii < s.items.length; ii++) {
         const it = s.items[ii];
+        const desc = products.find((p) => p.id === it.productId)?.description ?? "";
         await sql.query(
-          `INSERT INTO quote_items (id, section_id, product_id, name, category, brand, qty, price, discount, position) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-          [it.id, s.id, it.productId, it.name, it.category, it.brand, it.qty, it.price, it.discount, ii]
+          `INSERT INTO quote_items (id, section_id, product_id, name, category, brand, description, qty, price, discount, position) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+          [it.id, s.id, it.productId, it.name, it.category, it.brand, desc, it.qty, it.price, it.discount, ii]
         );
       }
     }
