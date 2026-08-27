@@ -21,6 +21,7 @@ import { calcQuoteTotal } from "@/lib/utils/quote";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { QuoteExpiryAlerts } from "@/components/dashboard/QuoteExpiryAlerts";
 import { SalesLeaderboard } from "@/components/dashboard/SalesLeaderboard";
+import { AiSummary } from "@/components/dashboard/AiSummary";
 import type { Quote } from "@/types";
 
 const CHART_COLORS = ["#3A90C3", "#44BE4A", "#8B5CF6", "#F59E0B", "#EF4444", "#64748B"];
@@ -75,9 +76,11 @@ function BarTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 export default function DashboardPage() {
   const leads = useLeadStore((s) => s.leads);
   const quotes = useQuoteStore((s) => s.quotes);
+  const products = useProductStore((s) => s.products);
   const leadsLoaded = useLeadStore((s) => s.loaded);
   const quotesLoaded = useQuoteStore((s) => s.loaded);
-  const loading = !leadsLoaded || !quotesLoaded;
+  const productsLoaded = useProductStore((s) => s.loaded);
+  const loading = !leadsLoaded || !quotesLoaded || !productsLoaded;
 
   const pipelineRevenue = useMemo(
     () => leads.filter((l) => l.stage !== "Won" && l.stage !== "Lost").reduce((s, l) => s + l.value, 0),
@@ -138,8 +141,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      <div className="mt-6 sm:mt-8">
+        <AiSummary leads={leads} quotes={quotes} products={products} />
+      </div>
+
       {/* Row 1 — KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {kpis.map((k) => (
           <div key={k.label} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-start justify-between ${k.bg}`} style={{ borderLeft: `3px solid ${k.accent}` }}>
             <div>

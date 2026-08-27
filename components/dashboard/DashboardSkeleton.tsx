@@ -14,8 +14,14 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
+      <div className="bg-white rounded-2xl shadow-card p-4 sm:p-6 mt-6 sm:mt-8 mb-6">
+        <Skeleton className="h-5 w-36 mb-3" />
+        <Skeleton className="h-3.5 w-full mb-2" />
+        <Skeleton className="h-3.5 w-4/5" />
+      </div>
+
       {/* Row 1 — KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="rounded-2xl shadow-card p-5 bg-white">
             <Skeleton className="h-3 w-24" />
