@@ -122,7 +122,7 @@ export function TicketsPageClient() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-text-primary">Tickets</h1>
+      <h1 className="text-3xl font-semibold text-text-primary">CRM Tickets</h1>
       <p className="text-sm text-text-secondary mt-1">Support ticket pipeline — drag cards between statuses</p>
 
       {/* Priority summary cards */}

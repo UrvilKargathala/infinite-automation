@@ -16,7 +16,7 @@ import { initials } from "@/lib/utils/initials";
 
 const allNavItems = [
   { label: "Dashboard", href: "/dashboard" },
-  { label: "Tickets", href: "/tickets" },
+  { label: "CRM", href: "/tickets" },
   { label: "Quote", href: "/quote" },
   { label: "Master File", href: "/master" },
   { label: "Users", href: "/users" },
