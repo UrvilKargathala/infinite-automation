@@ -2,31 +2,31 @@
 
 import { useDroppable } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
-import { LeadCard } from "./LeadCard";
+import { TicketCard } from "./TicketCard";
 import { Num } from "@/components/ui/Num";
-import type { Lead, LeadStage } from "@/types";
+import type { Ticket, TicketStatus } from "@/types";
 
-const stageColors: Record<LeadStage, string> = {
-  New: "#3B82F6",
-  Qualified: "#F59E0B",
-  Quoted: "#8B5CF6",
-  Won: "#10B981",
-  Lost: "#EF4444",
+const statusColors: Record<TicketStatus, string> = {
+  Open: "#3B82F6",
+  "In Progress": "#F59E0B",
+  "On Hold": "#8B5CF6",
+  Resolved: "#10B981",
+  Closed: "#64748B",
 };
 
 export function KanbanColumn({
-  stage,
-  leads,
-  onAddLead,
-  onEditLead,
+  status,
+  tickets,
+  onAddTicket,
+  onEditTicket,
 }: {
-  stage: LeadStage;
-  leads: Lead[];
-  onAddLead: (stage: LeadStage) => void;
-  onEditLead: (lead: Lead) => void;
+  status: TicketStatus;
+  tickets: Ticket[];
+  onAddTicket: (status: TicketStatus) => void;
+  onEditTicket: (ticket: Ticket) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: stage });
-  const color = stageColors[stage];
+  const { setNodeRef, isOver } = useDroppable({ id: status });
+  const color = statusColors[status];
 
   return (
     <div
@@ -41,15 +41,15 @@ export function KanbanColumn({
       <div className="flex items-center justify-between px-2 py-2 mb-2">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-          <span className="text-sm text-text-primary">{stage}</span>
+          <span className="text-sm text-text-primary">{status}</span>
           <span className="text-[10px] text-text-muted bg-white rounded-full px-2 py-0.5 ml-1">
-            <Num>{leads.length}</Num>
+            <Num>{tickets.length}</Num>
           </span>
         </div>
         <button
-          onClick={() => onAddLead(stage)}
+          onClick={() => onAddTicket(status)}
           className="w-7 h-7 rounded-full flex items-center justify-center text-text-muted hover:text-text-primary hover:bg-white transition-colors"
-          aria-label={`Add lead to ${stage}`}
+          aria-label={`Add ticket to ${status}`}
         >
           <Plus size={16} />
         </button>
@@ -57,13 +57,13 @@ export function KanbanColumn({
 
       {/* Cards */}
       <div className="space-y-2">
-        {leads.length === 0 ? (
+        {tickets.length === 0 ? (
           <div className="border-2 border-dashed border-border rounded-2xl py-8 text-center text-xs text-text-muted">
-            Drop leads here
+            Drop tickets here
           </div>
         ) : (
-          leads.map((lead) => (
-            <LeadCard key={lead.id} lead={lead} onClick={() => onEditLead(lead)} />
+          tickets.map((ticket) => (
+            <TicketCard key={ticket.id} ticket={ticket} onClick={() => onEditTicket(ticket)} />
           ))
         )}
       </div>

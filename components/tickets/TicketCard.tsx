@@ -2,21 +2,18 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { Avatar } from "@/components/ui/Avatar";
-import { INR } from "@/components/ui/INR";
-import type { Lead, CustomerSegment } from "@/types";
+import type { Ticket, TicketPriority } from "@/types";
 
-const segmentColors: Record<CustomerSegment, string> = {
-  Residential: "#3A90C3",
-  Hospitality: "#8B5CF6",
-  "Government / Council": "#64748B",
-  Retail: "#F59E0B",
-  "Healthcare / Aged Care": "#EF4444",
-  Industrial: "#10B981",
+const priorityColors: Record<TicketPriority, string> = {
+  Low: "#64748B",
+  Medium: "#3A90C3",
+  High: "#F59E0B",
+  Urgent: "#EF4444",
 };
 
-export function LeadCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {
+export function TicketCard({ ticket, onClick }: { ticket: Ticket; onClick: () => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: lead.id,
+    id: ticket.id,
   });
 
   const style = transform
@@ -27,7 +24,7 @@ export function LeadCard({ lead, onClick }: { lead: Lead; onClick: () => void })
       }
     : undefined;
 
-  const segColor = segmentColors[lead.segment];
+  const priorityColor = priorityColors[ticket.priority];
 
   return (
     <div
@@ -43,32 +40,32 @@ export function LeadCard({ lead, onClick }: { lead: Lead; onClick: () => void })
       }}
       className={`bg-white rounded-2xl p-4 cursor-grab active:cursor-grabbing select-none ${isDragging ? "shadow-drag" : "shadow-card hover:shadow-cardHover"}`}
     >
-      {/* Row 1: name + segment badge */}
+      {/* Row 1: subject + priority badge */}
       <div className="flex items-start justify-between gap-2">
-        <span className="text-sm text-text-primary">{lead.name}</span>
+        <span className="text-sm text-text-primary line-clamp-2">{ticket.subject}</span>
         <span
           className="inline-flex items-center px-2.5 py-1 rounded-full text-xs shrink-0"
-          style={{ backgroundColor: segColor + "18", color: segColor }}
+          style={{ backgroundColor: priorityColor + "18", color: priorityColor }}
         >
-          {lead.segment}
+          {ticket.priority}
         </span>
       </div>
 
-      {/* Row 2: company */}
-      <div className="mt-1 text-xs text-text-secondary">{lead.company}</div>
+      {/* Row 2: contact + company */}
+      <div className="mt-1 text-xs text-text-secondary truncate">{ticket.name} · {ticket.company}</div>
 
-      {/* Row 3: value + date */}
+      {/* Row 3: category + date */}
       <div className="mt-3 flex items-center justify-between">
-        <INR value={lead.value} className="text-sm text-text-primary" />
+        <span className="text-xs text-text-secondary bg-surface-alt rounded-full px-2.5 py-1">{ticket.category}</span>
         <span className="text-[10px] text-text-muted bg-[#F9FAFB] rounded-full px-2 py-0.5">
-          {lead.lastContact}
+          {ticket.lastContact}
         </span>
       </div>
 
       {/* Row 4: assignee */}
       <div className="mt-3 pt-3 border-t border-border flex items-center">
-        <Avatar name={lead.assigned} size="xs" />
-        <span className="ml-2 text-xs text-text-secondary">{lead.assigned}</span>
+        <Avatar name={ticket.assigned} size="xs" />
+        <span className="ml-2 text-xs text-text-secondary">{ticket.assigned}</span>
       </div>
     </div>
   );

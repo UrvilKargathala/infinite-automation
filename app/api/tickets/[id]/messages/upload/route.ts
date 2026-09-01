@@ -12,7 +12,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "No file provided" }, { status: 400 });
   }
 
-  const blob = await put(`lead-${params.id}/${Date.now()}-${file.name}`, file, {
+  const blob = await put(`ticket-${params.id}/${Date.now()}-${file.name}`, file, {
     access: "public",
   });
 

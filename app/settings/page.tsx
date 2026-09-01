@@ -30,9 +30,9 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
 export default function SettingsPage() {
   const router = useRouter();
   const { signOut } = useClerk();
-  const { leadAlerts, quoteAlerts, setSetting } = useSettingsStore();
+  const { ticketAlerts, quoteAlerts, setSetting } = useSettingsStore();
 
-  function handleToggle(key: "leadAlerts" | "quoteAlerts", value: boolean, label: string) {
+  function handleToggle(key: "ticketAlerts" | "quoteAlerts", value: boolean, label: string) {
     setSetting(key, value);
     toast.success(`${label} ${value ? "enabled" : "disabled"}`);
   }
@@ -42,7 +42,7 @@ export default function SettingsPage() {
   }
 
   const rows = [
-    { key: "leadAlerts" as const, label: "New lead alerts", desc: "Notify me in-app when a new lead is created", value: leadAlerts, disabled: false },
+    { key: "ticketAlerts" as const, label: "New ticket alerts", desc: "Notify me in-app when a new ticket is created", value: ticketAlerts, disabled: false },
     { key: "quoteAlerts" as const, label: "Quote status alerts", desc: "Notify me in-app when a quote is accepted or rejected", value: quoteAlerts, disabled: false },
   ];
 

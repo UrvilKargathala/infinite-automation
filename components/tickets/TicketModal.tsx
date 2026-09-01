@@ -4,66 +4,71 @@ import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import type { Lead, CustomerSegment, LeadStage } from "@/types";
+import type { Ticket, TicketCategory, TicketPriority, TicketStatus } from "@/types";
 
-const segments: CustomerSegment[] = ["Residential", "Hospitality", "Government / Council", "Retail", "Healthcare / Aged Care", "Industrial"];
-const stages: LeadStage[] = ["New", "Qualified", "Quoted", "Won", "Lost"];
-const salesTeam = ["Urvil", "Henil", "Chirag"];
+const categories: TicketCategory[] = ["Installation", "Repair", "Maintenance", "General"];
+const priorities: TicketPriority[] = ["Low", "Medium", "High", "Urgent"];
+const statuses: TicketStatus[] = ["Open", "In Progress", "On Hold", "Resolved", "Closed"];
+const supportTeam = ["Urvil", "Henil", "Chirag"];
 
 interface Props {
   open: boolean;
   onClose: () => void;
-  lead: Lead | null;
-  defaultStage?: LeadStage;
-  onSave: (data: Omit<Lead, "id">) => void;
+  ticket: Ticket | null;
+  defaultStatus?: TicketStatus;
+  onSave: (data: Omit<Ticket, "id">) => void;
   onDelete?: (id: number) => void;
 }
 
-export function LeadModal({ open, onClose, lead, defaultStage, onSave, onDelete }: Props) {
+export function TicketModal({ open, onClose, ticket, defaultStatus, onSave, onDelete }: Props) {
+  const [subject, setSubject] = useState("");
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [segment, setSegment] = useState<CustomerSegment>("Residential");
-  const [stage, setStage] = useState<LeadStage>("New");
-  const [value, setValue] = useState("");
-  const [assigned, setAssigned] = useState(salesTeam[0]);
+  const [category, setCategory] = useState<TicketCategory>("General");
+  const [priority, setPriority] = useState<TicketPriority>("Medium");
+  const [status, setStatus] = useState<TicketStatus>("Open");
+  const [assigned, setAssigned] = useState(supportTeam[0]);
   const [lastContact, setLastContact] = useState("");
 
   useEffect(() => {
     if (!open) return;
-    if (lead) {
-      setName(lead.name);
-      setCompany(lead.company);
-      setEmail(lead.email);
-      setPhone(lead.phone);
-      setSegment(lead.segment);
-      setStage(lead.stage);
-      setValue(String(lead.value));
-      setAssigned(lead.assigned);
-      setLastContact(lead.lastContact);
+    if (ticket) {
+      setSubject(ticket.subject);
+      setName(ticket.name);
+      setCompany(ticket.company);
+      setEmail(ticket.email);
+      setPhone(ticket.phone);
+      setCategory(ticket.category);
+      setPriority(ticket.priority);
+      setStatus(ticket.status);
+      setAssigned(ticket.assigned);
+      setLastContact(ticket.lastContact);
     } else {
+      setSubject("");
       setName("");
       setCompany("");
       setEmail("");
       setPhone("");
-      setSegment("Residential");
-      setStage(defaultStage ?? "New");
-      setValue("");
-      setAssigned(salesTeam[0]);
+      setCategory("General");
+      setPriority("Medium");
+      setStatus(defaultStatus ?? "Open");
+      setAssigned(supportTeam[0]);
       setLastContact(new Date().toISOString().slice(0, 10));
     }
-  }, [open, lead, defaultStage]);
+  }, [open, ticket, defaultStatus]);
 
   function handleSave() {
     onSave({
+      subject: subject.trim(),
       name: name.trim(),
       company: company.trim(),
       email: email.trim(),
       phone: phone.trim(),
-      segment,
-      stage,
-      value: Number(value) || 0,
+      category,
+      priority,
+      status,
       assigned,
       lastContact,
     });
@@ -79,36 +84,40 @@ export function LeadModal({ open, onClose, lead, defaultStage, onSave, onDelete 
       open={open}
       onClose={onClose}
       title={
-        lead ? (
+        ticket ? (
           <div className="flex items-center gap-3">
-            <span>Edit lead</span>
+            <span>Edit ticket</span>
             {onDelete && (
               <button
                 onClick={() => {
-                  if (window.confirm("Delete this lead?")) {
-                    onDelete(lead.id);
+                  if (window.confirm("Delete this ticket?")) {
+                    onDelete(ticket.id);
                     onClose();
                   }
                 }}
                 className="text-text-muted hover:text-danger transition-colors"
-                aria-label="Delete lead"
+                aria-label="Delete ticket"
               >
                 <Trash2 size={16} />
               </button>
             )}
           </div>
-        ) : "New lead"
+        ) : "New ticket"
       }
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!name.trim()}>Save</Button>
+          <Button onClick={handleSave} disabled={!subject.trim() || !name.trim()}>Save</Button>
         </>
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="sm:col-span-2">
+          <label className={labelClass}>Subject</label>
+          <input className={inputClass} value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Dimmer switch not responding" />
+        </div>
         <div>
-          <label className={labelClass}>Name</label>
+          <label className={labelClass}>Contact name</label>
           <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div>
@@ -124,25 +133,27 @@ export function LeadModal({ open, onClose, lead, defaultStage, onSave, onDelete 
           <input className={inputClass} value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <div>
-          <label className={labelClass}>Segment</label>
-          <select className={inputClass} value={segment} onChange={(e) => setSegment(e.target.value as CustomerSegment)}>
-            {segments.map((s) => <option key={s} value={s}>{s}</option>)}
+          <label className={labelClass}>Category</label>
+          <select className={inputClass} value={category} onChange={(e) => setCategory(e.target.value as TicketCategory)}>
+            {categories.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
         </div>
         <div>
-          <label className={labelClass}>Stage</label>
-          <select className={inputClass} value={stage} onChange={(e) => setStage(e.target.value as LeadStage)}>
-            {stages.map((s) => <option key={s} value={s}>{s}</option>)}
+          <label className={labelClass}>Priority</label>
+          <select className={inputClass} value={priority} onChange={(e) => setPriority(e.target.value as TicketPriority)}>
+            {priorities.map((p) => <option key={p} value={p}>{p}</option>)}
           </select>
         </div>
         <div>
-          <label className={labelClass}>Value (INR)</label>
-          <input className={inputClass} type="number" value={value} onChange={(e) => setValue(e.target.value)} />
+          <label className={labelClass}>Status</label>
+          <select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value as TicketStatus)}>
+            {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
         </div>
         <div>
           <label className={labelClass}>Assigned to</label>
           <select className={inputClass} value={assigned} onChange={(e) => setAssigned(e.target.value)}>
-            {salesTeam.map((s) => <option key={s} value={s}>{s}</option>)}
+            {supportTeam.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div className="sm:col-span-2">

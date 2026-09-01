@@ -173,7 +173,7 @@ Never use `shadow-lg` / `shadow-xl` presets from Tailwind — they are too harsh
 
 ## Glassmorphism (cards)
 
-Content cards use a frosted-glass treatment instead of flat opaque white. This applies to: the generic `Card` component, KPI/stat cards (dashboard, CRM, Master File, Quote, Users), table/board wrapper cards, and dashboard widget cards (charts, Quote expiry alerts, Sales leaderboard).
+Content cards use a frosted-glass treatment instead of flat opaque white. This applies to: the generic `Card` component, KPI/stat cards (dashboard, Tickets, Master File, Quote, Users), table/board wrapper cards, and dashboard widget cards (charts, Quote expiry alerts, Team workload).
 
 ```
 bg-white/70 backdrop-blur-xl shadow-card border border-white/60
@@ -222,7 +222,7 @@ For the blur to actually read as glass there must be something soft behind the c
     - Logo mark: 36x36 `rounded-xl` square with diagonal brand gradient, white "IA" centered (Barlow 400, ~18px).
     - Wordmark to the right: "Infinite Automation" in one line, `text-base` weight 400 `text-primary`. No tagline underneath in the nav (saves vertical space).
   - **CENTER** — Nav items in a horizontal row (`flex items-center gap-1`):
-    - Five items: Dashboard, CRM, Quote, Master File, Users. Icon-less in the nav (labels only) — icons already on the pages.
+    - Five items: Dashboard, Tickets, Quote, Master File, Users. Icon-less in the nav (labels only) — icons already on the pages.
     - Each item: `px-4 py-2 rounded-full text-sm` weight 400. Cursor pointer.
     - **Inactive:** `text-secondary` (#64748B), hover background `#F9FAFB`, hover text `text-primary`.
     - **Active:** background `bg-brand-gradient` (horizontal blue-green gradient), text white, no shadow. The pill visually pops as the brand accent.
@@ -267,7 +267,7 @@ For the blur to actually read as glass there must be something soft behind the c
 
 ### Cards
 - Glass treatment (`bg-white/70 backdrop-blur-xl border border-white/60`), `rounded-2xl`, `shadow-card`, `p-6` default. Compact stat cards may use `p-5`. See Glassmorphism section above.
-- Hover on interactive cards (e.g., LeadCard, KpiCard when clickable): `shadow-cardHover`, no border change.
+- Hover on interactive cards (e.g., TicketCard, KpiCard when clickable): `shadow-cardHover`, no border change.
 - Non-interactive cards stay static on hover.
 
 ### Modals
@@ -309,29 +309,29 @@ For the blur to actually read as glass there must be something soft behind the c
 ### Sidebar (deprecated)
 There is no left sidebar in this design. All navigation lives in the top nav. Do not create a Sidebar component.
 
-### Kanban board (Phase 3)
+### Kanban board (Phase 3 — Tickets)
 - Board wrapper: white card (`bg-white rounded-2xl shadow-card p-6`). Inside:
   - Board header row (flex justify-between, mb-6):
-    - Left: "Lead Pipeline" title (`text-lg` weight 400) with lead count in `text-xs text-muted` underneath.
-    - Center: **AssigneeStack** — horizontal avatar stack of all salespeople assigned to any lead, each with a count badge showing how many leads that person owns. Clicking an avatar filters the board to that assignee (toggle). Selected avatar gets a `ring-2 ring-brand-blue`.
+    - Left: "Ticket Pipeline" title (`text-lg` weight 400) with ticket count in `text-xs text-muted` underneath.
+    - Center: **AssigneeStack** — horizontal avatar stack of all support staff assigned to any ticket, each with a count badge showing how many tickets that person owns. Clicking an avatar filters the board to that assignee (toggle). Selected avatar gets a `ring-2 ring-brand-blue`.
     - Right: circular icon buttons — Add (Plus, primary style: gradient background instead of white, icon white), Export (Download), Filter (SlidersHorizontal). The Add button is the eye-catcher.
   - Columns row (`flex gap-4 overflow-x-auto pb-2`).
 - **Column**:
   - Fixed width `w-80`, min-height `min-h-[560px]`, background `#F9FAFB`, `rounded-2xl`, `p-3`.
   - Column header (flex row, `px-2 py-2 mb-2`):
-    - Left: colored dot (`w-2 h-2 rounded-full` in stage color) + stage name (`text-sm` weight 400 text-primary) + count in a small pill (`ml-2 text-[10px] text-muted bg-white rounded-full px-2 py-0.5`).
-    - Right: ghost Plus icon button (opens new-lead modal with this stage preselected).
+    - Left: colored dot (`w-2 h-2 rounded-full` in status color) + status name (`text-sm` weight 400 text-primary) + count in a small pill (`ml-2 text-[10px] text-muted bg-white rounded-full px-2 py-0.5`).
+    - Right: ghost Plus icon button (opens new-ticket modal with this status preselected).
   - Card list: `space-y-2`.
   - Drop zone when a card is dragged over: background changes to `brand.blueTint`, and an inset dashed border `border-2 border-dashed border-brand-blue rounded-2xl` appears around the column.
-- **LeadCard**:
+- **TicketCard**:
   - `bg-white rounded-2xl shadow-card p-4 cursor-grab`, no border.
-  - Row 1: lead name (`text-sm` weight 400 text-primary) on the left, segment badge on the right.
-  - Row 2 (`mt-1`): company (`text-xs text-secondary`).
-  - Row 3 (`mt-3`): value in INR (`text-sm` weight 400 text-primary) on the left, tiny date pill on the right (`text-[10px] text-muted bg-[#F9FAFB] rounded-full px-2 py-0.5`).
+  - Row 1: ticket subject (`text-sm` weight 400 text-primary) on the left, priority badge on the right.
+  - Row 2 (`mt-1`): contact name + company (`text-xs text-secondary`).
+  - Row 3 (`mt-3`): category pill on the left, tiny date pill on the right (`text-[10px] text-muted bg-[#F9FAFB] rounded-full px-2 py-0.5`).
   - Row 4 (`mt-3 pt-3 border-t border-[#E5E7EB]`): small Avatar (xs, 24px) + assignee name (`text-xs text-secondary`) on the left; three-dot menu icon button on the right (ghost circular).
   - Hover: `shadow-cardHover`.
   - Dragging: `shadow-drag`, `scale-[1.02]`, opacity 95%, no rotation.
-- Cross-column drag with @dnd-kit updates the lead's stage. No intra-column reordering.
+- Cross-column drag with @dnd-kit updates the ticket's status. No intra-column reordering.
 
 ### Cascading product picker (Phase 4)
 A single row of three linked selects with an Add button. All elements share the same height (`py-2.5`) and align in a row (`flex gap-2 items-end`).

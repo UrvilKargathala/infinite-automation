@@ -19,21 +19,21 @@ while ((m = productRe.exec(productSrc))) {
 }
 if (products.length !== 105) throw new Error(`Expected 105 products, parsed ${products.length}`);
 
-const leads = [
-  { id: 1, name: "Rahul Mehta", company: "Mehta Residences", email: "rahul@mehta.in", phone: "+91 98765 43210", segment: "Residential", stage: "New", value: 185000, assigned: "Urvil", lastContact: "2026-08-10" },
-  { id: 2, name: "James Cooper", company: "Cooper & Sons Commercial", email: "james@coopersons.com.au", phone: "+61 412 345 678", segment: "Industrial", stage: "New", value: 1250000, assigned: "Henil", lastContact: "2026-08-12" },
-  { id: 3, name: "Ananya Sharma", company: "Sharma Smart Homes", email: "ananya@sharmahomes.in", phone: "+91 87654 32109", segment: "Residential", stage: "Qualified", value: 275000, assigned: "Urvil", lastContact: "2026-08-08" },
-  { id: 4, name: "David Mitchell", company: "Mitchell Agri Farms", email: "david@mitchellagri.com.au", phone: "+61 423 456 789", segment: "Industrial", stage: "Qualified", value: 210000, assigned: "Chirag", lastContact: "2026-08-06" },
-  { id: 5, name: "Sneha Patel", company: "Patel Holiday Stays", email: "sneha@patelstays.in", phone: "+91 76543 21098", segment: "Hospitality", stage: "Quoted", value: 340000, assigned: "Chirag", lastContact: "2026-08-09" },
-  { id: 6, name: "Tom Bradley", company: "Bradley Office Tower", email: "tom@bradleyoffice.com.au", phone: "+61 434 567 890", segment: "Industrial", stage: "Quoted", value: 2100000, assigned: "Urvil", lastContact: "2026-08-07" },
-  { id: 7, name: "Vikram Singh", company: "Singh Warehousing", email: "vikram@singhwh.in", phone: "+91 65432 10987", segment: "Industrial", stage: "Won", value: 850000, assigned: "Henil", lastContact: "2026-08-01" },
-  { id: 8, name: "Sarah O'Brien", company: "O'Brien BnB Group", email: "sarah@obrienstays.com.au", phone: "+61 445 678 901", segment: "Hospitality", stage: "Won", value: 420000, assigned: "Chirag", lastContact: "2026-07-28" },
-  { id: 9, name: "Amit Desai", company: "Desai Irrigation", email: "amit@desaiirr.in", phone: "+91 54321 09876", segment: "Industrial", stage: "Lost", value: 180000, assigned: "Chirag", lastContact: "2026-07-25" },
-  { id: 10, name: "Emily Watson", company: "Watson Smart Living", email: "emily@watsonliving.com.au", phone: "+61 456 789 012", segment: "Residential", stage: "New", value: 195000, assigned: "Urvil", lastContact: "2026-08-11" },
-  { id: 11, name: "Kavita Nair", company: "Nair Education Trust", email: "kavita@nairedu.in", phone: "+91 43210 98765", segment: "Industrial", stage: "Quoted", value: 1800000, assigned: "Urvil", lastContact: "2026-08-05" },
-  { id: 12, name: "Michael Chen", company: "Chen Vineyards", email: "michael@chenvineyards.com.au", phone: "+61 467 890 123", segment: "Industrial", stage: "Qualified", value: 290000, assigned: "Urvil", lastContact: "2026-08-04" },
-  { id: 13, name: "Deepak Joshi", company: "Joshi Luxury Villas", email: "deepak@joshivillas.in", phone: "+91 32109 87654", segment: "Residential", stage: "Won", value: 310000, assigned: "Henil", lastContact: "2026-07-30" },
-  { id: 14, name: "Lisa Taylor", company: "Taylor Co-Working Hub", email: "lisa@taylorcowork.com.au", phone: "+61 478 901 234", segment: "Industrial", stage: "Lost", value: 950000, assigned: "Chirag", lastContact: "2026-07-20" },
+const tickets = [
+  { id: 1, subject: "Dimmer switch not responding to app", name: "Rahul Mehta", company: "Mehta Residences", email: "rahul@mehta.in", phone: "+91 98765 43210", category: "Repair", priority: "Medium", status: "Open", assigned: "Urvil", lastContact: "2026-08-10" },
+  { id: 2, subject: "New site install — access control + cameras", name: "James Cooper", company: "Cooper & Sons Commercial", email: "james@coopersons.com.au", phone: "+61 412 345 678", category: "Installation", priority: "High", status: "Open", assigned: "Henil", lastContact: "2026-08-12" },
+  { id: 3, subject: "Smart lock battery low, keeps disconnecting", name: "Ananya Sharma", company: "Sharma Smart Homes", email: "ananya@sharmahomes.in", phone: "+91 87654 32109", category: "Maintenance", priority: "Low", status: "In Progress", assigned: "Urvil", lastContact: "2026-08-08" },
+  { id: 4, subject: "Irrigation controller not triggering on schedule", name: "David Mitchell", company: "Mitchell Agri Farms", email: "david@mitchellagri.com.au", phone: "+61 423 456 789", category: "Repair", priority: "High", status: "In Progress", assigned: "Chirag", lastContact: "2026-08-06" },
+  { id: 5, subject: "WiFi access points dropping guest connections", name: "Sneha Patel", company: "Patel Holiday Stays", email: "sneha@patelstays.in", phone: "+91 76543 21098", category: "Repair", priority: "Medium", status: "On Hold", assigned: "Chirag", lastContact: "2026-08-09" },
+  { id: 6, subject: "New office tower — full automation install", name: "Tom Bradley", company: "Bradley Office Tower", email: "tom@bradleyoffice.com.au", phone: "+61 434 567 890", category: "Installation", priority: "Urgent", status: "On Hold", assigned: "Urvil", lastContact: "2026-08-07" },
+  { id: 7, subject: "Warehouse camera install — final walkthrough", name: "Vikram Singh", company: "Singh Warehousing", email: "vikram@singhwh.in", phone: "+91 65432 10987", category: "Installation", priority: "Medium", status: "Resolved", assigned: "Henil", lastContact: "2026-08-01" },
+  { id: 8, subject: "VoIP phones no dial tone after outage", name: "Sarah O'Brien", company: "O'Brien BnB Group", email: "sarah@obrienstays.com.au", phone: "+61 445 678 901", category: "Repair", priority: "Urgent", status: "Resolved", assigned: "Chirag", lastContact: "2026-07-28" },
+  { id: 9, subject: "Sprinkler pump relay replacement", name: "Amit Desai", company: "Desai Irrigation", email: "amit@desaiirr.in", phone: "+91 54321 09876", category: "Repair", priority: "Medium", status: "Closed", assigned: "Chirag", lastContact: "2026-07-25" },
+  { id: 10, subject: "Curtain motor jammed, won't close fully", name: "Emily Watson", company: "Watson Smart Living", email: "emily@watsonliving.com.au", phone: "+61 456 789 012", category: "Repair", priority: "High", status: "Open", assigned: "Urvil", lastContact: "2026-08-11" },
+  { id: 11, subject: "Campus-wide sensor and alarm maintenance", name: "Kavita Nair", company: "Nair Education Trust", email: "kavita@nairedu.in", phone: "+91 43210 98765", category: "Maintenance", priority: "Low", status: "On Hold", assigned: "Urvil", lastContact: "2026-08-05" },
+  { id: 12, subject: "HVAC controller not cooling — vineyard office", name: "Michael Chen", company: "Chen Vineyards", email: "michael@chenvineyards.com.au", phone: "+61 467 890 123", category: "Repair", priority: "High", status: "In Progress", assigned: "Urvil", lastContact: "2026-08-04" },
+  { id: 13, subject: "Garage door controller install for villa", name: "Deepak Joshi", company: "Joshi Luxury Villas", email: "deepak@joshivillas.in", phone: "+91 32109 87654", category: "Installation", priority: "Medium", status: "Resolved", assigned: "Henil", lastContact: "2026-07-30" },
+  { id: 14, subject: "Co-working hub network gear decommission", name: "Lisa Taylor", company: "Taylor Co-Working Hub", email: "lisa@taylorcowork.com.au", phone: "+61 478 901 234", category: "General", priority: "Low", status: "Closed", assigned: "Chirag", lastContact: "2026-07-20" },
 ];
 
 const users = [
@@ -104,7 +104,7 @@ const quotes = [
 ];
 
 async function main() {
-  await sql.query("TRUNCATE quote_items, quote_sections, quotes, leads, products, users RESTART IDENTITY CASCADE");
+  await sql.query("TRUNCATE quote_items, quote_sections, quotes, tickets, products, users RESTART IDENTITY CASCADE");
 
   for (const p of products) {
     await sql.query(
@@ -114,13 +114,13 @@ async function main() {
   }
   console.log(`Seeded ${products.length} products`);
 
-  for (const l of leads) {
+  for (const t of tickets) {
     await sql.query(
-      `INSERT INTO leads (id, name, company, email, phone, segment, stage, value, assigned, last_contact) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
-      [l.id, l.name, l.company, l.email, l.phone, l.segment, l.stage, l.value, l.assigned, l.lastContact]
+      `INSERT INTO tickets (id, subject, name, company, email, phone, category, priority, status, assigned, last_contact) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+      [t.id, t.subject, t.name, t.company, t.email, t.phone, t.category, t.priority, t.status, t.assigned, t.lastContact]
     );
   }
-  console.log(`Seeded ${leads.length} leads`);
+  console.log(`Seeded ${tickets.length} tickets`);
 
   for (const q of quotes) {
     await sql.query(
@@ -154,7 +154,7 @@ async function main() {
   console.log(`Seeded ${users.length} users`);
 
   await sql.query(`SELECT setval('products_id_seq', (SELECT MAX(id) FROM products))`);
-  await sql.query(`SELECT setval('leads_id_seq', (SELECT MAX(id) FROM leads))`);
+  await sql.query(`SELECT setval('tickets_id_seq', (SELECT MAX(id) FROM tickets))`);
   await sql.query(`SELECT setval('quotes_id_seq', (SELECT MAX(id) FROM quotes))`);
   await sql.query(`SELECT setval('users_id_seq', (SELECT MAX(id) FROM users))`);
   console.log("Sequences synced. Done.");

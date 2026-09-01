@@ -1,6 +1,6 @@
 import { Skeleton } from "@/components/ui/Skeleton";
 
-export function CrmSkeleton() {
+export function TicketsSkeleton() {
   return (
     <div>
       <Skeleton className="h-9 w-24" />

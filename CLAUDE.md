@@ -11,7 +11,7 @@ For all visual, color, typography, and component-styling rules see the companion
 **Name:** Infinite Automation Dashboard
 **Purpose:** Internal operations dashboard for Infinite Automation (infiniteautomation.com.au), a Melbourne-based smart home and building automation company.
 **Users:** Internal team — Super Admin, Admin, Staff.
-**Modules:** 5 modules — Dashboard, CRM (Kanban), Quote, Master File, User Management.
+**Modules:** 5 modules — Dashboard, Tickets (Kanban), Quote, Master File, User Management.
 **Navigation style:** Top horizontal nav bar with pill-style active state. No left sidebar. See DESIGN_SYSTEM.md.
 
 The company sells hardware (smart switches, controllers, cameras, sensors, Unifi networking gear) and installation services across 6 customer segments: Residential, Hospitality, Government / Council, Retail, Healthcare / Aged Care, Industrial.
@@ -55,8 +55,9 @@ Do NOT introduce: Material UI, Chakra, Ant Design, Redux, styled-components, emo
 - Supabase bigserial in Phase 6.
 
 ### Enums (use exactly these strings, case-sensitive)
-- **Customer segments:** `Residential`, `Hospitality`, `Government / Council`, `Retail`, `Healthcare / Aged Care`, `Industrial`
-- **Lead stages:** `New`, `Qualified`, `Quoted`, `Won`, `Lost`
+- **Ticket statuses:** `Open`, `In Progress`, `On Hold`, `Resolved`, `Closed`
+- **Ticket priority:** `Low`, `Medium`, `High`, `Urgent`
+- **Ticket category:** `Installation`, `Repair`, `Maintenance`, `General`
 - **Quote status:** `Draft`, `Sent`, `Accepted`, `Rejected`
 - **Product status:** `Active`, `Inactive`
 - **User roles:** `Super Admin`, `Admin`, `Staff` (final — do not add or rename)
@@ -79,8 +80,8 @@ When adding a product to a quote, the picker cascades: user picks **Brand** firs
 | Capability | Super Admin | Admin | Staff |
 |---|---|---|---|
 | View Dashboard | Yes | Yes | Yes |
-| View CRM Kanban | Yes | Yes | Yes |
-| Create / edit / move / delete Leads | Yes | Yes | Yes |
+| View Tickets | Yes | Yes | Yes |
+| Create / edit / move / delete Tickets | Yes | Yes | Yes |
 | View Quote | Yes | Yes | Yes |
 | Create / edit Quote | Yes | Yes | Yes |
 | Delete Quote | Yes | Yes | No |
@@ -103,7 +104,7 @@ Enforce this in the UI (hide/disable actions via `can(role, action)`) and again 
 ```
 /app
   /dashboard/page.tsx
-  /crm/page.tsx
+  /tickets/page.tsx
   /quote/page.tsx
   /master/page.tsx
   /users/page.tsx           (Phase 7)
@@ -114,17 +115,17 @@ Enforce this in the UI (hide/disable actions via `can(role, action)`) and again 
   /ui                       (Button, IconButton, Input, Select, Modal, Card, Badge, Table, IconTile, ConfirmDialog, Avatar)
   /layout                   (TopNav, UserMenu)
   /dashboard                (KpiCard, RevenueChart, SegmentPie, StageBar, ActivityFeed)
-  /crm                      (KanbanBoard, KanbanColumn, LeadCard, LeadModal, SegmentCards, AssigneeStack)
+  /tickets                  (KanbanBoard, KanbanColumn, TicketCard, TicketModal, TicketPanel, AssigneeStack)
   /quote                    (QuoteTable, QuoteModal, SectionBlock, ProductPicker, QuotePrintView)
   /master                   (ProductTable, ProductModal, BrandFilter)
   /users                    (UserTable, UserModal, RoleBadge)
 /lib
   /utils                    (formatINR, calcQuoteTotal, generateQuoteNumber, uuid, permissions, initials)
-  /store                    (useProductStore, useLeadStore, useQuoteStore, useUserStore, useAuthStore)
+  /store                    (useProductStore, useTicketStore, useQuoteStore, useUserStore, useAuthStore)
   /supabase                 (Phase 6: client.ts, server.ts, middleware.ts)
-  /api                      (Phase 6: products.ts, leads.ts, quotes.ts, users.ts)
+  /api                      (Phase 6: products.ts, tickets.ts, quotes.ts, users.ts)
 /types
-  index.ts                  (Product, Lead, Quote, Section, QuoteItem, User, Role)
+  index.ts                  (Product, Ticket, Quote, Section, QuoteItem, User, Role)
 CLAUDE.md
 DESIGN_SYSTEM.md
 ```
@@ -156,7 +157,7 @@ DESIGN_SYSTEM.md
 - **Forms:** minimal validation — required fields only. Trim strings on save.
 - **Excel import:** never overwrite; always append. Show a summary alert with count imported.
 - **PDF export:** use `window.open()` + printable HTML + `window.print()`. No jsPDF, no external PDF libraries.
-- **Kanban drag:** dropping a card into a new column updates the lead's stage optimistically; revert on error.
+- **Kanban drag:** dropping a card into a new column updates the ticket's status optimistically; revert on error.
 
 ---
 
@@ -164,7 +165,7 @@ DESIGN_SYSTEM.md
 
 - **Phase 1:** Layout shell with top nav. Empty routes.
 - **Phase 2:** Master module (products with Brand, Excel import/export).
-- **Phase 3:** CRM Kanban board (drag leads between stage columns, assignee stack at top).
+- **Phase 3:** Tickets Kanban board (drag tickets between status columns, assignee stack at top).
 - **Phase 4:** Quote module with Section hierarchy + cascading Brand -> Category -> Product picker + PDF export.
 - **Phase 5:** Dashboard KPIs + charts.
 - **Phase 6:** Supabase (auth, real persistence, React Query, RLS with role checks).
@@ -178,11 +179,10 @@ Do not build features from a later phase during an earlier one. If a prompt asks
 
 - Company is Melbourne-based, Australian Made certified.
 - Products are Australian-manufactured hardware (own brand "Infinite AUS") plus resold Unifi network gear.
-- Customer segments: Residential (homes), Hospitality (hotels/resorts/serviced apartments), Government / Council (public buildings, council infrastructure), Retail (shopfronts, shopping centers), Healthcare / Aged Care (sensors, access control, emergency call systems), Industrial (factories, warehousing, offices).
+- Customer types served (not a tracked field — tickets are classified by `category` instead): Residential (homes), Hospitality (hotels/resorts/serviced apartments), Government / Council (public buildings, council infrastructure), Retail (shopfronts, shopping centers), Healthcare / Aged Care (sensors, access control, emergency call systems), Industrial (factories, warehousing, offices).
 - Typical products: dimmers, HVAC controllers, garage door controllers, curtain motors, smart locks, cameras, access control, WiFi access points, VoIP phones, sensors.
-- Typical deal sizes (INR): Residential 1L-3L, Hospitality 3L-8L, Government / Council 5L-25L, Retail 2L-6L, Healthcare / Aged Care 3L-10L, Industrial 5L-25L.
-- Sales team names for seed data: Priya, Arjun, Neha, Rohan, Sam.
-- Contact names in seed leads: mix Indian and Australian names for realism.
+- Support team names for seed data: Priya, Arjun, Neha, Rohan, Sam.
+- Contact names in seed tickets: mix Indian and Australian names for realism.
 - Brand naming rule: the clean brand list is: Infinite AUS, Automation Products, Electrical Product, Unifi. Products imported under the Unifi brand keep `brand: "Unifi"` — their sub-line (Wifi, Camera, Video Door Phone, Sensors & Alarms, Advance Hosting, Managed VoIP) is the **category**, not the brand. If the source brand column has a "Unifi " prefix followed by more text (e.g. "Unifi Wifi"), strip the prefix down to "Unifi".
 - Excel import in Master must auto-normalize brand names: strip a leading "Unifi " prefix down to "Unifi", trim trailing/leading whitespace, and correct known source typos ("Alarams" -> "Alarms"). This applies to every Excel import going forward, not just the initial seed.
 

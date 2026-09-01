@@ -1,14 +1,10 @@
 export type Role = "Super Admin" | "Admin" | "Staff";
 
-export type CustomerSegment =
-  | "Residential"
-  | "Hospitality"
-  | "Government / Council"
-  | "Retail"
-  | "Healthcare / Aged Care"
-  | "Industrial";
+export type TicketStatus = "Open" | "In Progress" | "On Hold" | "Resolved" | "Closed";
 
-export type LeadStage = "New" | "Qualified" | "Quoted" | "Won" | "Lost";
+export type TicketPriority = "Low" | "Medium" | "High" | "Urgent";
+
+export type TicketCategory = "Installation" | "Repair" | "Maintenance" | "General";
 
 export type QuoteStatus = "Draft" | "Sent" | "Accepted" | "Rejected";
 
@@ -28,15 +24,16 @@ export interface Product {
   status: ProductStatus;
 }
 
-export interface Lead {
+export interface Ticket {
   id: number;
+  subject: string;
   name: string;
   company: string;
   email: string;
   phone: string;
-  segment: CustomerSegment;
-  stage: LeadStage;
-  value: number;
+  category: TicketCategory;
+  priority: TicketPriority;
+  status: TicketStatus;
   assigned: string;
   lastContact: string;
 }
@@ -92,9 +89,9 @@ export interface Attachment {
   type: string;
 }
 
-export interface LeadMessage {
+export interface TicketMessage {
   id: number;
-  leadId: number;
+  ticketId: number;
   userId: number;
   fullName: string;
   text: string;

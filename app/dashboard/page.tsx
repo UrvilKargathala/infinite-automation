@@ -3,37 +3,32 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import {
-  DollarSign, Users, FileText, TrendingUp, TrendingDown, UserPlus, Plus,
+  Ticket as TicketIcon, AlertTriangle, FileText, CheckCircle2, TrendingUp, TrendingDown, Plus,
 } from "lucide-react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
-import { useLeadStore } from "@/lib/store/useLeadStore";
+import { useTicketStore } from "@/lib/store/useTicketStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
-import { formatINR } from "@/lib/utils/format";
 import { INR } from "@/components/ui/INR";
 import { Num } from "@/components/ui/Num";
-import { calcQuoteTotal } from "@/lib/utils/quote";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { QuoteExpiryAlerts } from "@/components/dashboard/QuoteExpiryAlerts";
-import { SalesLeaderboard } from "@/components/dashboard/SalesLeaderboard";
+import { TeamWorkload } from "@/components/dashboard/TeamWorkload";
 import { AiSummary } from "@/components/dashboard/AiSummary";
 import { computeMonthlyMetrics, computeMonthlySeries } from "@/lib/utils/dashboardMetrics";
 import { timeAgo } from "@/lib/utils/timeAgo";
-import type { Quote } from "@/types";
 
 const CHART_COLORS = ["#3A90C3", "#44BE4A", "#8B5CF6", "#F59E0B", "#EF4444", "#64748B"];
-const SEGMENT_COLORS: Record<string, string> = {
-  Residential: "#3A90C3",
-  Hospitality: "#8B5CF6",
-  "Government / Council": "#64748B",
-  Retail: "#F59E0B",
-  "Healthcare / Aged Care": "#EF4444",
-  Industrial: "#44BE4A",
+const CATEGORY_COLORS: Record<string, string> = {
+  Installation: "#3A90C3",
+  Repair: "#EF4444",
+  Maintenance: "#F59E0B",
+  General: "#64748B",
 };
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string }) {
@@ -56,80 +51,69 @@ function BarTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
   return (
     <div className="bg-white rounded-xl shadow-dropdown p-3 text-xs text-text-primary" style={{ border: "none" }}>
       <div className="text-text-muted mb-1">{label}</div>
-      <div><Num>{payload[0].value}</Num> leads</div>
+      <div><Num>{payload[0].value}</Num> tickets</div>
     </div>
   );
 }
 
 export default function DashboardPage() {
-  const leads = useLeadStore((s) => s.leads);
+  const tickets = useTicketStore((s) => s.tickets);
   const quotes = useQuoteStore((s) => s.quotes);
   const products = useProductStore((s) => s.products);
-  const leadsLoaded = useLeadStore((s) => s.loaded);
+  const ticketsLoaded = useTicketStore((s) => s.loaded);
   const quotesLoaded = useQuoteStore((s) => s.loaded);
   const productsLoaded = useProductStore((s) => s.loaded);
-  const loading = !leadsLoaded || !quotesLoaded || !productsLoaded;
+  const loading = !ticketsLoaded || !quotesLoaded || !productsLoaded;
 
-  const pipelineRevenue = useMemo(
-    () => leads.filter((l) => l.stage !== "Won" && l.stage !== "Lost").reduce((s, l) => s + l.value, 0),
-    [leads]
-  );
-  const activeLeads = useMemo(
-    () => leads.filter((l) => l.stage !== "Won" && l.stage !== "Lost").length,
-    [leads]
-  );
+  const metrics = useMemo(() => computeMonthlyMetrics(tickets, quotes), [tickets, quotes]);
+  const openCount = metrics.openTickets.length;
+  const urgentCount = metrics.urgentTickets.length;
   const activeQuotes = useMemo(
     () => quotes.filter((q) => q.status === "Draft" || q.status === "Sent").length,
     [quotes]
   );
-  const wonValue = useMemo(
-    () => leads.filter((l) => l.stage === "Won").reduce((s, l) => s + l.value, 0),
-    [leads]
-  );
+  const resolvedThisMonthCount = metrics.resolvedThisMonth.length;
 
-  const segmentData = useMemo(() => {
+  const categoryData = useMemo(() => {
     const map: Record<string, number> = {};
-    leads
-      .filter((l) => l.stage !== "Won" && l.stage !== "Lost")
-      .forEach((l) => { map[l.segment] = (map[l.segment] || 0) + l.value; });
+    metrics.openTickets.forEach((t) => { map[t.category] = (map[t.category] || 0) + 1; });
     return Object.entries(map).map(([name, value]) => ({ name, value }));
-  }, [leads]);
+  }, [metrics.openTickets]);
 
-  const stageData = useMemo(() => {
-    const stages = ["New", "Qualified", "Quoted", "Won", "Lost"];
-    return stages.map((stage) => ({
-      stage,
-      count: leads.filter((l) => l.stage === stage).length,
+  const statusData = useMemo(() => {
+    const statuses = ["Open", "In Progress", "On Hold", "Resolved", "Closed"];
+    return statuses.map((status) => ({
+      status,
+      count: tickets.filter((t) => t.status === status).length,
     }));
-  }, [leads]);
+  }, [tickets]);
 
-  const metrics = useMemo(() => computeMonthlyMetrics(leads, quotes), [leads, quotes]);
   const chartData = useMemo(() => computeMonthlySeries(quotes), [quotes]);
   const activity = useMemo(() => {
-    const leadEvents = leads.map((l) => ({
-      text: l.stage === "Won" ? `${l.name} deal won` : l.stage === "Lost" ? `${l.name} marked lost` : `${l.name} — ${l.stage}`,
-      color: l.stage === "Won" ? "#10B981" : l.stage === "Lost" ? "#EF4444" : "#3A90C3",
-      date: l.lastContact,
+    const ticketEvents = tickets.map((t) => ({
+      text: t.status === "Resolved" ? `${t.subject} resolved` : t.status === "Closed" ? `${t.subject} closed` : `${t.subject} — ${t.status}`,
+      color: t.status === "Resolved" ? "#10B981" : t.status === "Closed" ? "#64748B" : "#3A90C3",
+      date: t.lastContact,
     }));
     const quoteEvents = quotes.map((q) => ({
       text: `Quote ${q.number} for ${q.client} — ${q.status}`,
       color: q.status === "Accepted" ? "#10B981" : q.status === "Rejected" ? "#EF4444" : "#94A3B8",
       date: q.date,
     }));
-    return [...leadEvents, ...quoteEvents]
+    return [...ticketEvents, ...quoteEvents]
       .filter((e) => e.date)
       .sort((a, b) => (a.date < b.date ? 1 : -1))
       .slice(0, 4);
-  }, [leads, quotes]);
+  }, [tickets, quotes]);
 
   const pctLabel = (v: number | null) => (v === null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)}%`);
   const countLabel = (v: number) => (v > 0 ? `+${v}` : `${v}`);
 
   const kpis = [
-    { label: "Revenue Pipeline", value: <INR value={pipelineRevenue} />, delta: pctLabel(metrics.pipelineDeltaPct), up: (metrics.pipelineDeltaPct ?? 0) >= 0, icon: DollarSign, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
-    { label: "Active Leads", value: <Num>{activeLeads}</Num>, delta: countLabel(metrics.activeLeadsDeltaCount), up: metrics.activeLeadsDeltaCount >= 0, icon: Users, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
+    { label: "Open Tickets", value: <Num>{openCount}</Num>, delta: countLabel(metrics.openDeltaCount), up: metrics.openDeltaCount >= 0, icon: TicketIcon, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
+    { label: "Urgent Tickets", value: <Num>{urgentCount}</Num>, delta: countLabel(metrics.urgentDeltaCount), up: metrics.urgentDeltaCount <= 0, icon: AlertTriangle, bg: "bg-[#EF444418]", accent: "#EF4444" },
     { label: "Active Quotes", value: <Num>{activeQuotes}</Num>, delta: countLabel(metrics.activeQuotesDeltaCount), up: metrics.activeQuotesDeltaCount >= 0, icon: FileText, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
-    { label: "Won This Month", value: <INR value={wonValue} />, delta: pctLabel(metrics.wonDeltaPct), up: (metrics.wonDeltaPct ?? 0) >= 0, icon: TrendingUp, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
+    { label: "Resolved This Month", value: <Num>{resolvedThisMonthCount}</Num>, delta: pctLabel(metrics.resolvedDeltaPct), up: (metrics.resolvedDeltaPct ?? 0) >= 0, icon: CheckCircle2, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
   ];
 
   if (loading) return <DashboardSkeleton />;
@@ -142,8 +126,8 @@ export default function DashboardPage() {
           <p className="text-sm text-text-secondary mt-1">Overview of your business operations</p>
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/crm?new=1">
-            <Button variant="secondary" icon={UserPlus}>New lead</Button>
+          <Link href="/tickets?new=1">
+            <Button variant="secondary" icon={TicketIcon}>New ticket</Button>
           </Link>
           <Link href="/quote?new=1">
             <Button icon={Plus}>New quote</Button>
@@ -152,7 +136,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="mt-6 sm:mt-8">
-        <AiSummary leads={leads} quotes={quotes} products={products} />
+        <AiSummary tickets={tickets} quotes={quotes} products={products} />
       </div>
 
       {/* Row 1 — KPI cards */}
@@ -199,12 +183,12 @@ export default function DashboardPage() {
         </div>
 
         <div className="lg:col-span-1 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
-          <h2 className="text-lg text-text-primary mb-4">Pipeline by segment</h2>
+          <h2 className="text-lg text-text-primary mb-4">Open tickets by category</h2>
           <ResponsiveContainer width="100%" height={190}>
             <PieChart>
-              <Pie data={segmentData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={3}>
-                {segmentData.map((entry, i) => (
-                  <Cell key={entry.name} fill={SEGMENT_COLORS[entry.name] || CHART_COLORS[i]} />
+              <Pie data={categoryData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={3}>
+                {categoryData.map((entry, i) => (
+                  <Cell key={entry.name} fill={CATEGORY_COLORS[entry.name] || CHART_COLORS[i]} />
                 ))}
               </Pie>
               <Tooltip
@@ -213,7 +197,7 @@ export default function DashboardPage() {
                   const d = payload[0];
                   return (
                     <div className="bg-white rounded-xl shadow-dropdown p-3 text-xs text-text-primary" style={{ border: "none" }}>
-                      <div>{String(d.name)}: <INR value={d.value as number} /></div>
+                      <div>{String(d.name)}: <Num>{d.value as number}</Num></div>
                     </div>
                   );
                 }}
@@ -221,13 +205,13 @@ export default function DashboardPage() {
             </PieChart>
           </ResponsiveContainer>
           <div className="space-y-2 mt-2">
-            {segmentData.map((s) => (
-              <div key={s.name} className="flex items-center justify-between">
+            {categoryData.map((c) => (
+              <div key={c.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: SEGMENT_COLORS[s.name] || "#64748B" }} />
-                  <span className="text-xs text-text-secondary">{s.name}</span>
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[c.name] || "#64748B" }} />
+                  <span className="text-xs text-text-secondary">{c.name}</span>
                 </div>
-                <INR value={s.value} className="text-xs" />
+                <Num className="text-xs">{c.value}</Num>
               </div>
             ))}
           </div>
@@ -237,11 +221,11 @@ export default function DashboardPage() {
       {/* Row 3 — Bar chart + Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
-          <h2 className="text-lg text-text-primary mb-4">Leads by stage</h2>
+          <h2 className="text-lg text-text-primary mb-4">Tickets by status</h2>
           <ResponsiveContainer width="100%" height={256}>
-            <BarChart data={stageData}>
+            <BarChart data={statusData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-              <XAxis dataKey="stage" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="status" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fill: "#94A3B8", fontSize: 12, fontFamily: "var(--font-montserrat), ui-monospace, system-ui, sans-serif" }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={<BarTooltip />} />
               <Bar dataKey="count" fill="#3A90C3" radius={[8, 8, 0, 0]} />
@@ -269,10 +253,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Row 4 — Quote expiry alerts + Sales leaderboard */}
+      {/* Row 4 — Quote expiry alerts + Team workload */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <QuoteExpiryAlerts quotes={quotes} />
-        <SalesLeaderboard leads={leads} />
+        <TeamWorkload tickets={tickets} />
       </div>
     </div>
   );

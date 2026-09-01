@@ -6,7 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import { TopNav } from "./TopNav";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useProductStore } from "@/lib/store/useProductStore";
-import { useLeadStore } from "@/lib/store/useLeadStore";
+import { useTicketStore } from "@/lib/store/useTicketStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 
@@ -17,7 +17,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
 
   const { fetchMe, user: me, error: meError, loaded: meLoaded } = useAuthStore();
   const fetchProducts = useProductStore((s) => s.fetchAll);
-  const fetchLeads = useLeadStore((s) => s.fetchAll);
+  const fetchTickets = useTicketStore((s) => s.fetchAll);
   const fetchQuotes = useQuoteStore((s) => s.fetchAll);
   const fetchUsers = useUserStore((s) => s.fetchAll);
 
@@ -25,11 +25,11 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     if (isLoaded && isSignedIn) {
       fetchMe();
       fetchProducts();
-      fetchLeads();
+      fetchTickets();
       fetchQuotes();
       fetchUsers();
     }
-  }, [isLoaded, isSignedIn, fetchMe, fetchProducts, fetchLeads, fetchQuotes, fetchUsers]);
+  }, [isLoaded, isSignedIn, fetchMe, fetchProducts, fetchTickets, fetchQuotes, fetchUsers]);
 
   if (isAuthRoute) return <>{children}</>;
 

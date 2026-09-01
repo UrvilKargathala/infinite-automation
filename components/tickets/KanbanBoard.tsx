@@ -3,20 +3,20 @@
 import { useState, useEffect, useId } from "react";
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { KanbanColumn } from "./KanbanColumn";
-import type { Lead, LeadStage } from "@/types";
+import type { Ticket, TicketStatus } from "@/types";
 
-const stages: LeadStage[] = ["New", "Qualified", "Quoted", "Won", "Lost"];
+const statuses: TicketStatus[] = ["Open", "In Progress", "On Hold", "Resolved", "Closed"];
 
 export function KanbanBoard({
-  leads,
-  onMoveStage,
-  onAddLead,
-  onEditLead,
+  tickets,
+  onMoveStatus,
+  onAddTicket,
+  onEditTicket,
 }: {
-  leads: Lead[];
-  onMoveStage: (id: number, stage: LeadStage) => void;
-  onAddLead: (stage: LeadStage) => void;
-  onEditLead: (lead: Lead) => void;
+  tickets: Ticket[];
+  onMoveStatus: (id: number, status: TicketStatus) => void;
+  onAddTicket: (status: TicketStatus) => void;
+  onEditTicket: (ticket: Ticket) => void;
 }) {
   const dndId = useId();
   const [mounted, setMounted] = useState(false);
@@ -29,18 +29,18 @@ export function KanbanBoard({
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over) return;
-    const leadId = active.id as number;
-    const targetStage = over.id as LeadStage;
-    if (stages.includes(targetStage)) {
-      onMoveStage(leadId, targetStage);
+    const ticketId = active.id as number;
+    const targetStatus = over.id as TicketStatus;
+    if (statuses.includes(targetStatus)) {
+      onMoveStatus(ticketId, targetStatus);
     }
   }
 
   if (!mounted) {
     return (
       <div className="flex gap-4 overflow-x-auto pb-2 scroll-hover">
-        {stages.map((stage) => (
-          <div key={stage} className="w-[260px] sm:w-72 lg:w-80 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl p-3 bg-surface-alt" />
+        {statuses.map((status) => (
+          <div key={status} className="w-[260px] sm:w-72 lg:w-80 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl p-3 bg-surface-alt" />
         ))}
       </div>
     );
@@ -49,13 +49,13 @@ export function KanbanBoard({
   return (
     <DndContext id={dndId} sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="flex gap-4 overflow-x-auto pb-2 scroll-hover">
-        {stages.map((stage) => (
+        {statuses.map((status) => (
           <KanbanColumn
-            key={stage}
-            stage={stage}
-            leads={leads.filter((l) => l.stage === stage)}
-            onAddLead={onAddLead}
-            onEditLead={onEditLead}
+            key={status}
+            status={status}
+            tickets={tickets.filter((t) => t.status === status)}
+            onAddTicket={onAddTicket}
+            onEditTicket={onEditTicket}
           />
         ))}
       </div>

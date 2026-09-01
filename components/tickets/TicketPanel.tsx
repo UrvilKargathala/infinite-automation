@@ -8,12 +8,19 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
-import { INR } from "@/components/ui/INR";
-import type { Lead, LeadMessage, LeadStage, CustomerSegment, Attachment } from "@/types";
+import type { Ticket, TicketMessage, TicketStatus, TicketCategory, TicketPriority, Attachment } from "@/types";
 
-const segments: CustomerSegment[] = ["Residential", "Hospitality", "Government / Council", "Retail", "Healthcare / Aged Care", "Industrial"];
-const stages: LeadStage[] = ["New", "Qualified", "Quoted", "Won", "Lost"];
-const salesTeam = ["Urvil", "Henil", "Chirag"];
+const categories: TicketCategory[] = ["Installation", "Repair", "Maintenance", "General"];
+const priorities: TicketPriority[] = ["Low", "Medium", "High", "Urgent"];
+const statuses: TicketStatus[] = ["Open", "In Progress", "On Hold", "Resolved", "Closed"];
+const supportTeam = ["Urvil", "Henil", "Chirag"];
+
+const priorityColors: Record<TicketPriority, string> = {
+  Low: "#64748B",
+  Medium: "#3A90C3",
+  High: "#F59E0B",
+  Urgent: "#EF4444",
+};
 
 function dateLabel(iso: string): string {
   const d = new Date(iso);
@@ -30,8 +37,8 @@ function timeLabel(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 }
 
-async function fetchMessages(leadId: number): Promise<LeadMessage[]> {
-  const res = await fetch(`/api/leads/${leadId}/messages`);
+async function fetchMessages(ticketId: number): Promise<TicketMessage[]> {
+  const res = await fetch(`/api/tickets/${ticketId}/messages`);
   if (!res.ok) throw new Error("Failed to load messages");
   return res.json();
 }
@@ -39,13 +46,13 @@ async function fetchMessages(leadId: number): Promise<LeadMessage[]> {
 interface Props {
   open: boolean;
   onClose: () => void;
-  lead: Lead | null;
-  leads: Lead[];
-  onSave: (id: number, data: Partial<Omit<Lead, "id">>) => void;
+  ticket: Ticket | null;
+  tickets: Ticket[];
+  onSave: (id: number, data: Partial<Omit<Ticket, "id">>) => void;
   onDelete: (id: number) => void;
 }
 
-export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Props) {
+export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }: Props) {
   const queryClient = useQueryClient();
   const { users, fetchAll: fetchUsers } = useUserStore();
   const myId = useAuthStore((s) => s.user?.id);
@@ -58,51 +65,51 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
   const [pendingFiles, setPendingFiles] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
-  const [replyingTo, setReplyingTo] = useState<LeadMessage | null>(null);
-  const [forwardingMsg, setForwardingMsg] = useState<LeadMessage | null>(null);
+  const [replyingTo, setReplyingTo] = useState<TicketMessage | null>(null);
+  const [forwardingMsg, setForwardingMsg] = useState<TicketMessage | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [preview, setPreview] = useState<{ images: Attachment[]; index: number } | null>(null);
 
-  // Edit-fields local state (reuses the same shape as the old LeadModal form)
-  const [form, setForm] = useState<Omit<Lead, "id"> | null>(null);
+  // Edit-fields local state (reuses the same shape as TicketModal's form)
+  const [form, setForm] = useState<Omit<Ticket, "id"> | null>(null);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   useEffect(() => {
-    if (lead) {
+    if (ticket) {
       setForm({
-        name: lead.name, company: lead.company, email: lead.email, phone: lead.phone,
-        segment: lead.segment, stage: lead.stage, value: lead.value, assigned: lead.assigned,
-        lastContact: lead.lastContact,
+        subject: ticket.subject, name: ticket.name, company: ticket.company, email: ticket.email, phone: ticket.phone,
+        category: ticket.category, priority: ticket.priority, status: ticket.status, assigned: ticket.assigned,
+        lastContact: ticket.lastContact,
       });
     }
     setEditing(false);
     setText("");
     setPendingFiles([]);
     setReplyingTo(null);
-  }, [lead?.id]);
+  }, [ticket?.id]);
 
   const { data: messages = [] } = useQuery({
-    queryKey: ["lead-messages", lead?.id],
-    queryFn: () => fetchMessages(lead!.id),
-    enabled: !!lead && open,
+    queryKey: ["ticket-messages", ticket?.id],
+    queryFn: () => fetchMessages(ticket!.id),
+    enabled: !!ticket && open,
     refetchInterval: 3000,
   });
 
   const sendMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch(`/api/leads/${lead!.id}/messages`, {
+      const res = await fetch(`/api/tickets/${ticket!.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: text.trim(), attachments: pendingFiles, replyToId: replyingTo?.id ?? null }),
       });
       if (!res.ok) throw new Error("Failed to send");
-      return res.json() as Promise<LeadMessage>;
+      return res.json() as Promise<TicketMessage>;
     },
     onSuccess: (msg) => {
-      queryClient.setQueryData<LeadMessage[]>(["lead-messages", lead?.id], (prev = []) => [...prev, msg]);
+      queryClient.setQueryData<TicketMessage[]>(["ticket-messages", ticket?.id], (prev = []) => [...prev, msg]);
       setText("");
       setPendingFiles([]);
       setReplyingTo(null);
@@ -111,11 +118,11 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
 
   const deleteMutation = useMutation({
     mutationFn: async (messageId: number) => {
-      const res = await fetch(`/api/leads/${lead!.id}/messages/${messageId}`, { method: "DELETE" });
+      const res = await fetch(`/api/tickets/${ticket!.id}/messages/${messageId}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
     },
     onSuccess: (_void, messageId) => {
-      queryClient.setQueryData<LeadMessage[]>(["lead-messages", lead?.id], (prev = []) =>
+      queryClient.setQueryData<TicketMessage[]>(["ticket-messages", ticket?.id], (prev = []) =>
         prev.map((m) => (m.id === messageId ? { ...m, deleted: true, text: "", attachments: [] } : m))
       );
     },
@@ -123,17 +130,17 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
   });
 
   const forwardMutation = useMutation({
-    mutationFn: async ({ targetLeadId, msg }: { targetLeadId: number; msg: LeadMessage }) => {
-      const res = await fetch(`/api/leads/${targetLeadId}/messages`, {
+    mutationFn: async ({ targetTicketId, msg }: { targetTicketId: number; msg: TicketMessage }) => {
+      const res = await fetch(`/api/tickets/${targetTicketId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: msg.text, attachments: msg.attachments, isForwarded: true }),
       });
       if (!res.ok) throw new Error("Failed to forward");
-      return targetLeadId;
+      return targetTicketId;
     },
-    onSuccess: (targetLeadId) => {
-      queryClient.invalidateQueries({ queryKey: ["lead-messages", targetLeadId] });
+    onSuccess: (targetTicketId) => {
+      queryClient.invalidateQueries({ queryKey: ["ticket-messages", targetTicketId] });
       toast.success("Message forwarded");
       setForwardingMsg(null);
     },
@@ -169,7 +176,7 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
   }, [menuOpenId]);
 
   const grouped = useMemo(() => {
-    const map = new Map<string, LeadMessage[]>();
+    const map = new Map<string, TicketMessage[]>();
     for (const m of messages) {
       const key = dateLabel(m.createdAt);
       if (!map.has(key)) map.set(key, []);
@@ -198,13 +205,13 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
   async function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (files.length === 0 || !lead) return;
+    if (files.length === 0 || !ticket) return;
     setUploading(true);
     try {
       for (const file of files) {
         const body = new FormData();
         body.append("file", file);
-        const res = await fetch(`/api/leads/${lead.id}/messages/upload`, { method: "POST", body });
+        const res = await fetch(`/api/tickets/${ticket.id}/messages/upload`, { method: "POST", body });
         if (!res.ok) throw new Error("Upload failed");
         const attachment: Attachment = await res.json();
         setPendingFiles((prev) => [...prev, attachment]);
@@ -221,22 +228,23 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
     sendMutation.mutate();
   }
 
-  function handleStageChange(stage: LeadStage) {
-    if (!lead) return;
-    onSave(lead.id, { stage });
+  function handleStatusChange(status: TicketStatus) {
+    if (!ticket) return;
+    onSave(ticket.id, { status });
   }
 
   function handleFieldSave() {
-    if (!lead || !form) return;
-    onSave(lead.id, form);
+    if (!ticket || !form) return;
+    onSave(ticket.id, form);
     setEditing(false);
   }
 
-  if (!open || !lead || !form) return null;
+  if (!open || !ticket || !form) return null;
 
   const inputClass =
     "w-full bg-white border border-border rounded-lg py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors";
   const labelClass = "block text-xs text-text-muted mb-1";
+  const priorityColor = priorityColors[ticket.priority];
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
@@ -248,23 +256,23 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
         <div className="px-5 py-4 border-b border-border shrink-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3 min-w-0">
-              <Avatar name={lead.name} size="sm" />
+              <Avatar name={ticket.name} size="sm" />
               <div className="min-w-0">
-                <div className="text-sm text-text-primary truncate">{lead.name}</div>
-                <div className="text-xs text-text-muted truncate">{lead.company}</div>
+                <div className="text-sm text-text-primary truncate">{ticket.subject}</div>
+                <div className="text-xs text-text-muted truncate">{ticket.name} · {ticket.company}</div>
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => setEditing((v) => !v)}
-                aria-label="Edit lead"
+                aria-label="Edit ticket"
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${editing ? "bg-brand-gradient-tint text-brand-blue" : "text-text-muted hover:bg-[#F9FAFB]"}`}
               >
                 <Pencil size={15} />
               </button>
               <button
-                onClick={() => { if (window.confirm("Delete this lead?")) { onDelete(lead.id); onClose(); } }}
-                aria-label="Delete lead"
+                onClick={() => { if (window.confirm("Delete this ticket?")) { onDelete(ticket.id); onClose(); } }}
+                aria-label="Delete ticket"
                 className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-danger hover:bg-[#F9FAFB] transition-colors"
               >
                 <Trash2 size={15} />
@@ -281,10 +289,10 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
 
           <select
             className="mt-3 bg-white border border-border rounded-full py-1.5 px-3 text-xs text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
-            value={lead.stage}
-            onChange={(e) => handleStageChange(e.target.value as LeadStage)}
+            value={ticket.status}
+            onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
           >
-            {stages.map((s) => <option key={s} value={s}>{s}</option>)}
+            {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
 
@@ -292,7 +300,11 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
           /* Edit-fields view */
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
             <div>
-              <label className={labelClass}>Name</label>
+              <label className={labelClass}>Subject</label>
+              <input className={inputClass} value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} />
+            </div>
+            <div>
+              <label className={labelClass}>Contact name</label>
               <input className={inputClass} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </div>
             <div>
@@ -308,19 +320,21 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
               <input className={inputClass} value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </div>
             <div>
-              <label className={labelClass}>Segment</label>
-              <select className={inputClass} value={form.segment} onChange={(e) => setForm({ ...form, segment: e.target.value as CustomerSegment })}>
-                {segments.map((s) => <option key={s} value={s}>{s}</option>)}
+              <label className={labelClass}>Category</label>
+              <select className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as TicketCategory })}>
+                {categories.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className={labelClass}>Value (INR)</label>
-              <input className={inputClass} type="number" value={form.value} onChange={(e) => setForm({ ...form, value: Number(e.target.value) || 0 })} />
+              <label className={labelClass}>Priority</label>
+              <select className={inputClass} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as TicketPriority })}>
+                {priorities.map((p) => <option key={p} value={p}>{p}</option>)}
+              </select>
             </div>
             <div>
               <label className={labelClass}>Assigned to</label>
               <select className={inputClass} value={form.assigned} onChange={(e) => setForm({ ...form, assigned: e.target.value })}>
-                {salesTeam.map((s) => <option key={s} value={s}>{s}</option>)}
+                {supportTeam.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
             <div>
@@ -336,9 +350,13 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
           <>
             {/* Chat feed */}
             <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-              {form.value > 0 && (
-                <div className="text-xs text-text-muted text-center"><INR value={form.value} /> · {form.segment}</div>
-              )}
+              <div className="flex items-center justify-center gap-2 text-xs text-text-muted">
+                <span className="px-2 py-1 rounded-full" style={{ backgroundColor: priorityColor + "18", color: priorityColor }}>
+                  {ticket.priority}
+                </span>
+                <span>·</span>
+                <span>{ticket.category}</span>
+              </div>
               {grouped.length === 0 ? (
                 <div className="text-center text-text-muted text-sm py-10">No activity yet — start the conversation</div>
               ) : (
@@ -540,22 +558,22 @@ export function LeadPanel({ open, onClose, lead, leads, onSave, onDelete }: Prop
               </button>
             </div>
             <div className="overflow-y-auto p-2">
-              {leads.filter((l) => l.id !== lead.id).length === 0 ? (
-                <div className="text-center text-text-muted text-sm py-8">No other leads to forward to</div>
+              {tickets.filter((t) => t.id !== ticket.id).length === 0 ? (
+                <div className="text-center text-text-muted text-sm py-8">No other tickets to forward to</div>
               ) : (
-                leads
-                  .filter((l) => l.id !== lead.id)
-                  .map((l) => (
+                tickets
+                  .filter((t) => t.id !== ticket.id)
+                  .map((t) => (
                     <button
-                      key={l.id}
-                      onClick={() => forwardMutation.mutate({ targetLeadId: l.id, msg: forwardingMsg })}
+                      key={t.id}
+                      onClick={() => forwardMutation.mutate({ targetTicketId: t.id, msg: forwardingMsg })}
                       disabled={forwardMutation.isPending}
                       className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-[#F9FAFB] transition-colors text-left disabled:opacity-50"
                     >
-                      <Avatar name={l.name} size="xs" />
+                      <Avatar name={t.name} size="xs" />
                       <div className="min-w-0">
-                        <div className="text-sm text-text-primary truncate">{l.name}</div>
-                        <div className="text-xs text-text-muted truncate">{l.company}</div>
+                        <div className="text-sm text-text-primary truncate">{t.subject}</div>
+                        <div className="text-xs text-text-muted truncate">{t.name} · {t.company}</div>
                       </div>
                     </button>
                   ))

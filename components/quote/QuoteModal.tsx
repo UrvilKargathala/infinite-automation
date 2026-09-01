@@ -25,7 +25,7 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
-import { useLeadStore } from "@/lib/store/useLeadStore";
+import { useTicketStore } from "@/lib/store/useTicketStore";
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
 import { useNotificationStore } from "@/lib/store/useNotificationStore";
 import { formatINR } from "@/lib/utils/format";
@@ -64,7 +64,7 @@ export function QuoteModal({
 }) {
   const { add, update } = useQuoteStore();
   const products = useProductStore((s) => s.products);
-  const leads = useLeadStore((s) => s.leads);
+  const tickets = useTicketStore((s) => s.tickets);
   const quoteAlerts = useSettingsStore((s) => s.quoteAlerts);
   const notify = useNotificationStore((s) => s.add);
   const allCategories = useProductStore((s) => s.categories);
@@ -257,14 +257,14 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
               className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
               value={draft.clientId ?? ""}
               onChange={(e) => {
-                const lid = Number(e.target.value);
-                const lead = leads.find((l) => l.id === lid);
-                patchDraft({ clientId: lid || null, client: lead?.company ?? "" });
+                const tid = Number(e.target.value);
+                const ticket = tickets.find((t) => t.id === tid);
+                patchDraft({ clientId: tid || null, client: ticket?.company ?? "" });
               }}
             >
               <option value="">Select client...</option>
-              {leads.map((l) => (
-                <option key={l.id} value={l.id}>{l.company}</option>
+              {tickets.map((t) => (
+                <option key={t.id} value={t.id}>{t.company}</option>
               ))}
             </select>
           ) : (

@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface NotificationSettings {
-  leadAlerts: boolean;
+  ticketAlerts: boolean;
   quoteAlerts: boolean;
 }
 
@@ -13,7 +13,7 @@ interface SettingsStore extends NotificationSettings {
 export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set) => ({
-      leadAlerts: true,
+      ticketAlerts: true,
       quoteAlerts: false,
       setSetting: (key, value) => set({ [key]: value }),
     }),

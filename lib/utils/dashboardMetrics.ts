@@ -1,4 +1,4 @@
-import type { Lead, Quote } from "@/types";
+import type { Ticket, Quote } from "@/types";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 
 export function inMonth(dateStr: string, month: number, year: number): boolean {
@@ -19,7 +19,7 @@ export function pctChange(cur: number, prev: number): number | null {
 }
 
 /** Shared month-over-month numbers used by the dashboard KPI cards and the AI summary. */
-export function computeMonthlyMetrics(leads: Lead[], quotes: Quote[]) {
+export function computeMonthlyMetrics(tickets: Ticket[], quotes: Quote[]) {
   const now = new Date();
   const curMonth = now.getMonth();
   const curYear = now.getFullYear();
@@ -27,21 +27,19 @@ export function computeMonthlyMetrics(leads: Lead[], quotes: Quote[]) {
   const prevMonth = prevDate.getMonth();
   const prevYear = prevDate.getFullYear();
 
-  const activeLeads = leads.filter((l) => l.stage !== "Won" && l.stage !== "Lost");
-  const pipelineValue = activeLeads.reduce((s, l) => s + l.value, 0);
-  const pipelineThisMonth = activeLeads.filter((l) => inMonth(l.lastContact, curMonth, curYear)).reduce((s, l) => s + l.value, 0);
-  const pipelineLastMonth = activeLeads.filter((l) => inMonth(l.lastContact, prevMonth, prevYear)).reduce((s, l) => s + l.value, 0);
+  const openTickets = tickets.filter((t) => t.status !== "Resolved" && t.status !== "Closed");
+  const openThisMonth = openTickets.filter((t) => inMonth(t.lastContact, curMonth, curYear)).length;
+  const openLastMonth = openTickets.filter((t) => inMonth(t.lastContact, prevMonth, prevYear)).length;
 
-  const activeLeadsThisMonth = activeLeads.filter((l) => inMonth(l.lastContact, curMonth, curYear)).length;
-  const activeLeadsLastMonth = activeLeads.filter((l) => inMonth(l.lastContact, prevMonth, prevYear)).length;
+  const urgentTickets = openTickets.filter((t) => t.priority === "Urgent");
+  const urgentThisMonth = urgentTickets.filter((t) => inMonth(t.lastContact, curMonth, curYear)).length;
+  const urgentLastMonth = urgentTickets.filter((t) => inMonth(t.lastContact, prevMonth, prevYear)).length;
 
   const quotesThisMonth = quotes.filter((q) => inMonth(q.date, curMonth, curYear));
   const quotesLastMonth = quotes.filter((q) => inMonth(q.date, prevMonth, prevYear));
 
-  const wonThisMonth = leads.filter((l) => l.stage === "Won" && inMonth(l.lastContact, curMonth, curYear));
-  const wonLastMonth = leads.filter((l) => l.stage === "Won" && inMonth(l.lastContact, prevMonth, prevYear));
-  const wonValueThisMonth = wonThisMonth.reduce((s, l) => s + l.value, 0);
-  const wonValueLastMonth = wonLastMonth.reduce((s, l) => s + l.value, 0);
+  const resolvedThisMonth = tickets.filter((t) => (t.status === "Resolved" || t.status === "Closed") && inMonth(t.lastContact, curMonth, curYear));
+  const resolvedLastMonth = tickets.filter((t) => (t.status === "Resolved" || t.status === "Closed") && inMonth(t.lastContact, prevMonth, prevYear));
 
   const activeQuotes = quotes.filter((q) => q.status === "Draft" || q.status === "Sent");
   const activeQuotesThisMonth = activeQuotes.filter((q) => inMonth(q.date, curMonth, curYear)).length;
@@ -49,15 +47,14 @@ export function computeMonthlyMetrics(leads: Lead[], quotes: Quote[]) {
 
   return {
     curMonth, curYear, prevMonth, prevYear,
-    activeLeads, pipelineValue,
-    pipelineDeltaPct: pctChange(pipelineThisMonth, pipelineLastMonth),
-    activeLeadsThisMonth, activeLeadsLastMonth,
-    activeLeadsDeltaCount: activeLeadsThisMonth - activeLeadsLastMonth,
+    openTickets, urgentTickets,
+    openDeltaCount: openThisMonth - openLastMonth,
+    urgentDeltaCount: urgentThisMonth - urgentLastMonth,
     quotesThisMonth, quotesLastMonth,
     activeQuotesThisMonth, activeQuotesLastMonth,
     activeQuotesDeltaCount: activeQuotesThisMonth - activeQuotesLastMonth,
-    wonThisMonth, wonValueThisMonth, wonValueLastMonth,
-    wonDeltaPct: pctChange(wonValueThisMonth, wonValueLastMonth),
+    resolvedThisMonth, resolvedLastMonth,
+    resolvedDeltaPct: pctChange(resolvedThisMonth.length, resolvedLastMonth.length),
   };
 }
 

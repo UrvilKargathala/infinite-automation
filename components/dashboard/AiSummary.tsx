@@ -1,9 +1,8 @@
 import { Sparkles } from "lucide-react";
-import { formatINR } from "@/lib/utils/format";
 import { inMonth, daysUntil } from "@/lib/utils/dashboardMetrics";
-import type { Lead, Quote, Product } from "@/types";
+import type { Ticket, Quote, Product } from "@/types";
 
-export function AiSummary({ leads, quotes, products }: { leads: Lead[]; quotes: Quote[]; products: Product[] }) {
+export function AiSummary({ tickets, quotes, products }: { tickets: Ticket[]; quotes: Quote[]; products: Product[] }) {
   const now = new Date();
   const curMonth = now.getMonth();
   const curYear = now.getFullYear();
@@ -15,15 +14,14 @@ export function AiSummary({ leads, quotes, products }: { leads: Lead[]; quotes: 
   const quotesLastMonth = quotes.filter((q) => inMonth(q.date, prevMonth, prevYear));
   const acceptedThisMonth = quotesThisMonth.filter((q) => q.status === "Accepted").length;
 
-  const wonThisMonth = leads.filter((l) => l.stage === "Won" && inMonth(l.lastContact, curMonth, curYear));
-  const wonValueThisMonth = wonThisMonth.reduce((s, l) => s + l.value, 0);
+  const resolvedThisMonth = tickets.filter((t) => (t.status === "Resolved" || t.status === "Closed") && inMonth(t.lastContact, curMonth, curYear));
 
-  const activeLeads = leads.filter((l) => l.stage !== "Won" && l.stage !== "Lost");
-  const pipelineValue = activeLeads.reduce((s, l) => s + l.value, 0);
+  const openTickets = tickets.filter((t) => t.status !== "Resolved" && t.status !== "Closed");
+  const urgentOpen = openTickets.filter((t) => t.priority === "Urgent").length;
 
-  const segmentTotals = new Map<string, number>();
-  activeLeads.forEach((l) => segmentTotals.set(l.segment, (segmentTotals.get(l.segment) ?? 0) + l.value));
-  const topSegment = [...segmentTotals.entries()].sort((a, b) => b[1] - a[1])[0];
+  const categoryTotals = new Map<string, number>();
+  openTickets.forEach((t) => categoryTotals.set(t.category, (categoryTotals.get(t.category) ?? 0) + 1));
+  const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0];
 
   const expiring = quotes
     .filter((q) => q.status === "Draft" || q.status === "Sent")
@@ -36,11 +34,11 @@ export function AiSummary({ leads, quotes, products }: { leads: Lead[]; quotes: 
   const sentences: string[] = [];
 
   sentences.push(
-    `Active pipeline is ${formatINR(pipelineValue)} across ${activeLeads.length} lead${activeLeads.length === 1 ? "" : "s"}${topSegment ? `, led by ${topSegment[0]} at ${formatINR(topSegment[1])}` : ""}.`
+    `${openTickets.length} open ticket${openTickets.length === 1 ? "" : "s"}${urgentOpen > 0 ? `, ${urgentOpen} urgent` : ""}${topCategory ? `, most common category is ${topCategory[0]}` : ""}.`
   );
 
-  if (wonThisMonth.length > 0) {
-    sentences.push(`${wonThisMonth.length} deal${wonThisMonth.length === 1 ? "" : "s"} won this month worth ${formatINR(wonValueThisMonth)}.`);
+  if (resolvedThisMonth.length > 0) {
+    sentences.push(`${resolvedThisMonth.length} ticket${resolvedThisMonth.length === 1 ? "" : "s"} resolved this month.`);
   }
 
   if (quotesThisMonth.length > 0 || quotesLastMonth.length > 0) {

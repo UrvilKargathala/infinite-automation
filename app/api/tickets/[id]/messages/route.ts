@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
-import type { Attachment, LeadMessage } from "@/types";
+import type { Attachment, TicketMessage } from "@/types";
 
-function toMessage(r: Record<string, unknown>): LeadMessage {
+function toMessage(r: Record<string, unknown>): TicketMessage {
   return {
     id: r.id as number,
-    leadId: r.lead_id as number,
+    ticketId: r.ticket_id as number,
     userId: r.user_id as number,
     fullName: r.full_name as string,
     text: r.deleted ? "" : (r.text as string),
@@ -21,18 +21,18 @@ function toMessage(r: Record<string, unknown>): LeadMessage {
 }
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const leadId = Number(params.id);
+  const ticketId = Number(params.id);
 
   const messageRows = await sql`
-    SELECT m.id, m.lead_id, m.text, m.attachments, m.created_at::text AS created_at,
+    SELECT m.id, m.ticket_id, m.text, m.attachments, m.created_at::text AS created_at,
            m.reply_to_id, m.is_forwarded, m.deleted,
            u.id AS user_id, u.full_name,
            rt.text AS reply_to_text, ru.full_name AS reply_to_full_name
-    FROM lead_messages m
+    FROM ticket_messages m
     JOIN users u ON u.id = m.user_id
-    LEFT JOIN lead_messages rt ON rt.id = m.reply_to_id
+    LEFT JOIN ticket_messages rt ON rt.id = m.reply_to_id
     LEFT JOIN users ru ON ru.id = rt.user_id
-    WHERE m.lead_id = ${leadId}
+    WHERE m.ticket_id = ${ticketId}
     ORDER BY m.created_at ASC
   `;
 
@@ -40,7 +40,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 }
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
-  const leadId = Number(params.id);
+  const ticketId = Number(params.id);
   const me = await getCurrentAppUser();
   if (!me) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
@@ -59,8 +59,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 
   const rows = await sql`
-    INSERT INTO lead_messages (lead_id, user_id, text, attachments, reply_to_id, is_forwarded)
-    VALUES (${leadId}, ${me.id}, ${text}, ${JSON.stringify(attachments)}, ${replyToId}, ${isForwarded})
+    INSERT INTO ticket_messages (ticket_id, user_id, text, attachments, reply_to_id, is_forwarded)
+    VALUES (${ticketId}, ${me.id}, ${text}, ${JSON.stringify(attachments)}, ${replyToId}, ${isForwarded})
     RETURNING id, created_at::text AS created_at
   `;
   const messageId = rows[0].id as number;
@@ -69,7 +69,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   let replyToFullName: string | null = null;
   if (replyToId) {
     const rt = await sql`
-      SELECT m.text, u.full_name FROM lead_messages m JOIN users u ON u.id = m.user_id WHERE m.id = ${replyToId}
+      SELECT m.text, u.full_name FROM ticket_messages m JOIN users u ON u.id = m.user_id WHERE m.id = ${replyToId}
     `;
     if (rt.length > 0) {
       replyToText = rt[0].text as string;
@@ -77,9 +77,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     }
   }
 
-  const message: LeadMessage = {
+  const message: TicketMessage = {
     id: messageId,
-    leadId,
+    ticketId,
     userId: me.id,
     fullName: me.fullName,
     text,

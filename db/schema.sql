@@ -12,15 +12,16 @@ CREATE TABLE IF NOT EXISTS products (
   status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive'))
 );
 
-CREATE TABLE IF NOT EXISTS leads (
+CREATE TABLE IF NOT EXISTS tickets (
   id SERIAL PRIMARY KEY,
+  subject TEXT NOT NULL DEFAULT '',
   name TEXT NOT NULL,
   company TEXT NOT NULL,
   email TEXT NOT NULL DEFAULT '',
   phone TEXT NOT NULL DEFAULT '',
-  segment TEXT NOT NULL CHECK (segment IN ('Residential', 'Hospitality', 'Government / Council', 'Retail', 'Healthcare / Aged Care', 'Industrial')),
-  stage TEXT NOT NULL CHECK (stage IN ('New', 'Qualified', 'Quoted', 'Won', 'Lost')),
-  value NUMERIC NOT NULL DEFAULT 0,
+  category TEXT NOT NULL CHECK (category IN ('Installation', 'Repair', 'Maintenance', 'General')),
+  priority TEXT NOT NULL DEFAULT 'Medium' CHECK (priority IN ('Low', 'Medium', 'High', 'Urgent')),
+  status TEXT NOT NULL CHECK (status IN ('Open', 'In Progress', 'On Hold', 'Resolved', 'Closed')),
   assigned TEXT NOT NULL DEFAULT '',
   last_contact DATE
 );
@@ -28,7 +29,7 @@ CREATE TABLE IF NOT EXISTS leads (
 CREATE TABLE IF NOT EXISTS quotes (
   id SERIAL PRIMARY KEY,
   number TEXT NOT NULL UNIQUE,
-  client_id INTEGER REFERENCES leads(id) ON DELETE SET NULL,
+  client_id INTEGER REFERENCES tickets(id) ON DELETE SET NULL,
   client TEXT NOT NULL,
   date DATE NOT NULL,
   valid_until DATE NOT NULL,
@@ -72,31 +73,21 @@ CREATE TABLE IF NOT EXISTS chat_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Per-ticket conversation thread: messages with reply/forward/soft-delete
+CREATE TABLE IF NOT EXISTS ticket_messages (
+  id SERIAL PRIMARY KEY,
+  ticket_id INTEGER NOT NULL REFERENCES tickets(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL DEFAULT '',
+  attachments JSONB NOT NULL DEFAULT '[]',
+  reply_to_id INTEGER REFERENCES ticket_messages(id) ON DELETE SET NULL,
+  is_forwarded BOOLEAN NOT NULL DEFAULT false,
+  deleted BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_quote_sections_quote_id ON quote_sections(quote_id);
 CREATE INDEX IF NOT EXISTS idx_quote_items_section_id ON quote_items(section_id);
 CREATE INDEX IF NOT EXISTS idx_quotes_client_id ON quotes(client_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
-
--- Ticket-style chat per lead: messages with @mentions auto-create linked tasks
-CREATE TABLE IF NOT EXISTS lead_messages (
-  id SERIAL PRIMARY KEY,
-  lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  text TEXT NOT NULL DEFAULT '',
-  attachments JSONB NOT NULL DEFAULT '[]',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS idx_lead_messages_lead_id ON lead_messages(lead_id);
-
-CREATE TABLE IF NOT EXISTS lead_tasks (
-  id SERIAL PRIMARY KEY,
-  lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-  message_id INTEGER REFERENCES lead_messages(id) ON DELETE SET NULL,
-  assigned_to INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  text TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'Done')),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX IF NOT EXISTS idx_lead_tasks_lead_id ON lead_tasks(lead_id);
-CREATE INDEX IF NOT EXISTS idx_lead_tasks_assigned_to ON lead_tasks(assigned_to);
+CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket_id ON ticket_messages(ticket_id);

@@ -17,7 +17,7 @@ function nextId() {
 const seedNotifications: AppNotification[] = [
   { id: nextId(), text: "New quote sent to Chen Holdings", color: "#44BE4A", time: "2h ago", read: false },
   { id: nextId(), text: "Kapoor Villas quote accepted", color: "#10B981", time: "5h ago", read: false },
-  { id: nextId(), text: "New lead: Wilson Farms", color: "#3A90C3", time: "1d ago", read: true },
+  { id: nextId(), text: "New ticket: WiFi coverage complaint", color: "#3A90C3", time: "1d ago", read: true },
   { id: nextId(), text: "Product catalog updated", color: "#94A3B8", time: "2d ago", read: true },
 ];
 
