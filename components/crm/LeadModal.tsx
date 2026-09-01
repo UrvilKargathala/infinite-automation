@@ -6,7 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import type { Lead, CustomerSegment, LeadStage } from "@/types";
 
-const segments: CustomerSegment[] = ["Residential", "Commercial", "Short Term Rentals", "Agriculture"];
+const segments: CustomerSegment[] = ["Residential", "Hospitality", "Government / Council", "Retail", "Healthcare / Aged Care", "Industrial"];
 const stages: LeadStage[] = ["New", "Qualified", "Quoted", "Won", "Lost"];
 const salesTeam = ["Urvil", "Henil", "Chirag"];
 

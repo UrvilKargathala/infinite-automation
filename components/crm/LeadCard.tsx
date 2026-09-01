@@ -7,9 +7,11 @@ import type { Lead, CustomerSegment } from "@/types";
 
 const segmentColors: Record<CustomerSegment, string> = {
   Residential: "#3A90C3",
-  Commercial: "#8B5CF6",
-  "Short Term Rentals": "#F59E0B",
-  Agriculture: "#10B981",
+  Hospitality: "#8B5CF6",
+  "Government / Council": "#64748B",
+  Retail: "#F59E0B",
+  "Healthcare / Aged Care": "#EF4444",
+  Industrial: "#10B981",
 };
 
 export function LeadCard({ lead, onClick }: { lead: Lead; onClick: () => void }) {

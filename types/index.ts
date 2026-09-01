@@ -2,9 +2,11 @@ export type Role = "Super Admin" | "Admin" | "Staff";
 
 export type CustomerSegment =
   | "Residential"
-  | "Commercial"
-  | "Short Term Rentals"
-  | "Agriculture";
+  | "Hospitality"
+  | "Government / Council"
+  | "Retail"
+  | "Healthcare / Aged Care"
+  | "Industrial";
 
 export type LeadStage = "New" | "Qualified" | "Quoted" | "Won" | "Lost";
 
@@ -74,4 +76,33 @@ export interface User {
   email: string;
   role: Role;
   status: UserStatus;
+}
+
+export interface ChatMessage {
+  id: number;
+  text: string;
+  createdAt: string;
+  userId: number;
+  fullName: string;
+}
+
+export interface Attachment {
+  url: string;
+  name: string;
+  type: string;
+}
+
+export interface LeadMessage {
+  id: number;
+  leadId: number;
+  userId: number;
+  fullName: string;
+  text: string;
+  attachments: Attachment[];
+  createdAt: string;
+  replyToId: number | null;
+  replyToText: string | null;
+  replyToFullName: string | null;
+  isForwarded: boolean;
+  deleted: boolean;
 }

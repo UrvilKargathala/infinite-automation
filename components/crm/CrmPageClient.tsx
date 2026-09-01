@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { Home, Building2, Hotel, Sprout, Search, Plus, Download, SlidersHorizontal } from "lucide-react";
+import { Home, Hotel, Landmark, ShoppingBag, HeartPulse, Factory, Search, Plus, Download, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useLeadStore } from "@/lib/store/useLeadStore";
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
@@ -14,15 +14,18 @@ import { Button } from "@/components/ui/Button";
 import { AssigneeStack } from "@/components/crm/AssigneeStack";
 import { KanbanBoard } from "@/components/crm/KanbanBoard";
 import { LeadModal } from "@/components/crm/LeadModal";
+import { LeadPanel } from "@/components/crm/LeadPanel";
 import { CrmSkeleton } from "@/components/crm/CrmSkeleton";
 import type { Lead, LeadStage, CustomerSegment } from "@/types";
 import * as XLSX from "xlsx";
 
 const segmentMeta: { segment: CustomerSegment; icon: typeof Home; bg: string; accent: string }[] = [
   { segment: "Residential", icon: Home, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
-  { segment: "Commercial", icon: Building2, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
-  { segment: "Short Term Rentals", icon: Hotel, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
-  { segment: "Agriculture", icon: Sprout, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
+  { segment: "Hospitality", icon: Hotel, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
+  { segment: "Government / Council", icon: Landmark, bg: "bg-[#64748B18]", accent: "#64748B" },
+  { segment: "Retail", icon: ShoppingBag, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
+  { segment: "Healthcare / Aged Care", icon: HeartPulse, bg: "bg-[#EF444418]", accent: "#EF4444" },
+  { segment: "Industrial", icon: Factory, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
 ];
 
 export function CrmPageClient() {
@@ -31,17 +34,18 @@ export function CrmPageClient() {
   const notify = useNotificationStore((s) => s.add);
 
   const loading = !loaded;
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const [search, setSearch] = useState("");
   const [segFilter, setSegFilter] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editLead, setEditLead] = useState<Lead | null>(null);
   const [defaultStage, setDefaultStage] = useState<LeadStage>("New");
+  const [panelLead, setPanelLead] = useState<Lead | null>(null);
+  const [panelOpen, setPanelOpen] = useState(false);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).get("new") === "1") {
-      setEditLead(null);
       setDefaultStage("New");
       setModalOpen(true);
       window.history.replaceState(null, "", "/crm");
@@ -68,25 +72,25 @@ export function CrmPageClient() {
   }, [leads, assigneeFilter, segFilter, search]);
 
   function openAdd(stage: LeadStage) {
-    setEditLead(null);
     setDefaultStage(stage);
     setModalOpen(true);
   }
 
   function openEdit(lead: Lead) {
-    setEditLead(lead);
-    setModalOpen(true);
+    setPanelLead(lead);
+    setPanelOpen(true);
   }
 
-  function handleSave(data: Omit<Lead, "id">) {
-    if (editLead) {
-      update(editLead.id, data);
-      toast.success("Lead updated");
-    } else {
-      add(data);
-      toast.success("Lead added");
-      if (leadAlerts) notify(`New lead: ${data.name}`, "#3A90C3");
-    }
+  function handleCreate(data: Omit<Lead, "id">) {
+    add(data);
+    toast.success("Lead added");
+    if (leadAlerts) notify(`New lead: ${data.name}`, "#3A90C3");
+  }
+
+  function handlePanelSave(id: number, patch: Partial<Omit<Lead, "id">>) {
+    update(id, patch);
+    setPanelLead((prev) => (prev && prev.id === id ? { ...prev, ...patch } : prev));
+    toast.success("Lead updated");
   }
 
   function handleExport() {
@@ -122,7 +126,7 @@ export function CrmPageClient() {
       <p className="text-sm text-text-secondary mt-1">Lead pipeline — drag cards between stages</p>
 
       {/* Segment summary cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
         {segmentMeta.map(({ segment, icon, bg, accent }) => {
           const segLeads = leads.filter((l) => l.segment === segment);
           const totalValue = segLeads.reduce((s, l) => s + l.value, 0);
@@ -157,7 +161,18 @@ export function CrmPageClient() {
               <Plus size={18} />
             </button>
             <IconButton icon={Download} ariaLabel="Export" onClick={handleExport} />
-            <IconButton icon={SlidersHorizontal} ariaLabel="Filter" />
+            <div className="relative">
+              <IconButton icon={SlidersHorizontal} ariaLabel="Filter by assignee" onClick={() => setFilterOpen((o) => !o)} />
+              {filterOpen && (
+                <div className="absolute mt-2 right-0 bg-white shadow-dropdown rounded-2xl p-3 z-50">
+                  <AssigneeStack
+                    assignees={assignees}
+                    selected={assigneeFilter}
+                    onToggle={(name) => setAssigneeFilter((prev) => (prev === name ? null : name))}
+                  />
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -198,10 +213,18 @@ export function CrmPageClient() {
 
       <LeadModal
         open={modalOpen}
-        onClose={() => { setModalOpen(false); setEditLead(null); }}
-        lead={editLead}
+        onClose={() => setModalOpen(false)}
+        lead={null}
         defaultStage={defaultStage}
-        onSave={handleSave}
+        onSave={handleCreate}
+      />
+
+      <LeadPanel
+        open={panelOpen}
+        onClose={() => { setPanelOpen(false); setPanelLead(null); }}
+        lead={panelLead}
+        leads={leads}
+        onSave={handlePanelSave}
         onDelete={handleDelete}
       />
     </div>

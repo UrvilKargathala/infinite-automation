@@ -1,17 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { formatINR } from "@/lib/utils/format";
+import { inMonth, daysUntil } from "@/lib/utils/dashboardMetrics";
 import type { Lead, Quote, Product } from "@/types";
-
-function inMonth(dateStr: string, month: number, year: number): boolean {
-  if (!dateStr) return false;
-  const d = new Date(dateStr);
-  return d.getMonth() === month && d.getFullYear() === year;
-}
-
-function daysUntil(dateStr: string): number {
-  const ms = new Date(dateStr).getTime() - new Date().setHours(0, 0, 0, 0);
-  return Math.round(ms / 86400000);
-}
 
 export function AiSummary({ leads, quotes, products }: { leads: Lead[]; quotes: Quote[]; products: Product[] }) {
   const now = new Date();

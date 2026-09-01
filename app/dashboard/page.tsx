@@ -22,31 +22,19 @@ import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { QuoteExpiryAlerts } from "@/components/dashboard/QuoteExpiryAlerts";
 import { SalesLeaderboard } from "@/components/dashboard/SalesLeaderboard";
 import { AiSummary } from "@/components/dashboard/AiSummary";
+import { computeMonthlyMetrics, computeMonthlySeries } from "@/lib/utils/dashboardMetrics";
+import { timeAgo } from "@/lib/utils/timeAgo";
 import type { Quote } from "@/types";
 
 const CHART_COLORS = ["#3A90C3", "#44BE4A", "#8B5CF6", "#F59E0B", "#EF4444", "#64748B"];
 const SEGMENT_COLORS: Record<string, string> = {
   Residential: "#3A90C3",
-  Commercial: "#44BE4A",
-  "Short Term Rentals": "#8B5CF6",
-  Agriculture: "#F59E0B",
+  Hospitality: "#8B5CF6",
+  "Government / Council": "#64748B",
+  Retail: "#F59E0B",
+  "Healthcare / Aged Care": "#EF4444",
+  Industrial: "#44BE4A",
 };
-
-const MONTHS_DATA = [
-  { month: "Mar", quotes: 8, revenue: 420000 },
-  { month: "Apr", quotes: 12, revenue: 580000 },
-  { month: "May", quotes: 10, revenue: 510000 },
-  { month: "Jun", quotes: 15, revenue: 720000 },
-  { month: "Jul", quotes: 18, revenue: 890000 },
-  { month: "Aug", quotes: 22, revenue: 1050000 },
-];
-
-const ACTIVITIES = [
-  { text: "New quote sent to Chen Holdings", color: "#44BE4A", time: "2h ago" },
-  { text: "Kapoor Villas quote accepted", color: "#10B981", time: "5h ago" },
-  { text: "New lead: Wilson Farms", color: "#3A90C3", time: "1d ago" },
-  { text: "Product catalog updated", color: "#94A3B8", time: "2d ago" },
-];
 
 function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string }) {
   if (!active || !payload?.length) return null;
@@ -115,11 +103,33 @@ export default function DashboardPage() {
     }));
   }, [leads]);
 
+  const metrics = useMemo(() => computeMonthlyMetrics(leads, quotes), [leads, quotes]);
+  const chartData = useMemo(() => computeMonthlySeries(quotes), [quotes]);
+  const activity = useMemo(() => {
+    const leadEvents = leads.map((l) => ({
+      text: l.stage === "Won" ? `${l.name} deal won` : l.stage === "Lost" ? `${l.name} marked lost` : `${l.name} — ${l.stage}`,
+      color: l.stage === "Won" ? "#10B981" : l.stage === "Lost" ? "#EF4444" : "#3A90C3",
+      date: l.lastContact,
+    }));
+    const quoteEvents = quotes.map((q) => ({
+      text: `Quote ${q.number} for ${q.client} — ${q.status}`,
+      color: q.status === "Accepted" ? "#10B981" : q.status === "Rejected" ? "#EF4444" : "#94A3B8",
+      date: q.date,
+    }));
+    return [...leadEvents, ...quoteEvents]
+      .filter((e) => e.date)
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, 4);
+  }, [leads, quotes]);
+
+  const pctLabel = (v: number | null) => (v === null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)}%`);
+  const countLabel = (v: number) => (v > 0 ? `+${v}` : `${v}`);
+
   const kpis = [
-    { label: "Revenue Pipeline", value: <INR value={pipelineRevenue} />, delta: "+18.2%", up: true, icon: DollarSign, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
-    { label: "Active Leads", value: <Num>{activeLeads}</Num>, delta: "+3", up: true, icon: Users, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
-    { label: "Active Quotes", value: <Num>{activeQuotes}</Num>, delta: "+2", up: true, icon: FileText, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
-    { label: "Won This Month", value: <INR value={wonValue} />, delta: "-4.1%", up: false, icon: TrendingUp, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
+    { label: "Revenue Pipeline", value: <INR value={pipelineRevenue} />, delta: pctLabel(metrics.pipelineDeltaPct), up: (metrics.pipelineDeltaPct ?? 0) >= 0, icon: DollarSign, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
+    { label: "Active Leads", value: <Num>{activeLeads}</Num>, delta: countLabel(metrics.activeLeadsDeltaCount), up: metrics.activeLeadsDeltaCount >= 0, icon: Users, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
+    { label: "Active Quotes", value: <Num>{activeQuotes}</Num>, delta: countLabel(metrics.activeQuotesDeltaCount), up: metrics.activeQuotesDeltaCount >= 0, icon: FileText, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
+    { label: "Won This Month", value: <INR value={wonValue} />, delta: pctLabel(metrics.wonDeltaPct), up: (metrics.wonDeltaPct ?? 0) >= 0, icon: TrendingUp, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
   ];
 
   if (loading) return <DashboardSkeleton />;
@@ -175,7 +185,7 @@ export default function DashboardPage() {
             <span className="text-xs text-text-muted">Last 6 months</span>
           </div>
           <ResponsiveContainer width="100%" height={256}>
-            <LineChart data={MONTHS_DATA}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
               <XAxis dataKey="month" tick={{ fill: "#94A3B8", fontSize: 12 }} axisLine={false} tickLine={false} />
               <YAxis yAxisId="left" tick={{ fill: "#94A3B8", fontSize: 12, fontFamily: "var(--font-montserrat), ui-monospace, system-ui, sans-serif" }} axisLine={false} tickLine={false} />
@@ -241,17 +251,21 @@ export default function DashboardPage() {
 
         <div className="lg:col-span-1 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
           <h2 className="text-lg text-text-primary mb-4">Recent activity</h2>
-          <div className="space-y-4">
-            {ACTIVITIES.map((a, i) => (
-              <div key={i} className="flex gap-3">
-                <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: a.color }} />
-                <div>
-                  <div className="text-sm text-text-primary">{a.text}</div>
-                  <div className="text-xs text-text-muted mt-0.5">{a.time}</div>
+          {activity.length === 0 ? (
+            <div className="text-sm text-text-muted text-center py-6">No activity yet</div>
+          ) : (
+            <div className="space-y-4">
+              {activity.map((a, i) => (
+                <div key={i} className="flex gap-3">
+                  <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: a.color }} />
+                  <div>
+                    <div className="text-sm text-text-primary">{a.text}</div>
+                    <div className="text-xs text-text-muted mt-0.5">{timeAgo(a.date)}</div>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

@@ -14,7 +14,7 @@ For all visual, color, typography, and component-styling rules see the companion
 **Modules:** 5 modules — Dashboard, CRM (Kanban), Quote, Master File, User Management.
 **Navigation style:** Top horizontal nav bar with pill-style active state. No left sidebar. See DESIGN_SYSTEM.md.
 
-The company sells hardware (smart switches, controllers, cameras, sensors, Unifi networking gear) and installation services across 4 customer segments: Residential, Commercial, Short Term Rentals, Agriculture.
+The company sells hardware (smart switches, controllers, cameras, sensors, Unifi networking gear) and installation services across 6 customer segments: Residential, Hospitality, Government / Council, Retail, Healthcare / Aged Care, Industrial.
 
 ---
 
@@ -55,7 +55,7 @@ Do NOT introduce: Material UI, Chakra, Ant Design, Redux, styled-components, emo
 - Supabase bigserial in Phase 6.
 
 ### Enums (use exactly these strings, case-sensitive)
-- **Customer segments:** `Residential`, `Commercial`, `Short Term Rentals`, `Agriculture`
+- **Customer segments:** `Residential`, `Hospitality`, `Government / Council`, `Retail`, `Healthcare / Aged Care`, `Industrial`
 - **Lead stages:** `New`, `Qualified`, `Quoted`, `Won`, `Lost`
 - **Quote status:** `Draft`, `Sent`, `Accepted`, `Rejected`
 - **Product status:** `Active`, `Inactive`
@@ -178,9 +178,9 @@ Do not build features from a later phase during an earlier one. If a prompt asks
 
 - Company is Melbourne-based, Australian Made certified.
 - Products are Australian-manufactured hardware (own brand "Infinite AUS") plus resold Unifi network gear.
-- Customer segments: Residential (homes), Commercial (offices, warehouses, education), Short Term Rentals (Airbnb-style properties), Agriculture (irrigation, sprinklers, pumps).
+- Customer segments: Residential (homes), Hospitality (hotels/resorts/serviced apartments), Government / Council (public buildings, council infrastructure), Retail (shopfronts, shopping centers), Healthcare / Aged Care (sensors, access control, emergency call systems), Industrial (factories, warehousing, offices).
 - Typical products: dimmers, HVAC controllers, garage door controllers, curtain motors, smart locks, cameras, access control, WiFi access points, VoIP phones, sensors.
-- Typical deal sizes (INR): Residential 1L-3L, Commercial 5L-25L, STR 2L-5L, Agriculture 1L-3L.
+- Typical deal sizes (INR): Residential 1L-3L, Hospitality 3L-8L, Government / Council 5L-25L, Retail 2L-6L, Healthcare / Aged Care 3L-10L, Industrial 5L-25L.
 - Sales team names for seed data: Priya, Arjun, Neha, Rohan, Sam.
 - Contact names in seed leads: mix Indian and Australian names for realism.
 - Brand naming rule: the clean brand list is: Infinite AUS, Automation Products, Electrical Product, Unifi. Products imported under the Unifi brand keep `brand: "Unifi"` — their sub-line (Wifi, Camera, Video Door Phone, Sensors & Alarms, Advance Hosting, Managed VoIP) is the **category**, not the brand. If the source brand column has a "Unifi " prefix followed by more text (e.g. "Unifi Wifi"), strip the prefix down to "Unifi".

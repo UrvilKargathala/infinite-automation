@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS leads (
   company TEXT NOT NULL,
   email TEXT NOT NULL DEFAULT '',
   phone TEXT NOT NULL DEFAULT '',
-  segment TEXT NOT NULL CHECK (segment IN ('Residential', 'Commercial', 'Short Term Rentals', 'Agriculture')),
+  segment TEXT NOT NULL CHECK (segment IN ('Residential', 'Hospitality', 'Government / Council', 'Retail', 'Healthcare / Aged Care', 'Industrial')),
   stage TEXT NOT NULL CHECK (stage IN ('New', 'Qualified', 'Quoted', 'Won', 'Lost')),
   value NUMERIC NOT NULL DEFAULT 0,
   assigned TEXT NOT NULL DEFAULT '',
@@ -65,6 +65,38 @@ CREATE TABLE IF NOT EXISTS users (
   status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive'))
 );
 
+CREATE TABLE IF NOT EXISTS chat_messages (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_quote_sections_quote_id ON quote_sections(quote_id);
 CREATE INDEX IF NOT EXISTS idx_quote_items_section_id ON quote_items(section_id);
 CREATE INDEX IF NOT EXISTS idx_quotes_client_id ON quotes(client_id);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
+
+-- Ticket-style chat per lead: messages with @mentions auto-create linked tasks
+CREATE TABLE IF NOT EXISTS lead_messages (
+  id SERIAL PRIMARY KEY,
+  lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL DEFAULT '',
+  attachments JSONB NOT NULL DEFAULT '[]',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_lead_messages_lead_id ON lead_messages(lead_id);
+
+CREATE TABLE IF NOT EXISTS lead_tasks (
+  id SERIAL PRIMARY KEY,
+  lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+  message_id INTEGER REFERENCES lead_messages(id) ON DELETE SET NULL,
+  assigned_to INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_by INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Open' CHECK (status IN ('Open', 'Done')),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_lead_tasks_lead_id ON lead_tasks(lead_id);
+CREATE INDEX IF NOT EXISTS idx_lead_tasks_assigned_to ON lead_tasks(assigned_to);
