@@ -13,7 +13,7 @@ import type { Ticket, TicketMessage, TicketStatus, TicketCategory, TicketPriorit
 const categories: TicketCategory[] = ["Installation", "Repair", "Maintenance", "General"];
 const priorities: TicketPriority[] = ["Low", "Medium", "High", "Urgent"];
 const statuses: TicketStatus[] = ["Open", "In Progress", "On Hold", "Resolved", "Closed"];
-const supportTeam = ["Urvil", "Henil", "Chirag"];
+const supportTeam = ["Urvil Kargathala", "Henil Patel", "Tirth", "Chirag"];
 
 const priorityColors: Record<TicketPriority, string> = {
   Low: "#64748B",

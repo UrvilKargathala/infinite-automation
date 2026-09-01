@@ -9,7 +9,7 @@ import type { Ticket, TicketCategory, TicketPriority, TicketStatus } from "@/typ
 const categories: TicketCategory[] = ["Installation", "Repair", "Maintenance", "General"];
 const priorities: TicketPriority[] = ["Low", "Medium", "High", "Urgent"];
 const statuses: TicketStatus[] = ["Open", "In Progress", "On Hold", "Resolved", "Closed"];
-const supportTeam = ["Urvil", "Henil", "Chirag"];
+const supportTeam = ["Urvil Kargathala", "Henil Patel", "Tirth", "Chirag"];
 
 interface Props {
   open: boolean;
