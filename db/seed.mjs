@@ -36,6 +36,20 @@ const tickets = [
   { id: 14, subject: "Co-working hub network gear decommission", name: "Lisa Taylor", company: "Taylor Co-Working Hub", email: "lisa@taylorcowork.com.au", phone: "+61 478 901 234", category: "General", priority: "Low", status: "Closed", assigned: "Chirag", lastContact: "2026-07-20" },
 ];
 
+const projects = [
+  { id: 1, customerName: "Rohan Kulkarni", siteAddress: "14 Fitzroy St, St Kilda VIC", assigned: "Urvil Kargathala", architect: "", stage: "Inquiry", daysAgo: 2 },
+  { id: 2, customerName: "Emma Whitfield", siteAddress: "22 Chapel St, South Yarra VIC", assigned: "Henil Patel", architect: "DesignWorks Studio", stage: "Design", daysAgo: 5 },
+  { id: 3, customerName: "Priyanka Deshmukh", siteAddress: "8 Marine Pde, St Kilda VIC", assigned: "Urvil Kargathala", architect: "", stage: "Quotation", daysAgo: 8 },
+  { id: 4, customerName: "James Faulkner", siteAddress: "101 Collins St, Melbourne VIC", assigned: "Tirth", architect: "Faulkner & Co Architects", stage: "Measurement", daysAgo: 12 },
+  { id: 5, customerName: "Ananya Reddy", siteAddress: "45 Toorak Rd, Toorak VIC", assigned: "Henil Patel", architect: "", stage: "Marking", daysAgo: 15 },
+  { id: 6, customerName: "Liam O'Sullivan", siteAddress: "3 Beaconsfield Pde, Albert Park VIC", assigned: "Chirag", architect: "", stage: "Production", daysAgo: 20 },
+  { id: 7, customerName: "Meera Iyer", siteAddress: "77 High St, Prahran VIC", assigned: "Urvil Kargathala", architect: "Iyer Interiors", stage: "Material Requirement", daysAgo: 25 },
+  { id: 8, customerName: "Oliver Bennett", siteAddress: "19 Church St, Brighton VIC", assigned: "Henil Patel", architect: "", stage: "Ready to Dispatch", daysAgo: 30 },
+  { id: 9, customerName: "Kavya Nair", siteAddress: "5 Bay St, Port Melbourne VIC", assigned: "Tirth", architect: "", stage: "Installation", daysAgo: 35 },
+  { id: 10, customerName: "Daniel Foster", siteAddress: "12 Glenferrie Rd, Hawthorn VIC", assigned: "Urvil Kargathala", architect: "Foster Design Group", stage: "Completed", daysAgo: 3 },
+  { id: 11, customerName: "Sanjana Rao", siteAddress: "60 Dandenong Rd, Windsor VIC", assigned: "Chirag", architect: "", stage: "Cancelled", daysAgo: 18 },
+];
+
 const users = [
   { id: 1, fullName: "Urvil Kargathala", email: "urvilk1542@gmail.com", role: "Super Admin", status: "Active" },
   { id: 2, fullName: "Henil Patel", email: "patelhenil34@gmail.com", role: "Super Admin", status: "Active" },
@@ -104,7 +118,7 @@ const quotes = [
 ];
 
 async function main() {
-  await sql.query("TRUNCATE quote_items, quote_sections, quotes, tickets, products, users RESTART IDENTITY CASCADE");
+  await sql.query("TRUNCATE quote_items, quote_sections, quotes, tickets, products, users, project_stage_events, projects RESTART IDENTITY CASCADE");
 
   for (const p of products) {
     await sql.query(
@@ -145,6 +159,19 @@ async function main() {
   }
   console.log(`Seeded ${quotes.length} quotes`);
 
+  for (const p of projects) {
+    const changedAt = new Date(Date.now() - p.daysAgo * 86400000).toISOString();
+    await sql.query(
+      `INSERT INTO projects (id, customer_name, site_address, assigned, architect, stage, created_at, last_stage_change) VALUES ($1,$2,$3,$4,$5,$6,$7,$7)`,
+      [p.id, p.customerName, p.siteAddress, p.assigned, p.architect, p.stage, changedAt]
+    );
+    await sql.query(
+      `INSERT INTO project_stage_events (project_id, stage, changed_at) VALUES ($1,$2,$3)`,
+      [p.id, p.stage, changedAt]
+    );
+  }
+  console.log(`Seeded ${projects.length} projects`);
+
   for (const u of users) {
     await sql.query(
       `INSERT INTO users (id, full_name, email, role, status) VALUES ($1,$2,$3,$4,$5)`,
@@ -157,6 +184,7 @@ async function main() {
   await sql.query(`SELECT setval('tickets_id_seq', (SELECT MAX(id) FROM tickets))`);
   await sql.query(`SELECT setval('quotes_id_seq', (SELECT MAX(id) FROM quotes))`);
   await sql.query(`SELECT setval('users_id_seq', (SELECT MAX(id) FROM users))`);
+  await sql.query(`SELECT setval('projects_id_seq', (SELECT MAX(id) FROM projects))`);
   console.log("Sequences synced. Done.");
 }
 

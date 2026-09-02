@@ -7,6 +7,7 @@ import { TopNav } from "./TopNav";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useTicketStore } from "@/lib/store/useTicketStore";
+import { useProjectStore } from "@/lib/store/useProjectStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 
@@ -18,6 +19,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   const { fetchMe, user: me, error: meError, loaded: meLoaded } = useAuthStore();
   const fetchProducts = useProductStore((s) => s.fetchAll);
   const fetchTickets = useTicketStore((s) => s.fetchAll);
+  const fetchProjects = useProjectStore((s) => s.fetchAll);
   const fetchQuotes = useQuoteStore((s) => s.fetchAll);
   const fetchUsers = useUserStore((s) => s.fetchAll);
 
@@ -26,10 +28,11 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
       fetchMe();
       fetchProducts();
       fetchTickets();
+      fetchProjects();
       fetchQuotes();
       fetchUsers();
     }
-  }, [isLoaded, isSignedIn, fetchMe, fetchProducts, fetchTickets, fetchQuotes, fetchUsers]);
+  }, [isLoaded, isSignedIn, fetchMe, fetchProducts, fetchTickets, fetchProjects, fetchQuotes, fetchUsers]);
 
   if (isAuthRoute) return <>{children}</>;
 

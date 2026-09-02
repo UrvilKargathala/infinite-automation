@@ -103,3 +103,28 @@ export interface TicketMessage {
   isForwarded: boolean;
   deleted: boolean;
 }
+
+export type ProjectStage =
+  | "Inquiry" | "Design" | "Quotation" | "Measurement" | "Marking"
+  | "Production" | "Material Requirement" | "Ready to Dispatch"
+  | "Installation" | "Completed" | "Cancelled";
+
+export interface Project {
+  id: number;
+  customerName: string;
+  siteAddress: string;
+  assigned: string;
+  architect: string;
+  quoteId: number | null;
+  notes: string;
+  stage: ProjectStage;
+  createdAt: string;
+  lastStageChange: string;
+}
+
+export interface ProjectStageEvent {
+  id: number;
+  projectId: number;
+  stage: ProjectStage;
+  changedAt: string;
+}

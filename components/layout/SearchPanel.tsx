@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search as SearchIcon, Ticket as TicketIcon, FileText, Package, UserCog } from "lucide-react";
+import { Search as SearchIcon, Ticket as TicketIcon, Briefcase, FileText, Package, UserCog } from "lucide-react";
 import { useTicketStore } from "@/lib/store/useTicketStore";
+import { useProjectStore } from "@/lib/store/useProjectStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useUserStore } from "@/lib/store/useUserStore";
@@ -17,6 +18,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useState("");
 
   const tickets = useTicketStore((s) => s.tickets);
+  const projects = useProjectStore((s) => s.projects);
   const quotes = useQuoteStore((s) => s.quotes);
   const products = useProductStore((s) => s.products);
   const users = useUserStore((s) => s.users);
@@ -52,7 +54,11 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
     ? users.filter((u) => u.fullName.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)).slice(0, LIMIT)
     : [];
 
-  const totalResults = ticketResults.length + quoteResults.length + productResults.length + userResults.length;
+  const projectResults = q
+    ? projects.filter((p) => p.customerName.toLowerCase().includes(q) || p.siteAddress.toLowerCase().includes(q)).slice(0, LIMIT)
+    : [];
+
+  const totalResults = ticketResults.length + projectResults.length + quoteResults.length + productResults.length + userResults.length;
 
   function go(href: string) {
     router.push(href);
@@ -69,7 +75,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
         <input
           ref={inputRef}
           className="w-full bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
-          placeholder="Search tickets, quotes, products, users..."
+          placeholder="Search tickets, projects, quotes, products, users..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -89,6 +95,17 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
                   <button key={t.id} onClick={() => go("/tickets")} className="w-full text-left px-2 py-2 rounded-lg hover:bg-[#F9FAFB] transition-colors">
                     <div className="text-sm text-text-primary">{t.subject}</div>
                     <div className="text-xs text-text-muted">{t.name} · {t.company}</div>
+                  </button>
+                ))}
+              </div>
+            )}
+            {projectResults.length > 0 && (
+              <div>
+                <div className="flex items-center gap-1.5 px-1 text-xs uppercase tracking-wider text-text-muted mb-1"><Briefcase size={12} /> Projects</div>
+                {projectResults.map((p) => (
+                  <button key={p.id} onClick={() => go("/projects")} className="w-full text-left px-2 py-2 rounded-lg hover:bg-[#F9FAFB] transition-colors">
+                    <div className="text-sm text-text-primary">{p.customerName}</div>
+                    <div className="text-xs text-text-muted">{p.siteAddress}</div>
                   </button>
                 ))}
               </div>

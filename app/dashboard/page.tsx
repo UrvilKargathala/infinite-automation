@@ -10,6 +10,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar,
 } from "recharts";
 import { useTicketStore } from "@/lib/store/useTicketStore";
+import { useProjectStore } from "@/lib/store/useProjectStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { IconTile } from "@/components/ui/IconTile";
@@ -19,6 +20,7 @@ import { Num } from "@/components/ui/Num";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { QuoteExpiryAlerts } from "@/components/dashboard/QuoteExpiryAlerts";
 import { TeamWorkload } from "@/components/dashboard/TeamWorkload";
+import { ProjectsByStage } from "@/components/dashboard/ProjectsByStage";
 import { AiSummary } from "@/components/dashboard/AiSummary";
 import { computeMonthlyMetrics, computeMonthlySeries } from "@/lib/utils/dashboardMetrics";
 import { timeAgo } from "@/lib/utils/timeAgo";
@@ -58,12 +60,14 @@ function BarTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 
 export default function DashboardPage() {
   const tickets = useTicketStore((s) => s.tickets);
+  const projects = useProjectStore((s) => s.projects);
   const quotes = useQuoteStore((s) => s.quotes);
   const products = useProductStore((s) => s.products);
   const ticketsLoaded = useTicketStore((s) => s.loaded);
+  const projectsLoaded = useProjectStore((s) => s.loaded);
   const quotesLoaded = useQuoteStore((s) => s.loaded);
   const productsLoaded = useProductStore((s) => s.loaded);
-  const loading = !ticketsLoaded || !quotesLoaded || !productsLoaded;
+  const loading = !ticketsLoaded || !projectsLoaded || !quotesLoaded || !productsLoaded;
 
   const metrics = useMemo(() => computeMonthlyMetrics(tickets, quotes), [tickets, quotes]);
   const openCount = metrics.openTickets.length;
@@ -257,6 +261,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         <QuoteExpiryAlerts quotes={quotes} />
         <TeamWorkload tickets={tickets} />
+      </div>
+
+      {/* Row 5 — Projects by stage */}
+      <div className="mt-4">
+        <ProjectsByStage projects={projects} />
       </div>
     </div>
   );

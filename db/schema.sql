@@ -86,8 +86,33 @@ CREATE TABLE IF NOT EXISTS ticket_messages (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS projects (
+  id SERIAL PRIMARY KEY,
+  customer_name TEXT NOT NULL,
+  site_address TEXT NOT NULL DEFAULT '',
+  assigned TEXT NOT NULL DEFAULT '',
+  architect TEXT NOT NULL DEFAULT '',
+  quote_id INTEGER REFERENCES quotes(id) ON DELETE SET NULL,
+  notes TEXT NOT NULL DEFAULT '',
+  stage TEXT NOT NULL DEFAULT 'Inquiry' CHECK (stage IN (
+    'Inquiry', 'Design', 'Quotation', 'Measurement', 'Marking', 'Production',
+    'Material Requirement', 'Ready to Dispatch', 'Installation', 'Completed', 'Cancelled'
+  )),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_stage_change TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Timestamped log of every stage transition, for the Projects detail drawer's history list
+CREATE TABLE IF NOT EXISTS project_stage_events (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  stage TEXT NOT NULL,
+  changed_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_quote_sections_quote_id ON quote_sections(quote_id);
 CREATE INDEX IF NOT EXISTS idx_quote_items_section_id ON quote_items(section_id);
 CREATE INDEX IF NOT EXISTS idx_quotes_client_id ON quotes(client_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
 CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket_id ON ticket_messages(ticket_id);
+CREATE INDEX IF NOT EXISTS idx_project_stage_events_project_id ON project_stage_events(project_id);

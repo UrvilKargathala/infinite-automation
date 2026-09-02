@@ -11,7 +11,7 @@ For all visual, color, typography, and component-styling rules see the companion
 **Name:** Infinite Automation Dashboard
 **Purpose:** Internal operations dashboard for Infinite Automation (infiniteautomation.com.au), a Melbourne-based smart home and building automation company.
 **Users:** Internal team — Super Admin, Admin, Staff.
-**Modules:** 5 modules — Dashboard, Tickets (Kanban), Quote, Master File, User Management.
+**Modules:** 6 modules — Dashboard, Tickets (Kanban), Projects (Kanban), Quote, Master File, User Management.
 **Navigation style:** Top horizontal nav bar with pill-style active state. No left sidebar. See DESIGN_SYSTEM.md.
 
 The company sells hardware (smart switches, controllers, cameras, sensors, Unifi networking gear) and installation services across 6 customer segments: Residential, Hospitality, Government / Council, Retail, Healthcare / Aged Care, Industrial.
@@ -58,6 +58,7 @@ Do NOT introduce: Material UI, Chakra, Ant Design, Redux, styled-components, emo
 - **Ticket statuses:** `Open`, `In Progress`, `On Hold`, `Resolved`, `Closed`
 - **Ticket priority:** `Low`, `Medium`, `High`, `Urgent`
 - **Ticket category:** `Installation`, `Repair`, `Maintenance`, `General`
+- **Project stages (fixed pipeline order, never reopens — advance-only):** `Inquiry`, `Design`, `Quotation`, `Measurement`, `Marking`, `Production`, `Material Requirement`, `Ready to Dispatch`, `Installation`, `Completed`, plus a separate `Cancelled` status reachable from any stage (not a pipeline column)
 - **Quote status:** `Draft`, `Sent`, `Accepted`, `Rejected`
 - **Product status:** `Active`, `Inactive`
 - **User roles:** `Super Admin`, `Admin`, `Staff` (final — do not add or rename)
@@ -82,6 +83,8 @@ When adding a product to a quote, the picker cascades: user picks **Brand** firs
 | View Dashboard | Yes | Yes | Yes |
 | View Tickets | Yes | Yes | Yes |
 | Create / edit / move / delete Tickets | Yes | Yes | Yes |
+| View Projects | Yes | Yes | Yes |
+| Create / edit / advance / cancel / delete Projects | Yes | Yes | Yes |
 | View Quote | Yes | Yes | Yes |
 | Create / edit Quote | Yes | Yes | Yes |
 | Delete Quote | Yes | Yes | No |
@@ -105,6 +108,7 @@ Enforce this in the UI (hide/disable actions via `can(role, action)`) and again 
 /app
   /dashboard/page.tsx
   /tickets/page.tsx
+  /projects/page.tsx
   /quote/page.tsx
   /master/page.tsx
   /users/page.tsx           (Phase 7)
@@ -116,16 +120,17 @@ Enforce this in the UI (hide/disable actions via `can(role, action)`) and again 
   /layout                   (TopNav, UserMenu)
   /dashboard                (KpiCard, RevenueChart, SegmentPie, StageBar, ActivityFeed)
   /tickets                  (KanbanBoard, KanbanColumn, TicketCard, TicketModal, TicketPanel, AssigneeStack)
+  /projects                 (KanbanBoard, KanbanColumn, ProjectCard, ProjectModal, ProjectPanel — reuses AssigneeStack from /tickets)
   /quote                    (QuoteTable, QuoteModal, SectionBlock, ProductPicker, QuotePrintView)
   /master                   (ProductTable, ProductModal, BrandFilter)
   /users                    (UserTable, UserModal, RoleBadge)
 /lib
   /utils                    (formatINR, calcQuoteTotal, generateQuoteNumber, uuid, permissions, initials)
-  /store                    (useProductStore, useTicketStore, useQuoteStore, useUserStore, useAuthStore)
+  /store                    (useProductStore, useTicketStore, useProjectStore, useQuoteStore, useUserStore, useAuthStore)
   /supabase                 (Phase 6: client.ts, server.ts, middleware.ts)
-  /api                      (Phase 6: products.ts, tickets.ts, quotes.ts, users.ts)
+  /api                      (Phase 6: products.ts, tickets.ts, projects.ts, quotes.ts, users.ts)
 /types
-  index.ts                  (Product, Ticket, Quote, Section, QuoteItem, User, Role)
+  index.ts                  (Product, Ticket, Project, ProjectStageEvent, Quote, Section, QuoteItem, User, Role)
 CLAUDE.md
 DESIGN_SYSTEM.md
 ```
@@ -170,6 +175,7 @@ DESIGN_SYSTEM.md
 - **Phase 5:** Dashboard KPIs + charts.
 - **Phase 6:** Supabase (auth, real persistence, React Query, RLS with role checks).
 - **Phase 7:** User Management module.
+- **Additive (post-Phase 7):** Projects Kanban board (sales-to-delivery pipeline, drag projects between stage columns, stage-change history log, optional linked Quote). Modeled directly on the Phase 3 Tickets board's components/patterns; not part of the original 7-phase sequence, added as its own sibling module.
 
 Do not build features from a later phase during an earlier one. If a prompt asks for something out of phase, flag it back to the user.
 
