@@ -10,6 +10,7 @@ import { Num } from "@/components/ui/Num";
 import { IconTile } from "@/components/ui/IconTile";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
+import { CrmTabs } from "@/components/layout/CrmTabs";
 import { AssigneeStack } from "@/components/tickets/AssigneeStack";
 import { KanbanBoard } from "@/components/tickets/KanbanBoard";
 import { TicketModal } from "@/components/tickets/TicketModal";
@@ -122,6 +123,7 @@ export function TicketsPageClient() {
 
   return (
     <div>
+      <CrmTabs />
       <h1 className="text-3xl font-semibold text-text-primary">CRM Tickets</h1>
       <p className="text-sm text-text-secondary mt-1">Support ticket pipeline — drag cards between statuses</p>
 

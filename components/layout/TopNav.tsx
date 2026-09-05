@@ -16,8 +16,7 @@ import { initials } from "@/lib/utils/initials";
 
 const allNavItems = [
   { label: "Dashboard", href: "/dashboard" },
-  { label: "CRM", href: "/tickets" },
-  { label: "Projects", href: "/projects" },
+  { label: "CRM", href: "/tickets", activeMatch: ["/tickets", "/projects"] },
   { label: "Quote", href: "/quote" },
   { label: "Master File", href: "/master" },
   { label: "Users", href: "/users" },
@@ -59,8 +58,8 @@ export function TopNav() {
 
         {/* CENTER — Nav items (desktop) */}
         <div className="hidden lg:flex items-center gap-1">
-          {navItems.map(({ label, href }) => {
-            const active = pathname.startsWith(href);
+          {navItems.map(({ label, href, activeMatch }) => {
+            const active = (activeMatch ?? [href]).some((p) => pathname.startsWith(p));
             return (
               <Link
                 key={href}
@@ -102,8 +101,8 @@ export function TopNav() {
       {/* Mobile nav dropdown */}
       {mobileNav && (
         <div className="lg:hidden border-t border-border bg-white px-4 py-3 space-y-1">
-          {navItems.map(({ label, href }) => {
-            const active = pathname.startsWith(href);
+          {navItems.map(({ label, href, activeMatch }) => {
+            const active = (activeMatch ?? [href]).some((p) => pathname.startsWith(p));
             return (
               <Link
                 key={href}

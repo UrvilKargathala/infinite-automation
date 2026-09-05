@@ -388,7 +388,7 @@ function SortableSection({
 
   const [pickerCat, setPickerCat] = useState("");
   const [pickerBrand, setPickerBrand] = useState("");
-  const [selectedProductIds, setSelectedProductIds] = useState(() => new Set<number>());
+  const [selectedQty, setSelectedQty] = useState(() => new Map<number, number>());
   const [showProductPopup, setShowProductPopup] = useState(false);
 
   const sn = sectionIndex + 1;
@@ -397,15 +397,19 @@ function SortableSection({
   const prods = pickerCat && pickerBrand ? productsByBrandCategory(pickerBrand, pickerCat).filter((p) => p.status === "Active") : [];
 
   function toggleProduct(id: number) {
-    setSelectedProductIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedQty((prev) => {
+      const next = new Map(prev);
+      if (next.has(id)) next.delete(id); else next.set(id, 1);
       return next;
     });
   }
 
+  function setQty(id: number, qty: number) {
+    setSelectedQty((prev) => new Map(prev).set(id, Math.max(1, qty)));
+  }
+
   function handleAdd() {
-    const selected = prods.filter((p) => selectedProductIds.has(p.id));
+    const selected = prods.filter((p) => selectedQty.has(p.id));
     selected.forEach((prod) => {
       onAddItem({
         id: uid(),
@@ -414,14 +418,14 @@ function SortableSection({
         category: prod.category,
         brand: prod.brand,
         description: prod.description,
-        qty: 1,
+        qty: selectedQty.get(prod.id) ?? 1,
         price: prod.price ?? 0,
         discount: 0,
       });
     });
     setPickerCat("");
     setPickerBrand("");
-    setSelectedProductIds(new Set());
+    setSelectedQty(new Map());
     setShowProductPopup(false);
   }
 
@@ -477,7 +481,7 @@ function SortableSection({
               <select
                 className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
                 value={pickerCat}
-                onChange={(e) => { setPickerCat(e.target.value); setPickerBrand(""); setSelectedProductIds(new Set()); setShowProductPopup(false); }}
+                onChange={(e) => { setPickerCat(e.target.value); setPickerBrand(""); setSelectedQty(new Map()); setShowProductPopup(false); }}
               >
                 <option value="">Choose category</option>
                 {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -487,15 +491,15 @@ function SortableSection({
               <select
                 className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors disabled:opacity-50"
                 value={pickerBrand}
-                onChange={(e) => { setPickerBrand(e.target.value); setSelectedProductIds(new Set()); setShowProductPopup(e.target.value !== ""); }}
+                onChange={(e) => { setPickerBrand(e.target.value); setSelectedQty(new Map()); setShowProductPopup(e.target.value !== ""); }}
                 disabled={!pickerCat}
               >
                 <option value="">Choose brand</option>
                 {availableBrands.map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
-            <Button icon={Plus} disabled={selectedProductIds.size === 0} onClick={handleAdd} className="shrink-0 w-full sm:w-auto justify-center">
-              Add ({selectedProductIds.size})
+            <Button icon={Plus} disabled={selectedQty.size === 0} onClick={handleAdd} className="shrink-0 w-full sm:w-auto justify-center">
+              Add ({selectedQty.size})
             </Button>
           </div>
           {showProductPopup && prods.length > 0 && (
@@ -505,14 +509,14 @@ function SortableSection({
                 <button
                   className="text-xs text-brand-blue hover:underline"
                   onClick={() => {
-                    if (selectedProductIds.size === prods.length) {
-                      setSelectedProductIds(new Set());
+                    if (selectedQty.size === prods.length) {
+                      setSelectedQty(new Map());
                     } else {
-                      setSelectedProductIds(new Set(prods.map((p) => p.id)));
+                      setSelectedQty(new Map(prods.map((p) => [p.id, selectedQty.get(p.id) ?? 1])));
                     }
                   }}
                 >
-                  {selectedProductIds.size === prods.length ? "Deselect all" : "Select all"}
+                  {selectedQty.size === prods.length ? "Deselect all" : "Select all"}
                 </button>
               </div>
               <div className="space-y-1">
@@ -520,7 +524,7 @@ function SortableSection({
                   <label key={p.id} className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-white cursor-pointer transition-colors">
                     <input
                       type="checkbox"
-                      checked={selectedProductIds.has(p.id)}
+                      checked={selectedQty.has(p.id)}
                       onChange={() => toggleProduct(p.id)}
                       className="w-4 h-4 rounded border-border text-brand-blue focus:ring-brand-blue accent-[#3A90C3]"
                     />
@@ -528,6 +532,16 @@ function SortableSection({
                       <div className="text-sm text-text-primary">{p.name}</div>
                       <div className="text-xs text-text-muted truncate" title={p.description}>{p.description || "—"}</div>
                     </div>
+                    {selectedQty.has(p.id) && (
+                      <input
+                        type="number"
+                        min={1}
+                        value={selectedQty.get(p.id)}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => setQty(p.id, Number(e.target.value) || 1)}
+                        className={`${numberInputClass} w-14 text-center shrink-0`}
+                      />
+                    )}
                     <INR value={p.price} className="text-xs shrink-0" />
                   </label>
                 ))}
@@ -545,6 +559,7 @@ function SortableSection({
             <tr className="bg-surface-alt">
               <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-text-muted font-normal w-16">Sr.</th>
               <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-text-muted font-normal">Product</th>
+              <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-text-muted font-normal">Description</th>
               <th className="px-3 py-2 text-left text-xs uppercase tracking-wider text-text-muted font-normal w-28">Brand</th>
               <th className="px-3 py-2 text-right text-xs uppercase tracking-wider text-text-muted font-normal w-24">Price</th>
               <th className="px-3 py-2 text-center text-xs uppercase tracking-wider text-text-muted font-normal w-16">Qty</th>
@@ -559,12 +574,8 @@ function SortableSection({
               return (
                 <tr key={item.id} className="border-t border-border">
                   <td className="px-3 py-2 text-sm text-text-muted"><Num>{sn}.{ii + 1}</Num></td>
-                  <td className="px-3 py-2">
-                    <div className="text-sm text-text-primary">{item.name}</div>
-                    {item.description && (
-                      <div className="text-xs text-text-muted truncate max-w-[220px]" title={item.description}>{item.description}</div>
-                    )}
-                  </td>
+                  <td className="px-3 py-2 text-sm text-text-primary">{item.name}</td>
+                  <td className="px-3 py-2 text-xs text-text-muted max-w-[220px]">{item.description || "—"}</td>
                   <td className="px-3 py-2 text-xs text-text-secondary whitespace-nowrap">{item.brand}</td>
                   <td className="px-3 py-2 text-right">
                     {isEditing ? (

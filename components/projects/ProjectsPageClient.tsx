@@ -8,6 +8,7 @@ import { Num } from "@/components/ui/Num";
 import { IconTile } from "@/components/ui/IconTile";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
+import { CrmTabs } from "@/components/layout/CrmTabs";
 import { AssigneeStack } from "@/components/tickets/AssigneeStack";
 import { KanbanBoard, PIPELINE_STAGES } from "@/components/projects/KanbanBoard";
 import { ProjectModal, type NewProjectData } from "@/components/projects/ProjectModal";
@@ -125,6 +126,7 @@ export function ProjectsPageClient() {
 
   return (
     <div>
+      <CrmTabs />
       <h1 className="text-3xl font-semibold text-text-primary">Projects</h1>
       <p className="text-sm text-text-secondary mt-1">Sales-to-delivery pipeline — drag cards between stages</p>
 
