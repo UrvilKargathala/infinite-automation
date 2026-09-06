@@ -532,7 +532,7 @@ function SortableSection({
                       <div className="text-sm text-text-primary">{p.name}</div>
                       <div className="text-xs text-text-muted truncate" title={p.description}>{p.description || "—"}</div>
                     </div>
-                    {selectedQty.has(p.id) && (
+                    {selectedQty.has(p.id) && pickerCat.includes("Controller") && (
                       <input
                         type="number"
                         min={1}
@@ -574,7 +574,9 @@ function SortableSection({
               return (
                 <tr key={item.id} className="border-t border-border">
                   <td className="px-3 py-2 text-sm text-text-muted"><Num>{sn}.{ii + 1}</Num></td>
-                  <td className="px-3 py-2 text-sm text-text-primary">{item.name}</td>
+                  <td className="px-3 py-2 text-sm text-text-primary">
+                    {item.category.includes("Controller") ? item.category : item.name}
+                  </td>
                   <td className="px-3 py-2 text-xs text-text-muted max-w-[220px]">{item.description || "—"}</td>
                   <td className="px-3 py-2 text-xs text-text-secondary whitespace-nowrap">{item.brand}</td>
                   <td className="px-3 py-2 text-right">
@@ -591,7 +593,7 @@ function SortableSection({
                     )}
                   </td>
                   <td className="px-3 py-2 text-center">
-                    {isEditing ? (
+                    {isEditing && !item.category.includes("Controller") ? (
                       <input
                         type="number"
                         className={`${numberInputClass} w-14 text-center`}
