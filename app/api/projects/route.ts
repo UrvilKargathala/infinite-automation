@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { getCurrentAppUser } from "@/lib/currentAppUser";
+import { logAction } from "@/lib/api/audit";
 import type { Project } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +31,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const me = await getCurrentAppUser();
   const body = (await req.json()) as Omit<Project, "id" | "quoteId" | "notes" | "createdAt" | "lastStageChange">;
   const rows = await sql`
     INSERT INTO projects (customer_name, site_address, assigned, architect, stage)
@@ -37,5 +40,20 @@ export async function POST(req: Request) {
               created_at::text, last_stage_change::text
   `;
   await sql`INSERT INTO project_stage_events (project_id, stage) VALUES (${rows[0].id}, ${body.stage})`;
-  return NextResponse.json(toProject(rows[0]), { status: 201 });
+  const created = toProject(rows[0]);
+
+  if (me) {
+    await logAction({
+      module: "Projects",
+      action: "create",
+      entityType: "project",
+      entityId: created.id,
+      entityName: created.customerName,
+      summary: `Created project ${created.customerName} at ${created.siteAddress} in ${created.stage} stage`,
+      changes: { after: { customerName: created.customerName, siteAddress: created.siteAddress, assigned: created.assigned, architect: created.architect, stage: created.stage } },
+      actor: me,
+    });
+  }
+
+  return NextResponse.json(created, { status: 201 });
 }

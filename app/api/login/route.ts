@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { signSession, SESSION_COOKIE } from "@/lib/session";
+import { logAction } from "@/lib/api/audit";
+import type { Role } from "@/types";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +26,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "This account is inactive. Ask a Super Admin to reactivate it." }, { status: 403 });
   }
 
-  const token = await signSession(user.id as number);
+  const role = user.role as Role;
+  const token = await signSession(user.id as number, role);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SESSION_COOKIE, token, {
     httpOnly: true,
@@ -33,5 +36,16 @@ export async function POST(req: Request) {
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   });
+
+  await logAction({
+    module: "Auth",
+    action: "login",
+    entityType: "session",
+    entityName: user.full_name as string,
+    summary: `User ${user.full_name} logged in`,
+    metadata: { method: "email_password" },
+    actor: { id: user.id as number, fullName: user.full_name as string, role },
+  });
+
   return res;
 }

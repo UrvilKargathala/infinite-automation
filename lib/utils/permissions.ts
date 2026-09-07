@@ -10,7 +10,9 @@ export type Action =
   | "createSuperAdmin"
   | "editUser"
   | "editOwnRoleUser"
-  | "deleteUser";
+  | "deleteUser"
+  | "viewAuditLog"
+  | "exportAuditLog";
 
 export function can(role: Role, action: Action): boolean {
   switch (action) {
@@ -29,6 +31,10 @@ export function can(role: Role, action: Action): boolean {
       return role === "Super Admin" || role === "Admin";
     case "editOwnRoleUser":
       // Admin may only edit/deactivate Staff users, not other Admins/Super Admins
+      return role === "Super Admin";
+    case "viewAuditLog":
+      return role === "Super Admin" || role === "Admin";
+    case "exportAuditLog":
       return role === "Super Admin";
     default:
       return false;

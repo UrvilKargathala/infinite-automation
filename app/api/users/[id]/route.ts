@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { can } from "@/lib/utils/permissions";
+import { logAction, diffFields } from "@/lib/api/audit";
 import type { User } from "@/types";
 
 function toUser(row: Record<string, unknown>): User {
@@ -45,7 +46,52 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     WHERE id = ${id}
     RETURNING *
   `;
-  return NextResponse.json(toUser(rows[0]));
+  const updated = toUser(rows[0]);
+
+  if (updated.role !== current.role) {
+    await logAction({
+      module: "User Management",
+      action: "role_change",
+      entityType: "user",
+      entityId: updated.id,
+      entityName: updated.fullName,
+      summary: `Changed ${updated.fullName} role from ${current.role} to ${updated.role}`,
+      changes: { before: { role: current.role }, after: { role: updated.role } },
+      actor: me,
+    });
+  }
+
+  if (updated.status !== current.status) {
+    await logAction({
+      module: "User Management",
+      action: "status_change",
+      entityType: "user",
+      entityId: updated.id,
+      entityName: updated.fullName,
+      summary: updated.status === "Inactive" ? `Deactivated user ${updated.fullName}` : `Reactivated user ${updated.fullName}`,
+      changes: { before: { status: current.status }, after: { status: updated.status } },
+      actor: me,
+    });
+  }
+
+  const otherChanges = diffFields(
+    { fullName: current.fullName, email: current.email },
+    { fullName: updated.fullName, email: updated.email }
+  );
+  if (otherChanges) {
+    await logAction({
+      module: "User Management",
+      action: "update",
+      entityType: "user",
+      entityId: updated.id,
+      entityName: updated.fullName,
+      summary: `Updated user ${updated.fullName}`,
+      changes: otherChanges,
+      actor: me,
+    });
+  }
+
+  return NextResponse.json(updated);
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {

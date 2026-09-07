@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { getCurrentAppUser } from "@/lib/currentAppUser";
+import { logAction } from "@/lib/api/audit";
 import type { Ticket } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -26,11 +28,27 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const me = await getCurrentAppUser();
   const body = (await req.json()) as Omit<Ticket, "id">;
   const rows = await sql`
     INSERT INTO tickets (subject, name, company, email, phone, category, priority, status, assigned, last_contact)
     VALUES (${body.subject}, ${body.name}, ${body.company}, ${body.email}, ${body.phone}, ${body.category}, ${body.priority}, ${body.status}, ${body.assigned}, ${body.lastContact})
     RETURNING id, subject, name, company, email, phone, category, priority, status, assigned, last_contact::text
   `;
-  return NextResponse.json(toTicket(rows[0]), { status: 201 });
+  const created = toTicket(rows[0]);
+
+  if (me) {
+    await logAction({
+      module: "CRM",
+      action: "create",
+      entityType: "ticket",
+      entityId: created.id,
+      entityName: created.subject,
+      summary: `Created ticket ${created.subject} for ${created.company} in ${created.status} status`,
+      changes: { after: { subject: created.subject, name: created.name, company: created.company, category: created.category, priority: created.priority, status: created.status, assigned: created.assigned } },
+      actor: me,
+    });
+  }
+
+  return NextResponse.json(created, { status: 201 });
 }

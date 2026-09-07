@@ -2,6 +2,8 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   Ticket as TicketIcon, AlertTriangle, FileText, CheckCircle2, TrendingUp, TrendingDown, Plus,
 } from "lucide-react";
@@ -24,6 +26,18 @@ import { ProjectsByStage } from "@/components/dashboard/ProjectsByStage";
 import { AiSummary } from "@/components/dashboard/AiSummary";
 import { computeMonthlyMetrics, computeMonthlySeries } from "@/lib/utils/dashboardMetrics";
 import { timeAgo } from "@/lib/utils/timeAgo";
+import { relativeTime } from "@/lib/utils/relativeTime";
+import { moduleColors } from "@/components/audit/auditMeta";
+import { useAuthStore } from "@/lib/store/useAuthStore";
+import { can } from "@/lib/utils/permissions";
+import type { AuditLog } from "@/types";
+
+async function fetchRecentActivity(): Promise<AuditLog[]> {
+  const res = await fetch("/api/audit?limit=6");
+  if (!res.ok) throw new Error("Failed to load activity");
+  const json = (await res.json()) as { rows: AuditLog[] };
+  return json.rows;
+}
 
 const CHART_COLORS = ["#3A90C3", "#44BE4A", "#8B5CF6", "#F59E0B", "#EF4444", "#64748B"];
 const CATEGORY_COLORS: Record<string, string> = {
@@ -59,6 +73,15 @@ function BarTooltip({ active, payload, label }: { active?: boolean; payload?: Ar
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const role = useAuthStore((s) => s.user?.role ?? "Staff");
+  const canViewAudit = can(role, "viewAuditLog");
+  const { data: recentActivity } = useQuery({
+    queryKey: ["dashboard-recent-activity"],
+    queryFn: fetchRecentActivity,
+    enabled: canViewAudit,
+  });
+
   const tickets = useTicketStore((s) => s.tickets);
   const projects = useProjectStore((s) => s.projects);
   const quotes = useQuoteStore((s) => s.quotes);
@@ -239,7 +262,23 @@ export default function DashboardPage() {
 
         <div className="lg:col-span-1 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
           <h2 className="text-lg text-text-primary mb-4">Recent activity</h2>
-          {activity.length === 0 ? (
+          {canViewAudit ? (
+            !recentActivity || recentActivity.length === 0 ? (
+              <div className="text-sm text-text-muted text-center py-6">No recent activity</div>
+            ) : (
+              <div className="space-y-4">
+                {recentActivity.map((log) => (
+                  <button key={log.id} onClick={() => router.push("/audit")} className="flex gap-3 w-full text-left">
+                    <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: moduleColors[log.module] }} />
+                    <div className="min-w-0">
+                      <div className="text-sm text-text-primary truncate">{log.summary}</div>
+                      <div className="text-xs text-text-muted mt-0.5">{relativeTime(log.timestamp)}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )
+          ) : activity.length === 0 ? (
             <div className="text-sm text-text-muted text-center py-6">No activity yet</div>
           ) : (
             <div className="space-y-4">

@@ -1,12 +1,23 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { ScrollText } from "lucide-react";
 import { useNotificationStore } from "@/lib/store/useNotificationStore";
+import { useAuditUnreadCount } from "@/lib/hooks/useAuditUnreadCount";
 
 export function NotificationPanel({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const { notifications, markRead, markAllRead } = useNotificationStore();
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const { count: auditCount, canView: canViewAudit, markViewed } = useAuditUnreadCount();
+
+  function handleViewAuditLog() {
+    markViewed();
+    onClose();
+    router.push("/audit");
+  }
 
   useEffect(() => {
     function handle(e: MouseEvent) {
@@ -39,6 +50,27 @@ export function NotificationPanel({ onClose }: { onClose: () => void }) {
           </button>
         )}
       </div>
+
+      {canViewAudit && (
+        <button
+          onClick={handleViewAuditLog}
+          className="w-full flex items-center gap-3 text-left px-3 py-2.5 rounded-xl hover:bg-[#F9FAFB] transition-colors border-b border-border mb-1"
+        >
+          <ScrollText size={16} className="text-brand-blue shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="text-sm text-text-primary">View audit log</div>
+            <div className="text-xs text-text-muted">
+              {auditCount > 0 ? `${auditCount > 99 ? "99+" : auditCount} new ${auditCount === 1 ? "entry" : "entries"}` : "No new activity"}
+            </div>
+          </div>
+          {auditCount > 0 && (
+            <span className="text-xs text-white bg-danger rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+              {auditCount > 99 ? "99+" : auditCount}
+            </span>
+          )}
+        </button>
+      )}
+
       <div className="overflow-y-auto">
         {notifications.length === 0 ? (
           <div className="text-center text-text-muted text-sm py-8">No notifications</div>

@@ -18,10 +18,10 @@ function toUser(row: Record<string, unknown>): User {
 
 export async function GET() {
   const token = cookies().get(SESSION_COOKIE)?.value;
-  const userId = token ? await verifySession(token) : null;
-  if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const session = token ? await verifySession(token) : null;
+  if (!session) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const rows = await sql`SELECT * FROM users WHERE id = ${userId}`;
+  const rows = await sql`SELECT * FROM users WHERE id = ${session.userId}`;
   if (rows.length === 0) {
     return NextResponse.json({ error: "No account provisioned for this email. Ask a Super Admin to add you in User Management." }, { status: 403 });
   }

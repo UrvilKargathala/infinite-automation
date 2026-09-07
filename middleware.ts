@@ -8,9 +8,9 @@ export async function middleware(req: NextRequest) {
   const isLoginPage = pathname.startsWith("/login");
   const isApiRoute = pathname.startsWith("/api");
   const token = req.cookies.get(SESSION_COOKIE)?.value;
-  const userId = token ? await verifySession(token) : null;
+  const session = token ? await verifySession(token) : null;
 
-  if (!userId) {
+  if (!session) {
     if (isLoginPage) return NextResponse.next();
     if (isApiRoute) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
     const url = req.nextUrl.clone();
@@ -19,6 +19,12 @@ export async function middleware(req: NextRequest) {
   }
 
   if (isLoginPage) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
+  }
+
+  if (pathname.startsWith("/audit") && session.role === "Staff") {
     const url = req.nextUrl.clone();
     url.pathname = "/dashboard";
     return NextResponse.redirect(url);

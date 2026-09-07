@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { can } from "@/lib/utils/permissions";
+import { logAction } from "@/lib/api/audit";
 import type { User } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -36,5 +37,18 @@ export async function POST(req: Request) {
     VALUES (${body.fullName}, ${body.email}, ${body.role}, ${body.status})
     RETURNING *
   `;
-  return NextResponse.json(toUser(rows[0]), { status: 201 });
+  const created = toUser(rows[0]);
+
+  await logAction({
+    module: "User Management",
+    action: "create",
+    entityType: "user",
+    entityId: created.id,
+    entityName: created.fullName,
+    summary: `Invited user ${created.fullName} (${created.email}) with role ${created.role}`,
+    changes: { after: { fullName: created.fullName, email: created.email, role: created.role, status: created.status } },
+    actor: me,
+  });
+
+  return NextResponse.json(created, { status: 201 });
 }

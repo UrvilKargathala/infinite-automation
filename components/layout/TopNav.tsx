@@ -4,13 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { Search, Bell, Menu, X } from "lucide-react";
+import { Search, Bell, Menu, X, ScrollText } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
 import { SearchPanel } from "@/components/layout/SearchPanel";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useNotificationStore } from "@/lib/store/useNotificationStore";
+import { useAuditUnreadCount } from "@/lib/hooks/useAuditUnreadCount";
 import { can } from "@/lib/utils/permissions";
 import { initials } from "@/lib/utils/initials";
 
@@ -20,6 +21,7 @@ const allNavItems = [
   { label: "Quote", href: "/quote" },
   { label: "Master File", href: "/master" },
   { label: "Users", href: "/users" },
+  { label: "Audit Log", href: "/audit", icon: ScrollText },
 ];
 
 export function TopNav() {
@@ -35,8 +37,13 @@ export function TopNav() {
     setOpenPanel((p) => (p === panel ? null : panel));
   }
   const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.read).length);
+  const { count: auditUnread } = useAuditUnreadCount();
 
-  const navItems = allNavItems.filter((item) => item.href !== "/users" || can(role, "viewUsers"));
+  const navItems = allNavItems.filter((item) => {
+    if (item.href === "/users") return can(role, "viewUsers");
+    if (item.href === "/audit") return can(role, "viewAuditLog");
+    return true;
+  });
 
   return (
     <nav className="sticky top-0 z-40 bg-white shadow-card w-full">
@@ -58,18 +65,19 @@ export function TopNav() {
 
         {/* CENTER — Nav items (desktop) */}
         <div className="hidden lg:flex items-center gap-1">
-          {navItems.map(({ label, href, activeMatch }) => {
+          {navItems.map(({ label, href, activeMatch, icon: Icon }) => {
             const active = (activeMatch ?? [href]).some((p) => pathname.startsWith(p));
             return (
               <Link
                 key={href}
                 href={href}
-                className={`px-4 py-2 rounded-full text-sm font-normal transition-colors ${
+                className={`px-4 py-2 rounded-full text-sm font-normal transition-colors flex items-center gap-1.5 ${
                   active
                     ? "bg-brand-gradient text-white"
                     : "text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary"
                 }`}
               >
+                {Icon && <Icon size={14} />}
                 {label}
               </Link>
             );
@@ -83,7 +91,7 @@ export function TopNav() {
             {searchOpen && <SearchPanel onClose={() => setOpenPanel(null)} />}
           </div>
           <div className="relative">
-            <IconButton icon={Bell} ariaLabel="Notifications" indicator={unreadCount > 0} onClick={() => togglePanel("notifications")} />
+            <IconButton icon={Bell} ariaLabel="Notifications" indicator={unreadCount > 0 || auditUnread > 0} onClick={() => togglePanel("notifications")} />
             {notifOpen && <NotificationPanel onClose={() => setOpenPanel(null)} />}
           </div>
           <div className="relative">
@@ -101,19 +109,20 @@ export function TopNav() {
       {/* Mobile nav dropdown */}
       {mobileNav && (
         <div className="lg:hidden border-t border-border bg-white px-4 py-3 space-y-1">
-          {navItems.map(({ label, href, activeMatch }) => {
+          {navItems.map(({ label, href, activeMatch, icon: Icon }) => {
             const active = (activeMatch ?? [href]).some((p) => pathname.startsWith(p));
             return (
               <Link
                 key={href}
                 href={href}
                 onClick={() => setMobileNav(false)}
-                className={`block px-4 py-2.5 rounded-xl text-sm font-normal transition-colors ${
+                className={`px-4 py-2.5 rounded-xl text-sm font-normal transition-colors flex items-center gap-2 ${
                   active
                     ? "bg-brand-gradient text-white"
                     : "text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary"
                 }`}
               >
+                {Icon && <Icon size={15} />}
                 {label}
               </Link>
             );

@@ -130,3 +130,24 @@ CREATE TABLE IF NOT EXISTS project_messages (
 
 CREATE INDEX IF NOT EXISTS idx_project_stage_events_project_id ON project_stage_events(project_id);
 CREATE INDEX IF NOT EXISTS idx_project_messages_project_id ON project_messages(project_id);
+
+-- Append-only activity trail across every module. No UPDATE/DELETE is ever written for this table.
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id SERIAL PRIMARY KEY,
+  timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
+  user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  user_name TEXT NOT NULL,
+  user_role TEXT NOT NULL,
+  module TEXT NOT NULL CHECK (module IN ('Master', 'CRM', 'Quote', 'Projects', 'User Management', 'Auth')),
+  action TEXT NOT NULL CHECK (action IN ('create', 'update', 'delete', 'import', 'export', 'status_change', 'stage_change', 'login', 'logout', 'role_change')),
+  entity_type TEXT NOT NULL,
+  entity_id TEXT,
+  entity_name TEXT,
+  summary TEXT NOT NULL,
+  changes JSONB,
+  metadata JSONB
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_module_timestamp ON audit_logs (module, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_timestamp ON audit_logs (user_id, timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON audit_logs (timestamp DESC);

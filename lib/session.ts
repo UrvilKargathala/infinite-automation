@@ -1,3 +1,5 @@
+import type { Role } from "@/types";
+
 export const SESSION_COOKIE = "ia_session";
 
 function toHex(buf: ArrayBuffer): string {
@@ -16,16 +18,18 @@ async function getKey(): Promise<CryptoKey> {
   );
 }
 
-export async function signSession(userId: number): Promise<string> {
+export async function signSession(userId: number, role: Role): Promise<string> {
   const key = await getKey();
-  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(String(userId)));
-  return `${userId}.${toHex(sig)}`;
+  const payload = `${userId}.${role}`;
+  const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(payload));
+  return `${payload}.${toHex(sig)}`;
 }
 
-/** Returns the user id encoded in the token, or null if missing/tampered. */
-export async function verifySession(token: string): Promise<number | null> {
-  const [idPart, sigPart] = token.split(".");
-  if (!idPart || !sigPart) return null;
-  const expected = await signSession(Number(idPart));
-  return expected === token ? Number(idPart) : null;
+/** Returns the user id + role encoded in the token, or null if missing/tampered. */
+export async function verifySession(token: string): Promise<{ userId: number; role: Role } | null> {
+  const parts = token.split(".");
+  if (parts.length !== 3) return null;
+  const [idPart, rolePart] = parts;
+  const expected = await signSession(Number(idPart), rolePart as Role);
+  return expected === token ? { userId: Number(idPart), role: rolePart as Role } : null;
 }

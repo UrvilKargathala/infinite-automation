@@ -143,3 +143,30 @@ export interface ProjectMessage {
   isForwarded: boolean;
   deleted: boolean;
 }
+
+export type AuditModule = "Master" | "CRM" | "Quote" | "Projects" | "User Management" | "Auth";
+
+export type AuditAction =
+  | "create" | "update" | "delete" | "import" | "export"
+  | "status_change" | "stage_change" | "login" | "logout" | "role_change";
+
+export interface AuditChanges {
+  before?: Record<string, unknown> | null;
+  after?: Record<string, unknown> | null;
+}
+
+export interface AuditLog {
+  id: number;
+  timestamp: string;
+  userId: number | null;
+  userName: string;
+  userRole: Role;
+  module: AuditModule;
+  action: AuditAction;
+  entityType: string;
+  entityId: string | null;
+  entityName: string | null;
+  summary: string;
+  changes: AuditChanges | null;
+  metadata: Record<string, unknown> | null;
+}

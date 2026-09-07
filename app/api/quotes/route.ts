@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { assembleQuotes, replaceQuoteSections } from "@/lib/quotesDb";
+import { getCurrentAppUser } from "@/lib/currentAppUser";
+import { logAction } from "@/lib/api/audit";
+import { calcQuoteTotal } from "@/lib/utils/quote";
 import type { Quote } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -11,6 +14,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const me = await getCurrentAppUser();
   const body = (await req.json()) as Omit<Quote, "id" | "number">;
 
   const yearRows = await sql`
@@ -28,5 +32,21 @@ export async function POST(req: Request) {
   await replaceQuoteSections(quoteId, body.sections);
 
   const [assembled] = await assembleQuotes(quoteRows);
+
+  if (me) {
+    const itemCount = assembled.sections.reduce((n, s) => n + s.items.length, 0);
+    const { grandTotal } = calcQuoteTotal(assembled);
+    await logAction({
+      module: "Quote",
+      action: "create",
+      entityType: "quote",
+      entityId: assembled.id,
+      entityName: assembled.number,
+      summary: `Created quote ${assembled.number} for ${assembled.client} — ${assembled.sections.length} sections, ${itemCount} items, total ₹${grandTotal.toLocaleString("en-IN")}`,
+      changes: { after: { number: assembled.number, client: assembled.client, date: assembled.date, validUntil: assembled.validUntil, status: assembled.status, sectionCount: assembled.sections.length, itemCount, grandTotal } },
+      actor: me,
+    });
+  }
+
   return NextResponse.json(assembled, { status: 201 });
 }

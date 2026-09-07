@@ -128,7 +128,7 @@ export default function MasterPage() {
       if (items.length === 0) {
         toast.error("No valid products found in file");
       } else {
-        bulkAdd(items).then(() => toast.success(`${items.length} products imported`)).catch(() => {
+        bulkAdd(items, file.name).then(() => toast.success(`${items.length} products imported`)).catch(() => {
           // error toast already shown by the store
         });
       }
@@ -154,6 +154,11 @@ export default function MasterPage() {
     XLSX.utils.book_append_sheet(wb, ws, "Products");
     XLSX.writeFile(wb, "infinite_products_export.xlsx");
     toast.success("Products exported");
+    fetch("/api/products/export-log", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ rowCount: products.length, brand: brandFilter, category: catFilter, search }),
+    }).catch(() => {});
   }
 
   const stats = [

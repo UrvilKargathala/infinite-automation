@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { can } from "@/lib/utils/permissions";
+import { logAction } from "@/lib/api/audit";
 import type { Product } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -36,5 +37,17 @@ export async function POST(req: Request) {
     VALUES (${body.name}, ${body.sku}, ${body.brand}, ${body.category}, ${body.hsn}, ${body.description}, ${body.price}, ${body.status})
     RETURNING *
   `;
-  return NextResponse.json(toProduct(rows[0]), { status: 201 });
+  const created = toProduct(rows[0]);
+
+  await logAction({
+    module: "Master",
+    action: "create",
+    entityType: "product",
+    entityId: created.id,
+    entityName: created.name,
+    summary: `Created product ${created.name} (SKU: ${created.sku}) under ${created.brand} > ${created.category}`,
+    changes: { after: { name: created.name, sku: created.sku, brand: created.brand, category: created.category, hsn: created.hsn, price: created.price, status: created.status } },
+  });
+
+  return NextResponse.json(created, { status: 201 });
 }

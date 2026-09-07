@@ -19,7 +19,7 @@ interface ProductStore {
   add: (p: Omit<Product, "id">) => Promise<void>;
   update: (id: number, patch: Partial<Omit<Product, "id">>) => Promise<void>;
   remove: (id: number) => Promise<void>;
-  bulkAdd: (items: Omit<Product, "id">[]) => Promise<void>;
+  bulkAdd: (items: Omit<Product, "id">[], filename?: string) => Promise<void>;
   setAll: (items: Product[]) => void;
   brands: () => string[];
   categories: () => string[];
@@ -76,9 +76,9 @@ export const useProductStore = create<ProductStore>((set, get) => ({
       throw new Error(body.error ?? "Failed to delete product");
     }
   },
-  bulkAdd: async (items) => {
+  bulkAdd: async (items, filename) => {
     const normalized = items.map((p) => ({ ...p, category: normalizeCategory(p.category) }));
-    const bulkRes = await fetch("/api/products/bulk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(normalized) });
+    const bulkRes = await fetch("/api/products/bulk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: normalized, filename }) });
     if (!bulkRes.ok) {
       const body = await bulkRes.json().catch(() => ({}));
       toast.error(body.error ?? "You don't have permission to do that");

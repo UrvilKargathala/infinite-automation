@@ -11,7 +11,7 @@ For all visual, color, typography, and component-styling rules see the companion
 **Name:** Infinite Automation Dashboard
 **Purpose:** Internal operations dashboard for Infinite Automation (infiniteautomation.com.au), a Melbourne-based smart home and building automation company.
 **Users:** Internal team — Super Admin, Admin, Staff.
-**Modules:** 6 modules — Dashboard, Tickets (Kanban), Projects (Kanban), Quote, Master File, User Management.
+**Modules:** 7 modules — Dashboard, Tickets (Kanban), Projects (Kanban), Quote, Master File, User Management, Audit Log.
 **Navigation style:** Top horizontal nav bar with pill-style active state. No left sidebar. See DESIGN_SYSTEM.md.
 
 The company sells hardware (smart switches, controllers, cameras, sensors, Unifi networking gear) and installation services across 6 customer segments: Residential, Hospitality, Government / Council, Retail, Healthcare / Aged Care, Industrial.
@@ -97,6 +97,8 @@ When adding a product to a quote, the picker cascades: user picks **Brand** firs
 | Create Super Admin | Yes | No | — |
 | Edit / deactivate any user | Yes | Only Staff | — |
 | Delete user | Yes | No | — |
+| View Audit Log | Yes | Yes | No |
+| Export Audit Log (CSV) | Yes | No | No |
 
 Enforce this in the UI (hide/disable actions via `can(role, action)`) and again in Supabase RLS in Phase 6.
 
@@ -112,6 +114,7 @@ Enforce this in the UI (hide/disable actions via `can(role, action)`) and again 
   /quote/page.tsx
   /master/page.tsx
   /users/page.tsx           (Phase 7)
+  /audit/page.tsx           (Additive — Audit Log)
   /login/page.tsx           (Phase 6)
   layout.tsx
   globals.css
@@ -124,13 +127,14 @@ Enforce this in the UI (hide/disable actions via `can(role, action)`) and again 
   /quote                    (QuoteTable, QuoteModal, SectionBlock, ProductPicker, QuotePrintView)
   /master                   (ProductTable, ProductModal, BrandFilter)
   /users                    (UserTable, UserModal, RoleBadge)
+  /audit                    (AuditPageClient, AuditDetailModal, AuditPageSkeleton, auditMeta — module colors/action icons)
 /lib
-  /utils                    (formatINR, calcQuoteTotal, generateQuoteNumber, uuid, permissions, initials)
+  /utils                    (formatINR, calcQuoteTotal, generateQuoteNumber, uuid, permissions, initials, timeAgo, relativeTime)
   /store                    (useProductStore, useTicketStore, useProjectStore, useQuoteStore, useUserStore, useAuthStore)
-  /supabase                 (Phase 6: client.ts, server.ts, middleware.ts)
-  /api                      (Phase 6: products.ts, tickets.ts, projects.ts, quotes.ts, users.ts)
+  /hooks                    (useAuditUnreadCount — shared by TopNav bell dot and NotificationPanel)
+  /api                      (audit.ts — logAction/listAuditLogs/exportAuditLogs/getAuditStats; the app has no other data-access layer, every other route calls the Neon `sql` client directly in app/api/*/route.ts)
 /types
-  index.ts                  (Product, Ticket, TicketMessage, Project, ProjectStageEvent, ProjectMessage, Quote, Section, QuoteItem, User, Role)
+  index.ts                  (Product, Ticket, TicketMessage, Project, ProjectStageEvent, ProjectMessage, Quote, Section, QuoteItem, User, Role, AuditLog, AuditModule, AuditAction, AuditChanges)
 CLAUDE.md
 DESIGN_SYSTEM.md
 ```
@@ -177,6 +181,7 @@ DESIGN_SYSTEM.md
 - **Phase 7:** User Management module.
 - **Additive (post-Phase 7):** Projects Kanban board (sales-to-delivery pipeline, drag projects between stage columns, stage-change history log, optional linked Quote). Modeled directly on the Phase 3 Tickets board's components/patterns; not part of the original 7-phase sequence, added as its own sibling module.
 - **Additive (post-Phase 7):** Per-record chat on both Tickets (`TicketPanel`) and Projects (`ProjectPanel`, under a Details/Chat tab switcher) — reply, forward-to-another-record-of-the-same-type, delete-for-me (soft delete), image/file attachments via Vercel Blob, @mention autocomplete, in-panel search with highlighting, avatar + sender name per message. Backed by `ticket_messages` / `project_messages` tables (same shape) and `/api/{tickets,projects}/[id]/messages*` routes. Forwarding does not cross module boundaries (a ticket message can only forward to another ticket, a project message only to another project).
+- **Additive (post-Phase 7):** Audit Log — an append-only `audit_logs` table records every meaningful create/update/delete/import/export/status-change/stage-change/login/logout/role-change across Master, CRM (Tickets), Quote, Projects, User Management, and Auth. Logged via `logAction()` in `/lib/api/audit.ts`, called directly from each mutating API route right after its DB write (no separate data-access layer — this app has none, so the logger is the one new shared piece, not a new architectural layer). The `/audit` page (Super Admin/Admin only, gated in middleware via the session cookie's embedded role, and again server-side via `can(role, "viewAuditLog")` on every read route) supports filtering, search, cursor-paginated infinite scroll, a detail modal with before/after diffs, and CSV export (`can(role, "exportAuditLog")`, Super Admin only). The Dashboard's "Recent activity" card and the notification panel's unread-count row both read live from this table for Super Admin/Admin; Staff see the original ticket/quote-derived activity feed instead, since Staff cannot access the audit log itself.
 
 Do not build features from a later phase during an earlier one. If a prompt asks for something out of phase, flag it back to the user.
 
