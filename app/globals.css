@@ -9,16 +9,12 @@ body {
   color: #0f172a;
 }
 
-/* Horizontal scrollbar that's invisible until hovered — used on the CRM Kanban board */
+/* Always-visible, thin horizontal scrollbar — used on the Tickets/Projects Kanban boards */
 .scroll-hover {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: #D1D5DB transparent;
 }
 .scroll-hover::-webkit-scrollbar {
-  height: 0px;
-  transition: height 0.15s ease;
-}
-.scroll-hover:hover::-webkit-scrollbar {
   height: 8px;
 }
 .scroll-hover::-webkit-scrollbar-track {
