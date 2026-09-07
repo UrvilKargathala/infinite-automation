@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
+import { getCurrentAppUser } from "@/lib/currentAppUser";
+import { can } from "@/lib/utils/permissions";
 import type { User } from "@/types";
+
+export const dynamic = "force-dynamic";
 
 function toUser(row: Record<string, unknown>): User {
   return {
@@ -18,7 +22,15 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const me = await getCurrentAppUser();
+  if (!me) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  if (!can(me.role, "createStaff")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
   const body = (await req.json()) as Omit<User, "id">;
+  if (body.role !== "Staff" && me.role !== "Super Admin") {
+    return NextResponse.json({ error: "Only Super Admin can create Admin or Super Admin users" }, { status: 403 });
+  }
+
   const rows = await sql`
     INSERT INTO users (full_name, email, role, status)
     VALUES (${body.fullName}, ${body.email}, ${body.role}, ${body.status})

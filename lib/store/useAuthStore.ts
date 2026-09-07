@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import type { Role } from "@/types";
 
 interface CurrentUser {
@@ -28,14 +29,18 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   fetchMe: async () => {
     if (get().loaded || get().loading) return;
     set({ loading: true, error: null });
-    const res = await fetch("/api/me");
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      set({ loading: false, loaded: true, error: body.error ?? "Failed to load account", user: null });
-      return;
+    try {
+      const res = await fetch("/api/me");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        set({ loading: false, loaded: true, error: body.error ?? "Failed to load account", user: null });
+        return;
+      }
+      const user = await res.json();
+      set({ user, loaded: true, loading: false });
+    } catch {
+      set({ loading: false, loaded: true, error: "Failed to load account", user: null });
     }
-    const user = await res.json();
-    set({ user, loaded: true, loading: false });
   },
   updateProfile: async (patch) => {
     const current = get().user ?? emptyUser;
@@ -44,6 +49,11 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(patch),
     });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      toast.error(body.error ?? "Failed to update profile");
+      throw new Error(body.error ?? "Failed to update profile");
+    }
     const updated = await res.json();
     set({ user: updated });
   },

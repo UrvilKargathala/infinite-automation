@@ -71,18 +71,23 @@ export default function UsersPage() {
 
   function handleDelete(id: number) {
     if (window.confirm("Delete this user?")) {
-      remove(id);
-      toast.success("User deleted");
+      remove(id).then(() => toast.success("User deleted")).catch(() => {
+        // error toast already shown by the store
+      });
     }
   }
 
-  function handleSave(data: Omit<User, "id">) {
-    if (editUser) {
-      update(editUser.id, data);
-      toast.success("User updated");
-    } else {
-      add(data);
-      toast.success("User added");
+  async function handleSave(data: Omit<User, "id">) {
+    try {
+      if (editUser) {
+        await update(editUser.id, data);
+        toast.success("User updated");
+      } else {
+        await add(data);
+        toast.success("User added");
+      }
+    } catch {
+      // error toast already shown by the store
     }
   }
 

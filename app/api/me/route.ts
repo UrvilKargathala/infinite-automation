@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { currentUser } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
+import { verifySession, SESSION_COOKIE } from "@/lib/session";
 import type { User } from "@/types";
+
+export const dynamic = "force-dynamic";
 
 function toUser(row: Record<string, unknown>): User {
   return {
@@ -14,21 +17,11 @@ function toUser(row: Record<string, unknown>): User {
 }
 
 export async function GET() {
-  const clerkUser = await currentUser();
-  if (!clerkUser) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  const token = cookies().get(SESSION_COOKIE)?.value;
+  const userId = token ? await verifySession(token) : null;
+  if (!userId) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
-  const email = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase();
-  if (!email) return NextResponse.json({ error: "No email on account" }, { status: 400 });
-
-  // Match by clerk_user_id first (already linked), else by email (first login — link it now)
-  let rows = await sql`SELECT * FROM users WHERE clerk_user_id = ${clerkUser.id}`;
-  if (rows.length === 0) {
-    rows = await sql`SELECT * FROM users WHERE lower(email) = ${email}`;
-    if (rows.length > 0) {
-      rows = await sql`UPDATE users SET clerk_user_id = ${clerkUser.id} WHERE id = ${rows[0].id} RETURNING *`;
-    }
-  }
-
+  const rows = await sql`SELECT * FROM users WHERE id = ${userId}`;
   if (rows.length === 0) {
     return NextResponse.json({ error: "No account provisioned for this email. Ask a Super Admin to add you in User Management." }, { status: 403 });
   }

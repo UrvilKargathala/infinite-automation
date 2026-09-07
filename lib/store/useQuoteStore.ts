@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import type { Quote } from "@/types";
 
 interface QuoteStore {
@@ -19,9 +20,15 @@ export const useQuoteStore = create<QuoteStore>((set, get) => ({
   fetchAll: async () => {
     if (get().loaded || get().loading) return;
     set({ loading: true });
-    const res = await fetch("/api/quotes");
-    const quotes = await res.json();
-    set({ quotes, loaded: true, loading: false });
+    try {
+      const res = await fetch("/api/quotes");
+      if (!res.ok) throw new Error("Failed to load quotes");
+      const quotes = await res.json();
+      set({ quotes, loaded: true, loading: false });
+    } catch {
+      set({ loading: false, loaded: true });
+      toast.error("Couldn't load quotes. Check your connection and try again.");
+    }
   },
   add: async (q) => {
     const res = await fetch("/api/quotes", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(q) });
@@ -34,8 +41,15 @@ export const useQuoteStore = create<QuoteStore>((set, get) => ({
     set((s) => ({ quotes: s.quotes.map((q) => (q.id === id ? updated : q)) }));
   },
   remove: async (id) => {
+    const prev = get().quotes;
     set((s) => ({ quotes: s.quotes.filter((q) => q.id !== id) }));
-    await fetch(`/api/quotes/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/quotes/${id}`, { method: "DELETE" });
+    if (!res.ok) {
+      set({ quotes: prev });
+      const body = await res.json().catch(() => ({}));
+      toast.error(body.error ?? "You don't have permission to do that");
+      throw new Error(body.error ?? "Failed to delete quote");
+    }
   },
   setAll: (quotes) => set({ quotes, loaded: true }),
 }));

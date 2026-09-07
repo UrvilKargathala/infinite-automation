@@ -1,16 +1,15 @@
-import { currentUser } from "@clerk/nextjs/server";
+import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
+import { verifySession, SESSION_COOKIE } from "@/lib/session";
+import type { Role } from "@/types";
 
-/** Resolves the signed-in Clerk user to their linked `users` row (id + full_name), or null. */
-export async function getCurrentAppUser(): Promise<{ id: number; fullName: string } | null> {
-  const clerkUser = await currentUser();
-  if (!clerkUser) return null;
-  const email = clerkUser.emailAddresses[0]?.emailAddress?.toLowerCase();
+/** Resolves the signed-in session cookie to its `users` row (id + full_name + role), or null. */
+export async function getCurrentAppUser(): Promise<{ id: number; fullName: string; role: Role } | null> {
+  const token = cookies().get(SESSION_COOKIE)?.value;
+  const userId = token ? await verifySession(token) : null;
+  if (!userId) return null;
 
-  let rows = await sql`SELECT id, full_name FROM users WHERE clerk_user_id = ${clerkUser.id}`;
-  if (rows.length === 0 && email) {
-    rows = await sql`SELECT id, full_name FROM users WHERE lower(email) = ${email}`;
-  }
+  const rows = await sql`SELECT id, full_name, role FROM users WHERE id = ${userId}`;
   if (rows.length === 0) return null;
-  return { id: rows[0].id as number, fullName: rows[0].full_name as string };
+  return { id: rows[0].id as number, fullName: rows[0].full_name as string, role: rows[0].role as Role };
 }

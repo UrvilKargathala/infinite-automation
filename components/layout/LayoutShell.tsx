@@ -2,7 +2,6 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
 import { TopNav } from "./TopNav";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useProductStore } from "@/lib/store/useProductStore";
@@ -13,8 +12,7 @@ import { useUserStore } from "@/lib/store/useUserStore";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthRoute = pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up");
-  const { isLoaded, isSignedIn } = useUser();
+  const isAuthRoute = pathname.startsWith("/login");
 
   const { fetchMe, user: me, error: meError, loaded: meLoaded } = useAuthStore();
   const fetchProducts = useProductStore((s) => s.fetchAll);
@@ -24,21 +22,20 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   const fetchUsers = useUserStore((s) => s.fetchAll);
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
-      fetchMe();
-      fetchProducts();
-      fetchTickets();
-      fetchProjects();
-      fetchQuotes();
-      fetchUsers();
-    }
-  }, [isLoaded, isSignedIn, fetchMe, fetchProducts, fetchTickets, fetchProjects, fetchQuotes, fetchUsers]);
+    if (isAuthRoute) return;
+    fetchMe();
+    fetchProducts();
+    fetchTickets();
+    fetchProjects();
+    fetchQuotes();
+    fetchUsers();
+  }, [isAuthRoute, fetchMe, fetchProducts, fetchTickets, fetchProjects, fetchQuotes, fetchUsers]);
 
   if (isAuthRoute) return <>{children}</>;
 
-  if (!isLoaded || (isSignedIn && !meLoaded)) return null;
+  if (!meLoaded) return null;
 
-  if (isSignedIn && meError) {
+  if (meError) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6">
         <div className="max-w-sm text-center">

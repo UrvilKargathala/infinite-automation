@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import type { Ticket, TicketStatus } from "@/types";
 
 interface TicketStore {
@@ -20,9 +21,15 @@ export const useTicketStore = create<TicketStore>((set, get) => ({
   fetchAll: async () => {
     if (get().loaded || get().loading) return;
     set({ loading: true });
-    const res = await fetch("/api/tickets");
-    const tickets = await res.json();
-    set({ tickets, loaded: true, loading: false });
+    try {
+      const res = await fetch("/api/tickets");
+      if (!res.ok) throw new Error("Failed to load tickets");
+      const tickets = await res.json();
+      set({ tickets, loaded: true, loading: false });
+    } catch {
+      set({ loading: false, loaded: true });
+      toast.error("Couldn't load tickets. Check your connection and try again.");
+    }
   },
   add: async (ticket) => {
     const res = await fetch("/api/tickets", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(ticket) });

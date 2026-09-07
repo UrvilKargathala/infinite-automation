@@ -90,8 +90,9 @@ export default function QuotePage() {
 
   function handleDelete(id: number) {
     if (window.confirm("Delete this quote?")) {
-      remove(id);
-      toast.success("Quote deleted");
+      remove(id).then(() => toast.success("Quote deleted")).catch(() => {
+        // error toast already shown by the store
+      });
     }
   }
 

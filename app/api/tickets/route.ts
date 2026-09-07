@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import type { Ticket } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 function toTicket(row: Record<string, unknown>): Ticket {
   return {
     id: row.id as number,

@@ -3,6 +3,8 @@ import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import type { Attachment, TicketMessage } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 function toMessage(r: Record<string, unknown>): TicketMessage {
   return {
     id: r.id as number,

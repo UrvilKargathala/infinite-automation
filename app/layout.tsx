@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
 import { Fredoka, Montserrat } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
@@ -32,22 +31,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html lang="en" className={`${fredoka.variable} ${montserrat.variable}`}>
-        <body>
-          <ReactQueryProvider>
-            <LayoutShell>{children}</LayoutShell>
-          </ReactQueryProvider>
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              classNames: {
-                toast: "!font-sans",
-              },
-            }}
-          />
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en" className={`${fredoka.variable} ${montserrat.variable}`}>
+      <body>
+        <ReactQueryProvider>
+          <LayoutShell>{children}</LayoutShell>
+        </ReactQueryProvider>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            classNames: {
+              toast: "!font-sans",
+            },
+          }}
+        />
+      </body>
+    </html>
   );
 }

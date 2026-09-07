@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const rows = await sql`
     SELECT m.id, m.text, m.created_at::text AS created_at, u.id AS user_id, u.full_name

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import type { Project, ProjectStage } from "@/types";
 
 interface ProjectStore {
@@ -20,9 +21,15 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   fetchAll: async () => {
     if (get().loaded || get().loading) return;
     set({ loading: true });
-    const res = await fetch("/api/projects");
-    const projects = await res.json();
-    set({ projects, loaded: true, loading: false });
+    try {
+      const res = await fetch("/api/projects");
+      if (!res.ok) throw new Error("Failed to load projects");
+      const projects = await res.json();
+      set({ projects, loaded: true, loading: false });
+    } catch {
+      set({ loading: false, loaded: true });
+      toast.error("Couldn't load projects. Check your connection and try again.");
+    }
   },
   add: async (project) => {
     const res = await fetch("/api/projects", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(project) });

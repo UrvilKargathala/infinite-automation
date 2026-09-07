@@ -80,8 +80,9 @@ export default function MasterPage() {
 
   function handleDelete(id: number) {
     if (window.confirm("Delete this product?")) {
-      remove(id);
-      toast.success("Product deleted");
+      remove(id).then(() => toast.success("Product deleted")).catch(() => {
+        // error toast already shown by the store
+      });
     }
   }
 
@@ -127,8 +128,9 @@ export default function MasterPage() {
       if (items.length === 0) {
         toast.error("No valid products found in file");
       } else {
-        bulkAdd(items);
-        toast.success(`${items.length} products imported`);
+        bulkAdd(items).then(() => toast.success(`${items.length} products imported`)).catch(() => {
+          // error toast already shown by the store
+        });
       }
     };
     reader.readAsArrayBuffer(file);

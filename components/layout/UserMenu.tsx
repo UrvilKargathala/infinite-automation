@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
 import { User, Settings, LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { RoleBadge } from "@/components/users/RoleBadge";
@@ -11,11 +10,13 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 export function UserMenu({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { signOut } = useClerk();
   const user = useAuthStore((s) => s.user);
+  const reset = useAuthStore((s) => s.reset);
 
-  function handleSignOut() {
-    signOut(() => router.push("/sign-in"));
+  async function handleSignOut() {
+    await fetch("/api/logout", { method: "POST" });
+    reset();
+    router.push("/login");
   }
 
   function goTo(href: string) {

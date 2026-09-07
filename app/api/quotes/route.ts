@@ -3,6 +3,8 @@ import { sql } from "@/lib/db";
 import { assembleQuotes, replaceQuoteSections } from "@/lib/quotesDb";
 import type { Quote } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const quoteRows = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status FROM quotes ORDER BY id`;
   return NextResponse.json(await assembleQuotes(quoteRows));

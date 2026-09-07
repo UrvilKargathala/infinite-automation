@@ -58,7 +58,7 @@ export function ProductModal({ open, onClose, product }: Props) {
   const categories = brand ? categoriesByBrand(brand) : [];
   const canSave = name.trim() && brand.trim() && category.trim();
 
-  function handleSave() {
+  async function handleSave() {
     const data = {
       name: name.trim(),
       sku: sku.trim(),
@@ -69,14 +69,18 @@ export function ProductModal({ open, onClose, product }: Props) {
       price: price.trim() ? Number(price) : null,
       status,
     };
-    if (product) {
-      update(product.id, data);
-      toast.success("Product updated");
-    } else {
-      add(data);
-      toast.success("Product added");
+    try {
+      if (product) {
+        await update(product.id, data);
+        toast.success("Product updated");
+      } else {
+        await add(data);
+        toast.success("Product added");
+      }
+      onClose();
+    } catch {
+      // error toast already shown by the store
     }
-    onClose();
   }
 
   const inputClass =

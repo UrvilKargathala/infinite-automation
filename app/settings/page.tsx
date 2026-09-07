@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useClerk } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { LogOut } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
+import { useAuthStore } from "@/lib/store/useAuthStore";
 
 function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
   return (
@@ -29,7 +29,7 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
 
 export default function SettingsPage() {
   const router = useRouter();
-  const { signOut } = useClerk();
+  const reset = useAuthStore((s) => s.reset);
   const { ticketAlerts, quoteAlerts, setSetting } = useSettingsStore();
 
   function handleToggle(key: "ticketAlerts" | "quoteAlerts", value: boolean, label: string) {
@@ -37,8 +37,10 @@ export default function SettingsPage() {
     toast.success(`${label} ${value ? "enabled" : "disabled"}`);
   }
 
-  function handleSignOut() {
-    signOut(() => router.push("/sign-in"));
+  async function handleSignOut() {
+    await fetch("/api/logout", { method: "POST" });
+    reset();
+    router.push("/login");
   }
 
   const rows = [

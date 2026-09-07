@@ -18,10 +18,14 @@ export default function ProfilePage() {
     setFullName(user?.fullName ?? "");
   }, [user?.fullName]);
 
-  function handleSave() {
+  async function handleSave() {
     if (!fullName.trim()) return;
-    updateProfile({ fullName: fullName.trim() });
-    toast.success("Profile updated");
+    try {
+      await updateProfile({ fullName: fullName.trim() });
+      toast.success("Profile updated");
+    } catch {
+      // error toast already shown by the store
+    }
   }
 
   if (!user) return null;

@@ -1,5 +1,95 @@
-import { redirect } from "next/navigation";
+"use client";
 
-export default function LoginRedirect() {
-  redirect("/sign-in");
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        setError(body.error ?? "Failed to sign in");
+        return;
+      }
+      router.push("/dashboard");
+      router.refresh();
+    } catch {
+      setError("Failed to sign in. Check your connection and try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex">
+      {/* Left — sign-in form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white">
+        <div className="w-full max-w-sm">
+          <div className="flex items-center gap-3 mb-10">
+            <Image src="/logo.png" alt="Infinite Automation" width={44} height={44} className="rounded-xl" />
+            <div>
+              <h1 className="text-xl font-normal text-text-primary leading-tight">Infinite Automation</h1>
+              <p className="text-xs text-text-muted">Operations Dashboard</p>
+            </div>
+          </div>
+
+          <h2 className="text-2xl font-light text-text-primary mb-1">Welcome back</h2>
+          <p className="text-sm text-text-secondary mb-8">Sign in to your account</p>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Input
+              label="Email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <Input
+              label="Password"
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            {error && <p className="text-sm text-danger">{error}</p>}
+            <Button type="submit" disabled={submitting} className="w-full justify-center">
+              {submitting ? "Signing in..." : "Sign in"}
+            </Button>
+          </form>
+        </div>
+      </div>
+
+      {/* Right — image panel */}
+      <div className="hidden lg:flex flex-1 relative overflow-hidden">
+        <Image src="/login-bg.jpg" alt="Smart home automation" fill className="object-cover" priority />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #3A90C3CC 0%, #44BE4ACC 100%)" }} />
+        <div className="relative z-10 flex flex-col items-center justify-center w-full text-center text-white px-12">
+          <Image src="/logo.png" alt="" width={72} height={72} className="mb-6 rounded-2xl shadow-lg" />
+          <h2 className="text-3xl font-light mb-3">Smart Automation</h2>
+          <p className="text-sm opacity-80 max-w-xs leading-relaxed">
+            Building intelligent homes and commercial spaces across Australia
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 }
