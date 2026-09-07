@@ -128,3 +128,18 @@ export interface ProjectStageEvent {
   stage: ProjectStage;
   changedAt: string;
 }
+
+export interface ProjectMessage {
+  id: number;
+  projectId: number;
+  userId: number;
+  fullName: string;
+  text: string;
+  attachments: Attachment[];
+  createdAt: string;
+  replyToId: number | null;
+  replyToText: string | null;
+  replyToFullName: string | null;
+  isForwarded: boolean;
+  deleted: boolean;
+}

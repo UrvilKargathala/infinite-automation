@@ -115,4 +115,18 @@ CREATE INDEX IF NOT EXISTS idx_quote_items_section_id ON quote_items(section_id)
 CREATE INDEX IF NOT EXISTS idx_quotes_client_id ON quotes(client_id);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_created_at ON chat_messages(created_at);
 CREATE INDEX IF NOT EXISTS idx_ticket_messages_ticket_id ON ticket_messages(ticket_id);
+-- Per-project conversation thread: messages with reply/forward/soft-delete, same shape as ticket_messages
+CREATE TABLE IF NOT EXISTS project_messages (
+  id SERIAL PRIMARY KEY,
+  project_id INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL DEFAULT '',
+  attachments JSONB NOT NULL DEFAULT '[]',
+  reply_to_id INTEGER REFERENCES project_messages(id) ON DELETE SET NULL,
+  is_forwarded BOOLEAN NOT NULL DEFAULT false,
+  deleted BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS idx_project_stage_events_project_id ON project_stage_events(project_id);
+CREATE INDEX IF NOT EXISTS idx_project_messages_project_id ON project_messages(project_id);

@@ -130,7 +130,7 @@ Enforce this in the UI (hide/disable actions via `can(role, action)`) and again 
   /supabase                 (Phase 6: client.ts, server.ts, middleware.ts)
   /api                      (Phase 6: products.ts, tickets.ts, projects.ts, quotes.ts, users.ts)
 /types
-  index.ts                  (Product, Ticket, Project, ProjectStageEvent, Quote, Section, QuoteItem, User, Role)
+  index.ts                  (Product, Ticket, TicketMessage, Project, ProjectStageEvent, ProjectMessage, Quote, Section, QuoteItem, User, Role)
 CLAUDE.md
 DESIGN_SYSTEM.md
 ```
@@ -176,6 +176,7 @@ DESIGN_SYSTEM.md
 - **Phase 6:** Supabase (auth, real persistence, React Query, RLS with role checks).
 - **Phase 7:** User Management module.
 - **Additive (post-Phase 7):** Projects Kanban board (sales-to-delivery pipeline, drag projects between stage columns, stage-change history log, optional linked Quote). Modeled directly on the Phase 3 Tickets board's components/patterns; not part of the original 7-phase sequence, added as its own sibling module.
+- **Additive (post-Phase 7):** Per-record chat on both Tickets (`TicketPanel`) and Projects (`ProjectPanel`, under a Details/Chat tab switcher) — reply, forward-to-another-record-of-the-same-type, delete-for-me (soft delete), image/file attachments via Vercel Blob, @mention autocomplete, in-panel search with highlighting, avatar + sender name per message. Backed by `ticket_messages` / `project_messages` tables (same shape) and `/api/{tickets,projects}/[id]/messages*` routes. Forwarding does not cross module boundaries (a ticket message can only forward to another ticket, a project message only to another project).
 
 Do not build features from a later phase during an earlier one. If a prompt asks for something out of phase, flag it back to the user.
 

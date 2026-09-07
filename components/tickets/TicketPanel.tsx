@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { X, Trash2, Paperclip, Send, Pencil, Check, Reply, Forward, Copy, MoreVertical, ChevronLeft, ChevronRight } from "lucide-react";
+import { X, Trash2, Paperclip, Send, Pencil, Check, Reply, Forward, Copy, MoreVertical, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/lib/store/useUserStore";
@@ -35,6 +35,18 @@ function dateLabel(iso: string): string {
 
 function timeLabel(iso: string): string {
   return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
+}
+
+function highlight(text: string, query: string) {
+  if (!query.trim()) return text;
+  const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
+  return parts.map((part, i) =>
+    part.toLowerCase() === query.trim().toLowerCase() ? (
+      <mark key={i} className="bg-brand-gradient-tint text-text-primary rounded-sm">{part}</mark>
+    ) : (
+      part
+    )
+  );
 }
 
 async function fetchMessages(ticketId: number): Promise<TicketMessage[]> {
@@ -69,6 +81,8 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
   const [forwardingMsg, setForwardingMsg] = useState<TicketMessage | null>(null);
   const [menuOpenId, setMenuOpenId] = useState<number | null>(null);
   const [preview, setPreview] = useState<{ images: Attachment[]; index: number } | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Edit-fields local state (reuses the same shape as TicketModal's form)
   const [form, setForm] = useState<Omit<Ticket, "id"> | null>(null);
@@ -89,6 +103,8 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
     setText("");
     setPendingFiles([]);
     setReplyingTo(null);
+    setSearchOpen(false);
+    setSearchQuery("");
   }, [ticket?.id]);
 
   const { data: messages = [] } = useQuery({
@@ -155,6 +171,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
         if (preview) setPreview(null);
+        else if (searchOpen) { setSearchOpen(false); setSearchQuery(""); }
         else onClose();
       } else if (preview && e.key === "ArrowLeft") {
         setPreview((p) => (p ? { ...p, index: (p.index - 1 + p.images.length) % p.images.length } : p));
@@ -164,7 +181,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
     }
     if (open) document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
-  }, [open, onClose, preview]);
+  }, [open, onClose, preview, searchOpen]);
 
   useEffect(() => {
     if (menuOpenId === null) return;
@@ -176,14 +193,18 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
   }, [menuOpenId]);
 
   const grouped = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    const filtered = q
+      ? messages.filter((m) => !m.deleted && m.text.toLowerCase().includes(q))
+      : messages;
     const map = new Map<string, TicketMessage[]>();
-    for (const m of messages) {
+    for (const m of filtered) {
       const key = dateLabel(m.createdAt);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(m);
     }
     return [...map.entries()];
-  }, [messages]);
+  }, [messages, searchQuery]);
 
   const mentionMatches = useMemo(() => {
     if (mentionQuery === null) return [];
@@ -263,6 +284,15 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
+              {!editing && (
+                <button
+                  onClick={() => setSearchOpen((v) => { if (v) setSearchQuery(""); return !v; })}
+                  aria-label="Search chat"
+                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${searchOpen ? "bg-brand-gradient-tint text-brand-blue" : "text-text-muted hover:bg-[#F9FAFB]"}`}
+                >
+                  <Search size={15} />
+                </button>
+              )}
               <button
                 onClick={() => setEditing((v) => !v)}
                 aria-label="Edit ticket"
@@ -294,6 +324,19 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
           >
             {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
+
+          {searchOpen && !editing && (
+            <div className="relative mt-3">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+              <input
+                autoFocus
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search this chat..."
+                className="w-full bg-white border border-border rounded-full py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              />
+            </div>
+          )}
         </div>
 
         {editing ? (
@@ -358,14 +401,18 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                 <span>{ticket.category}</span>
               </div>
               {grouped.length === 0 ? (
-                <div className="text-center text-text-muted text-sm py-10">No activity yet — start the conversation</div>
+                <div className="text-center text-text-muted text-sm py-10">
+                  {searchQuery.trim() ? "No messages match your search" : "No activity yet — start the conversation"}
+                </div>
               ) : (
                 grouped.map(([label, msgs]) => (
                   <div key={label}>
                     <div className="text-center text-[11px] text-text-muted mb-3">{label}</div>
                     <div className="space-y-3">
                       {msgs.map((m) => (
-                        <div key={m.id} className="group">
+                        <div key={m.id} className="group flex items-start gap-2">
+                          <Avatar name={m.fullName} size="xs" />
+                          <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-2">
                             <span className="text-xs text-text-primary">{m.fullName}</span>
                             <span className="text-[10px] text-text-muted">{timeLabel(m.createdAt)}</span>
@@ -435,7 +482,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                               )}
                               {m.text && (
                                 <div className="mt-1 text-sm text-text-primary bg-[#F9FAFB] rounded-xl px-3 py-2 inline-block max-w-full whitespace-pre-wrap break-words">
-                                  {m.text}
+                                  {highlight(m.text, searchQuery)}
                                 </div>
                               )}
                               {m.attachments.length > 0 && (() => {
@@ -463,6 +510,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                               })()}
                             </>
                           )}
+                          </div>
                         </div>
                       ))}
                     </div>

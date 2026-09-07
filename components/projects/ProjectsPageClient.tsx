@@ -233,6 +233,7 @@ export function ProjectsPageClient() {
         open={panelOpen}
         onClose={() => { setPanelOpen(false); setPanelProject(null); }}
         project={panelProject}
+        projects={projects}
         onSave={handlePanelSave}
         onDelete={handleDelete}
       />
