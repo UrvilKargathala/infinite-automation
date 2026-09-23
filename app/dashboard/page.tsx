@@ -147,7 +147,7 @@ export default function DashboardPage() {
 
   return (
     <div>
-      <div className="flex items-start justify-between gap-4 flex-wrap">
+      <div className="flex justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-3xl font-semibold text-text-primary">Dashboard</h1>
           <p className="text-sm text-text-secondary mt-1">Overview of your business operations</p>

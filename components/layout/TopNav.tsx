@@ -21,7 +21,7 @@ const allNavItems = [
   { label: "Quote", href: "/quote" },
   { label: "Master File", href: "/master" },
   { label: "Users", href: "/users" },
-  { label: "Audit Log", href: "/audit", icon: ScrollText },
+  { label: "Audit Log", href: "/audit"},
 ];
 
 export function TopNav() {
@@ -65,7 +65,7 @@ export function TopNav() {
 
         {/* CENTER — Nav items (desktop) */}
         <div className="hidden lg:flex items-center gap-1">
-          {navItems.map(({ label, href, activeMatch, icon: Icon }) => {
+          {navItems.map(({ label, href, activeMatch, }) => {
             const active = (activeMatch ?? [href]).some((p) => pathname.startsWith(p));
             return (
               <Link
@@ -77,7 +77,6 @@ export function TopNav() {
                     : "text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary"
                 }`}
               >
-                {Icon && <Icon size={14} />}
                 {label}
               </Link>
             );
@@ -109,7 +108,7 @@ export function TopNav() {
       {/* Mobile nav dropdown */}
       {mobileNav && (
         <div className="lg:hidden border-t border-border bg-white px-4 py-3 space-y-1">
-          {navItems.map(({ label, href, activeMatch, icon: Icon }) => {
+          {navItems.map(({ label, href, activeMatch,  }) => {
             const active = (activeMatch ?? [href]).some((p) => pathname.startsWith(p));
             return (
               <Link
@@ -122,7 +121,6 @@ export function TopNav() {
                     : "text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary"
                 }`}
               >
-                {Icon && <Icon size={15} />}
                 {label}
               </Link>
             );
