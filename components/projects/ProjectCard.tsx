@@ -2,7 +2,7 @@
 
 import { useDraggable } from "@dnd-kit/core";
 import { Avatar } from "@/components/ui/Avatar";
-import { INR } from "@/components/ui/INR";
+import { Price } from "@/components/ui/Price";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import type { Project } from "@/types";
@@ -48,7 +48,7 @@ export function ProjectCard({ project, onClick }: { project: Project; onClick: (
       <div className="mt-3 flex items-center justify-between gap-2">
         {quote ? (
           <span className="text-xs text-brand-blue bg-brand-gradient-tint rounded-full px-2.5 py-1 truncate">
-            {quote.number} · <INR value={calcQuoteTotal(quote).grandTotal} />
+            {quote.number} · <Price value={calcQuoteTotal(quote).grandTotal} currency={quote.currency} />
           </span>
         ) : (
           <span />

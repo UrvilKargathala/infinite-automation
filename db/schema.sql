@@ -12,6 +12,16 @@ CREATE TABLE IF NOT EXISTS products (
   status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive'))
 );
 
+CREATE TABLE IF NOT EXISTS product_prices (
+  id SERIAL PRIMARY KEY,
+  product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+  currency TEXT NOT NULL,
+  price NUMERIC NOT NULL,
+  UNIQUE (product_id, currency)
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_prices_product_id ON product_prices(product_id);
+
 CREATE TABLE IF NOT EXISTS tickets (
   id SERIAL PRIMARY KEY,
   subject TEXT NOT NULL DEFAULT '',
@@ -33,7 +43,8 @@ CREATE TABLE IF NOT EXISTS quotes (
   client TEXT NOT NULL,
   date DATE NOT NULL,
   valid_until DATE NOT NULL,
-  status TEXT NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Sent', 'Accepted', 'Rejected'))
+  status TEXT NOT NULL DEFAULT 'Draft' CHECK (status IN ('Draft', 'Sent', 'Accepted', 'Rejected')),
+  currency TEXT NOT NULL DEFAULT 'INR'
 );
 
 CREATE TABLE IF NOT EXISTS quote_sections (

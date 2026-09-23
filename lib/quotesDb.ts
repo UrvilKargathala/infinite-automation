@@ -1,5 +1,6 @@
 import { sql } from "@/lib/db";
 import type { Quote, Section, QuoteItem } from "@/types";
+import type { CurrencyCode } from "@/lib/utils/currency";
 
 export async function assembleQuotes(quoteRows: Record<string, unknown>[]): Promise<Quote[]> {
   if (quoteRows.length === 0) return [];
@@ -46,6 +47,7 @@ export async function assembleQuotes(quoteRows: Record<string, unknown>[]): Prom
     date: q.date as string,
     validUntil: q.valid_until as string,
     status: q.status as Quote["status"],
+    currency: (q.currency as CurrencyCode) ?? "INR",
     sections: sectionsByQuote.get(q.id as number) ?? [],
   }));
 }

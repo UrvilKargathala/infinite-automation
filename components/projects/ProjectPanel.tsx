@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
-import { INR } from "@/components/ui/INR";
+import { Price } from "@/components/ui/Price";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
@@ -459,7 +459,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 <div className="text-xs text-text-muted mb-1">Linked quote</div>
                 <div className="flex items-center justify-between bg-[#F9FAFB] rounded-xl px-3 py-2.5">
                   <span className="text-sm text-text-primary">{linkedQuote.number} — {linkedQuote.client}</span>
-                  <INR value={calcQuoteTotal(linkedQuote).grandTotal} className="text-sm text-brand-blue" />
+                  <Price value={calcQuoteTotal(linkedQuote).grandTotal} currency={linkedQuote.currency} className="text-sm text-brand-blue" />
                 </div>
               </div>
             )}

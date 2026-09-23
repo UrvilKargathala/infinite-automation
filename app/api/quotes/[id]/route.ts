@@ -5,6 +5,7 @@ import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { can } from "@/lib/utils/permissions";
 import { logAction, diffFields } from "@/lib/api/audit";
 import { calcQuoteTotal } from "@/lib/utils/quote";
+import { formatCurrency } from "@/lib/utils/currency";
 import type { Quote, Section } from "@/types";
 
 /** Human-readable per-section item add/remove lines, e.g. "Section 1 (Ground Floor): added item Smart Locks x 4". */
@@ -38,16 +39,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const id = Number(params.id);
   const body = (await req.json()) as Partial<Quote>;
 
-  const existing = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status FROM quotes WHERE id = ${id}`;
+  const existing = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status, currency FROM quotes WHERE id = ${id}`;
   if (existing.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const [current] = await assembleQuotes(existing);
   const merged = { ...current, ...body };
 
   const quoteRows = await sql`
     UPDATE quotes SET client_id = ${merged.clientId}, client = ${merged.client}, date = ${merged.date},
-      valid_until = ${merged.validUntil}, status = ${merged.status}
+      valid_until = ${merged.validUntil}, status = ${merged.status}, currency = ${merged.currency ?? "INR"}
     WHERE id = ${id}
-    RETURNING id, number, client_id, client, date::text, valid_until::text, status
+    RETURNING id, number, client_id, client, date::text, valid_until::text, status, currency
   `;
   if (body.sections) await replaceQuoteSections(id, body.sections);
 
@@ -91,7 +92,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!can(me.role, "deleteQuote")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const id = Number(params.id);
-  const existing = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status FROM quotes WHERE id = ${id}`;
+  const existing = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status, currency FROM quotes WHERE id = ${id}`;
   const [toDelete] = existing.length > 0 ? await assembleQuotes(existing) : [null];
   await sql`DELETE FROM quotes WHERE id = ${id}`;
 
@@ -103,7 +104,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
       entityType: "quote",
       entityId: toDelete.id,
       entityName: toDelete.number,
-      summary: `Deleted quote ${toDelete.number} (client: ${toDelete.client}, total: ₹${grandTotal.toLocaleString("en-IN")})`,
+      summary: `Deleted quote ${toDelete.number} (client: ${toDelete.client}, total: ${formatCurrency(grandTotal, toDelete.currency)})`,
       changes: { before: { number: toDelete.number, client: toDelete.client, status: toDelete.status, grandTotal } },
       actor: me,
     });

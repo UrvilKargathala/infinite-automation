@@ -4,12 +4,13 @@ import { assembleQuotes, replaceQuoteSections } from "@/lib/quotesDb";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction } from "@/lib/api/audit";
 import { calcQuoteTotal } from "@/lib/utils/quote";
+import { formatCurrency } from "@/lib/utils/currency";
 import type { Quote } from "@/types";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const quoteRows = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status FROM quotes ORDER BY id`;
+  const quoteRows = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status, currency FROM quotes ORDER BY id`;
   return NextResponse.json(await assembleQuotes(quoteRows));
 }
 
@@ -24,9 +25,9 @@ export async function POST(req: Request) {
   const number = `IA-Q-${new Date().getFullYear()}-${String(seq).padStart(3, "0")}`;
 
   const quoteRows = await sql`
-    INSERT INTO quotes (number, client_id, client, date, valid_until, status)
-    VALUES (${number}, ${body.clientId}, ${body.client}, ${body.date}, ${body.validUntil}, ${body.status})
-    RETURNING id, number, client_id, client, date::text, valid_until::text, status
+    INSERT INTO quotes (number, client_id, client, date, valid_until, status, currency)
+    VALUES (${number}, ${body.clientId}, ${body.client}, ${body.date}, ${body.validUntil}, ${body.status}, ${body.currency ?? "INR"})
+    RETURNING id, number, client_id, client, date::text, valid_until::text, status, currency
   `;
   const quoteId = quoteRows[0].id as number;
   await replaceQuoteSections(quoteId, body.sections);
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
       entityType: "quote",
       entityId: assembled.id,
       entityName: assembled.number,
-      summary: `Created quote ${assembled.number} for ${assembled.client} — ${assembled.sections.length} sections, ${itemCount} items, total ₹${grandTotal.toLocaleString("en-IN")}`,
+      summary: `Created quote ${assembled.number} for ${assembled.client} — ${assembled.sections.length} sections, ${itemCount} items, total ${formatCurrency(grandTotal, assembled.currency)}`,
       changes: { after: { number: assembled.number, client: assembled.client, date: assembled.date, validUntil: assembled.validUntil, status: assembled.status, sectionCount: assembled.sections.length, itemCount, grandTotal } },
       actor: me,
     });

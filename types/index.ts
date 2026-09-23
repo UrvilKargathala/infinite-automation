@@ -12,6 +12,8 @@ export type ProductStatus = "Active" | "Inactive";
 
 export type UserStatus = "Active" | "Inactive";
 
+import type { CurrencyCode } from "@/lib/utils/currency";
+
 export interface Product {
   id: number;
   name: string;
@@ -21,6 +23,7 @@ export interface Product {
   hsn: string;
   description: string;
   price: number | null;
+  prices: Partial<Record<CurrencyCode, number>>;
   status: ProductStatus;
 }
 
@@ -64,6 +67,7 @@ export interface Quote {
   date: string;
   validUntil: string;
   status: QuoteStatus;
+  currency: CurrencyCode;
   sections: Section[];
 }
 

@@ -17,7 +17,7 @@ import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
-import { INR } from "@/components/ui/INR";
+import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { QuoteExpiryAlerts } from "@/components/dashboard/QuoteExpiryAlerts";
@@ -55,7 +55,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
       {payload.map((entry, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-          <span>{entry.name}: {entry.name === "Revenue" ? <INR value={entry.value} /> : <Num>{entry.value}</Num>}</span>
+          <span>{entry.name}: {entry.name === "Revenue" ? <Price value={entry.value} currency="INR" /> : <Num>{entry.value}</Num>}</span>
         </div>
       ))}
     </div>

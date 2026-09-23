@@ -28,8 +28,8 @@ import { useProductStore } from "@/lib/store/useProductStore";
 import { useTicketStore } from "@/lib/store/useTicketStore";
 import { useSettingsStore } from "@/lib/store/useSettingsStore";
 import { useNotificationStore } from "@/lib/store/useNotificationStore";
-import { formatINR } from "@/lib/utils/format";
-import { INR } from "@/components/ui/INR";
+import { formatCurrency, CURRENCIES, CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
+import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import { calcLineTotal, calcSectionSubtotal, calcQuoteTotal } from "@/lib/utils/quote";
 import type { Quote, Section, QuoteItem, QuoteStatus, Product } from "@/types";
@@ -48,7 +48,7 @@ const numberInputClass =
 function emptyQuoteDraft(): Omit<Quote, "id" | "number"> {
   const today = new Date().toISOString().slice(0, 10);
   const valid = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-  return { clientId: null, client: "", date: today, validUntil: valid, status: "Draft", sections: [emptySection()] };
+  return { clientId: null, client: "", date: today, validUntil: valid, status: "Draft", currency: "INR" as CurrencyCode, sections: [emptySection()] };
 }
 
 export function QuoteModal({
@@ -189,10 +189,10 @@ export function QuoteModal({
         sectionRows += `<tr>
           <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;" class="num">${sn}.${ii + 1}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;">${item.name} - ${products.find((p) => p.id === item.productId)?.sku ?? "N/A"} (<span class="num">${item.qty}</span> PCS)</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;" class="num">${formatINR(item.price)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;" class="num">${formatCurrency(item.price, q.currency)}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;" class="num">${item.qty}</td>
           <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;" class="num">${item.discount}%</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;" class="num">${formatINR(lt)}</td>
+          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;" class="num">${formatCurrency(lt, q.currency)}</td>
         </tr>`;
       });
     });
@@ -207,7 +207,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
 <div style="text-align:right"><div style="font-size:18px;font-weight:300">${q.number}</div><div style="font-size:12px;color:#64748B;margin-top:4px">Date: ${q.date}</div><div style="font-size:12px;color:#64748B">Valid until: ${q.validUntil}</div></div></div>
 <div style="margin-bottom:24px"><div style="font-size:12px;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Client</div><div style="font-size:16px">${q.client}</div></div>
 <table><thead><tr><th>Sr.</th><th>Description</th><th style="text-align:right">Price</th><th style="text-align:center">Qty</th><th style="text-align:center">Disc.</th><th style="text-align:right">Total</th></tr></thead><tbody>${sectionRows}</tbody></table>
-<div class="totals"><div class="row">Subtotal: <span class="num">${formatINR(t.subtotal)}</span></div><div class="row">GST (<span class="num">18</span>%): <span class="num">${formatINR(t.gst)}</span></div><div class="grand">Grand Total: <span class="num">${formatINR(t.grandTotal)}</span></div></div>
+<div class="totals"><div class="row">Subtotal: <span class="num">${formatCurrency(t.subtotal, q.currency)}</span></div>${t.taxRate > 0 ? `<div class="row">${t.taxLabel} (<span class="num">${Math.round(t.taxRate * 100)}</span>%): <span class="num">${formatCurrency(t.tax, q.currency)}</span></div>` : ""}<div class="grand">Grand Total: <span class="num">${formatCurrency(t.grandTotal, q.currency)}</span></div></div>
 <script>window.onload=function(){window.print()}<\/script></body></html>`;
     const w = window.open("", "_blank");
     if (w) { w.document.write(html); w.document.close(); }
@@ -249,7 +249,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
       }
     >
       {/* Header fields */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
         <div>
           <label className="block text-sm text-text-primary mb-1">Client</label>
           {isEditing ? (
@@ -290,6 +290,22 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
             <div className="py-2.5"><Badge color={statusColor(draft.status)}>{draft.status}</Badge></div>
           )}
         </div>
+        <div>
+          <label className="block text-sm text-text-primary mb-1">Currency</label>
+          {isEditing ? (
+            <select
+              className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
+              value={draft.currency}
+              onChange={(e) => patchDraft({ currency: e.target.value as CurrencyCode })}
+            >
+              {CURRENCY_CODES.map((c) => (
+                <option key={c} value={c}>{c} ({CURRENCIES[c].symbol})</option>
+              ))}
+            </select>
+          ) : (
+            <div className="text-sm text-text-primary py-2.5">{draft.currency} ({CURRENCIES[draft.currency].symbol})</div>
+          )}
+        </div>
       </div>
 
       {/* Sections */}
@@ -302,6 +318,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
                 section={section}
                 sectionIndex={si}
                 isEditing={isEditing}
+                currency={draft.currency}
                 allCategories={allCategories()}
                 brandsByCategory={brandsByCategory}
                 productsByBrandCategory={productsByBrandCategory}
@@ -330,13 +347,15 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
       <div className="mt-6 flex justify-end">
         <div className="w-72 space-y-2">
           <div className="flex justify-between text-sm text-text-secondary">
-            <span>Subtotal</span><INR value={totals.subtotal} className="text-text-primary" />
+            <span>Subtotal</span><Price value={totals.subtotal} currency={draft.currency} className="text-text-primary" />
           </div>
-          <div className="flex justify-between text-sm text-text-secondary">
-            <span>GST (18%)</span><INR value={totals.gst} className="text-text-primary" />
-          </div>
+          {totals.taxRate > 0 && (
+            <div className="flex justify-between text-sm text-text-secondary">
+              <span>{totals.taxLabel} ({Math.round(totals.taxRate * 100)}%)</span><Price value={totals.tax} currency={draft.currency} className="text-text-primary" />
+            </div>
+          )}
           <div className="border-t border-border pt-2 flex justify-between text-lg text-text-primary">
-            <span>Grand Total</span><INR value={totals.grandTotal} />
+            <span>Grand Total</span><Price value={totals.grandTotal} currency={draft.currency} />
           </div>
         </div>
       </div>
@@ -358,6 +377,7 @@ interface SortableSectionProps {
   section: Section;
   sectionIndex: number;
   isEditing: boolean;
+  currency: CurrencyCode;
   allCategories: string[];
   brandsByCategory: (c: string) => string[];
   productsByBrandCategory: (b: string, c: string) => Product[];
@@ -373,6 +393,7 @@ function SortableSection({
   section,
   sectionIndex,
   isEditing,
+  currency,
   allCategories,
   brandsByCategory,
   productsByBrandCategory,
@@ -419,7 +440,7 @@ function SortableSection({
         brand: prod.brand,
         description: prod.description,
         qty: selectedQty.get(prod.id) ?? 1,
-        price: prod.price ?? 0,
+        price: prod.prices?.[currency] ?? prod.price ?? 0,
         discount: 0,
       });
     });
@@ -451,7 +472,7 @@ function SortableSection({
         ) : (
           <span className="flex-1 text-lg text-text-primary">{section.name || "Untitled Section"}</span>
         )}
-        <INR value={subtotal} className="text-sm text-text-secondary" />
+        <Price value={subtotal} currency={currency} className="text-sm text-text-secondary" />
         {isEditing && (
           <button
             onClick={onDuplicateSection}
@@ -542,7 +563,7 @@ function SortableSection({
                         className={`${numberInputClass} w-14 text-center shrink-0`}
                       />
                     )}
-                    <INR value={p.price} className="text-xs shrink-0" />
+                    <Price value={p.prices?.[currency] ?? p.price} currency={currency} className="text-xs shrink-0" />
                   </label>
                 ))}
               </div>
@@ -589,7 +610,7 @@ function SortableSection({
                         onChange={(e) => onUpdateItem(item.id, { price: Number(e.target.value) || 0 })}
                       />
                     ) : (
-                      <INR value={item.price} className="text-sm" />
+                      <Price value={item.price} currency={currency} className="text-sm" />
                     )}
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -621,7 +642,7 @@ function SortableSection({
                       <Num className="text-sm">{item.discount}%</Num>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right text-sm text-text-primary"><INR value={lt} /></td>
+                  <td className="px-3 py-2 text-right text-sm text-text-primary"><Price value={lt} currency={currency} /></td>
                   {isEditing && (
                     <td className="px-1 py-2">
                       <button onClick={() => onRemoveItem(item.id)} className="p-1 rounded text-text-muted hover:text-danger transition-colors">

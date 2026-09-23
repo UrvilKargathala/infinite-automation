@@ -6,7 +6,90 @@ import { toast } from "sonner";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useProductStore } from "@/lib/store/useProductStore";
+import { CURRENCIES, CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
 import type { Product } from "@/types";
+
+function PriceEditor({ prices, onChange, inputClass }: { prices: Partial<Record<CurrencyCode, string>>; onChange: (p: Partial<Record<CurrencyCode, string>>) => void; inputClass: string }) {
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>("INR");
+  const [priceValue, setPriceValue] = useState("");
+
+  const setCurrencies = Object.keys(prices).filter((c) => prices[c as CurrencyCode] !== undefined && prices[c as CurrencyCode] !== "") as CurrencyCode[];
+  const availableCurrencies = CURRENCY_CODES.filter((c) => !setCurrencies.includes(c));
+
+  useEffect(() => {
+    if (availableCurrencies.length > 0 && !availableCurrencies.includes(selectedCurrency)) {
+      setSelectedCurrency(availableCurrencies[0]);
+    }
+  }, [availableCurrencies, selectedCurrency]);
+
+  function handleAdd() {
+    if (!priceValue.trim() || isNaN(Number(priceValue))) return;
+    onChange({ ...prices, [selectedCurrency]: priceValue });
+    setPriceValue("");
+    const remaining = CURRENCY_CODES.filter((c) => c !== selectedCurrency && !setCurrencies.includes(c));
+    if (remaining.length > 0) setSelectedCurrency(remaining[0]);
+  }
+
+  function handleRemove(c: CurrencyCode) {
+    const next = { ...prices };
+    delete next[c];
+    onChange(next);
+  }
+
+  return (
+    <div className="space-y-2">
+      {setCurrencies.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {setCurrencies.map((c) => (
+            <div key={c} className="flex items-center gap-1.5 bg-surface-alt border border-border rounded-lg px-3 py-1.5">
+              <span className="text-xs text-text-muted">{CURRENCIES[c].symbol}</span>
+              <input
+                type="number"
+                className="w-20 bg-transparent text-sm text-text-primary focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                value={prices[c] ?? ""}
+                onChange={(e) => onChange({ ...prices, [c]: e.target.value })}
+              />
+              <span className="text-xs text-text-muted">{c}</span>
+              <button type="button" onClick={() => handleRemove(c)} className="text-text-muted hover:text-danger ml-1 text-sm leading-none">&times;</button>
+            </div>
+          ))}
+        </div>
+      )}
+      {availableCurrencies.length > 0 && (
+        <div className="flex items-center gap-2">
+          <select
+            className={`${inputClass} !w-auto min-w-[120px]`}
+            value={selectedCurrency}
+            onChange={(e) => setSelectedCurrency(e.target.value as CurrencyCode)}
+          >
+            {availableCurrencies.map((c) => (
+              <option key={c} value={c}>{c} ({CURRENCIES[c].symbol})</option>
+            ))}
+          </select>
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-text-muted">{CURRENCIES[selectedCurrency].symbol}</span>
+            <input
+              className={`${inputClass} pl-9`}
+              type="number"
+              placeholder="Price"
+              value={priceValue}
+              onChange={(e) => setPriceValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAdd(); } }}
+            />
+          </div>
+          <button
+            type="button"
+            onClick={handleAdd}
+            disabled={!priceValue.trim()}
+            className="px-3 py-2.5 rounded-lg text-sm text-white bg-brand-blue hover:bg-brand-blue/90 disabled:opacity-40 transition-colors shrink-0"
+          >
+            + Add
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface Props {
   open: boolean;
@@ -24,7 +107,7 @@ export function ProductModal({ open, onClose, product }: Props) {
   const [category, setCategory] = useState("");
   const [hsn, setHsn] = useState("");
   const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
+  const [prices, setPrices] = useState<Partial<Record<CurrencyCode, string>>>({});
   const [status, setStatus] = useState<"Active" | "Inactive">("Active");
   const [addingNewBrand, setAddingNewBrand] = useState(false);
   const [addingNewCategory, setAddingNewCategory] = useState(false);
@@ -38,7 +121,14 @@ export function ProductModal({ open, onClose, product }: Props) {
         setCategory(product.category);
         setHsn(product.hsn);
         setDescription(product.description || "");
-        setPrice(product.price != null ? String(product.price) : "");
+        const p: Partial<Record<CurrencyCode, string>> = {};
+        for (const [c, v] of Object.entries(product.prices ?? {})) {
+          p[c as CurrencyCode] = String(v);
+        }
+        if (Object.keys(p).length === 0 && product.price != null) {
+          p.INR = String(product.price);
+        }
+        setPrices(p);
         setStatus(product.status);
       } else {
         setName("");
@@ -47,7 +137,7 @@ export function ProductModal({ open, onClose, product }: Props) {
         setCategory("");
         setHsn("");
         setDescription("");
-        setPrice("");
+        setPrices({});
         setStatus("Active");
       }
       setAddingNewBrand(false);
@@ -59,6 +149,11 @@ export function ProductModal({ open, onClose, product }: Props) {
   const canSave = name.trim() && brand.trim() && category.trim();
 
   async function handleSave() {
+    const parsedPrices: Partial<Record<CurrencyCode, number>> = {};
+    for (const [c, v] of Object.entries(prices)) {
+      const n = v ? Number(v) : NaN;
+      if (!isNaN(n) && v?.trim()) parsedPrices[c as CurrencyCode] = n;
+    }
     const data = {
       name: name.trim(),
       sku: sku.trim(),
@@ -66,7 +161,8 @@ export function ProductModal({ open, onClose, product }: Props) {
       category: category.trim(),
       hsn: hsn.trim(),
       description: description.trim(),
-      price: price.trim() ? Number(price) : null,
+      price: parsedPrices.INR ?? null,
+      prices: parsedPrices,
       status,
     };
     try {
@@ -207,15 +303,9 @@ export function ProductModal({ open, onClose, product }: Props) {
           <textarea className={`${inputClass} resize-none`} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Product description" />
         </div>
 
-        <div>
-          <label className={labelClass}>Price (INR)</label>
-          <input
-            className={inputClass}
-            type="number"
-            value={price}
-            onChange={(e) => setPrice(e.target.value)}
-            placeholder="Leave blank if unknown"
-          />
+        <div className="col-span-2">
+          <label className={labelClass}>Prices by currency</label>
+          <PriceEditor prices={prices} onChange={setPrices} inputClass={inputClass} />
         </div>
 
         <div className="col-span-2">

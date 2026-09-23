@@ -13,6 +13,7 @@ import { ProductModal } from "@/components/master/ProductModal";
 import { Num } from "@/components/ui/Num";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import type { Product } from "@/types";
+import { CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
 import * as XLSX from "xlsx";
 
 function normalizeBrand(raw: string): string {
@@ -71,7 +72,7 @@ export default function MasterPage() {
 
   const totalActive = products.filter((p) => p.status === "Active").length;
   const totalBrands = new Set(products.map((p) => p.brand)).size;
-  const missingPrice = products.filter((p) => p.price == null).length;
+  const missingPrice = products.filter((p) => Object.keys(p.prices ?? {}).length === 0 && p.price == null).length;
 
   function handleEdit(p: Product) {
     setEditProduct(p);
@@ -109,9 +110,16 @@ export default function MasterPage() {
           const name = col(row, "Product Name");
           const brandRaw = col(row, "Product Group/Brand", "Brand");
           if (!name || !brandRaw) return null;
-          const priceStr = col(row, "Price ( INR )", "Price (INR)", "Price");
-          const priceNum = priceStr ? Number(priceStr) : null;
           const category = normalizeCategory(col(row, "Product Category", "Product Category "));
+          const prices: Partial<Record<CurrencyCode, number>> = {};
+          for (const c of CURRENCY_CODES) {
+            const v = col(row, `Price (${c})`, `Price ( ${c} )`);
+            const n = v ? Number(v) : NaN;
+            if (!isNaN(n) && v) prices[c] = n;
+          }
+          const legacyPrice = col(row, "Price ( INR )", "Price (INR)", "Price");
+          const legacyNum = legacyPrice ? Number(legacyPrice) : NaN;
+          if (!isNaN(legacyNum) && legacyPrice && !prices.INR) prices.INR = legacyNum;
           return {
             name,
             sku: col(row, "SKU"),
@@ -119,7 +127,8 @@ export default function MasterPage() {
             category,
             hsn: col(row, "Hsn Code", "HSN Code"),
             description: col(row, "Description"),
-            price: priceNum != null && !isNaN(priceNum) ? priceNum : null,
+            price: prices.INR ?? null,
+            prices,
             status: "Active" as const,
           };
         })
@@ -138,17 +147,22 @@ export default function MasterPage() {
   }
 
   function handleExport() {
-    const data = products.map((p, i) => ({
-      "Sr. No": i + 1,
-      "Product Name": p.name,
-      SKU: p.sku,
-      Brand: p.brand,
-      "Product Category": p.category,
-      "HSN Code": p.hsn,
-      Description: p.description || "",
-      "Price (INR)": p.price ?? "",
-      Status: p.status,
-    }));
+    const data = products.map((p, i) => {
+      const row: Record<string, unknown> = {
+        "Sr. No": i + 1,
+        "Product Name": p.name,
+        SKU: p.sku,
+        Brand: p.brand,
+        "Product Category": p.category,
+        "HSN Code": p.hsn,
+        Description: p.description || "",
+      };
+      for (const c of CURRENCY_CODES) {
+        row[`Price (${c})`] = p.prices?.[c] ?? "";
+      }
+      row.Status = p.status;
+      return row;
+    });
     const ws = XLSX.utils.json_to_sheet(data);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Products");

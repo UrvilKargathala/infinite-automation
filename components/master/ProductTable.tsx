@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
-import { INR } from "@/components/ui/INR";
+import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
+import type { CurrencyCode } from "@/lib/utils/currency";
 import { Pagination } from "@/components/ui/Pagination";
 import type { Product } from "@/types";
 
@@ -39,7 +40,7 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
               <th className={thClass}>Category</th>
               <th className={thClass}>Description</th>
               <th className={thClass}>HSN Code</th>
-              <th className={thClass}>Price (INR)</th>
+              <th className={thClass}>Price</th>
               <th className={thClass}>Status</th>
               {canManage && <th className={`${thClass} text-right`}>Actions</th>}
             </tr>
@@ -62,8 +63,17 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
                   <td className={`${tdClass} text-text-secondary text-xs max-w-[200px] truncate`} title={p.description}>{p.description || "—"}</td>
                   <td className={`${tdClass} font-mono text-xs text-text-secondary`}><Num>{p.hsn || "—"}</Num></td>
                   <td className={tdClass}>
-                    {p.price != null ? (
-                      <INR value={p.price} />
+                    {Object.keys(p.prices ?? {}).length > 0 ? (
+                      <div className="space-y-0.5">
+                        {Object.entries(p.prices).map(([c, v]) => (
+                          <div key={c} className="flex items-center gap-1">
+                            <span className="text-xs text-text-muted w-8">{c}</span>
+                            <Price value={v} currency={c as CurrencyCode} className="text-xs" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : p.price != null ? (
+                      <Price value={p.price} currency="INR" />
                     ) : (
                       <span className="text-warning">Not set</span>
                     )}
