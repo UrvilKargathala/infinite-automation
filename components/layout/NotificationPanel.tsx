@@ -3,14 +3,14 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ScrollText } from "lucide-react";
-import { useNotificationStore } from "@/lib/store/useNotificationStore";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useAuditUnreadCount } from "@/lib/hooks/useAuditUnreadCount";
+import { relativeTime } from "@/lib/utils/relativeTime";
 
 export function NotificationPanel({ onClose }: { onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
-  const { notifications, markRead, markAllRead } = useNotificationStore();
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
   const { count: auditCount, canView: canViewAudit, markViewed } = useAuditUnreadCount();
 
   function handleViewAuditLog() {
@@ -86,7 +86,7 @@ export function NotificationPanel({ onClose }: { onClose: () => void }) {
               <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: n.read ? "#D1D5DB" : n.color }} />
               <div>
                 <div className={`text-sm ${n.read ? "text-text-secondary" : "text-text-primary"}`}>{n.text}</div>
-                <div className="text-xs text-text-muted mt-0.5">{n.time}</div>
+                <div className="text-xs text-text-muted mt-0.5">{relativeTime(n.createdAt)}</div>
               </div>
             </button>
           ))

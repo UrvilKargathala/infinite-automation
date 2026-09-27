@@ -74,8 +74,20 @@ CREATE TABLE IF NOT EXISTS users (
   full_name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
   role TEXT NOT NULL CHECK (role IN ('Super Admin', 'Admin', 'Staff')),
-  status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive'))
+  status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
+  ticket_alerts BOOLEAN NOT NULL DEFAULT true,
+  quote_alerts BOOLEAN NOT NULL DEFAULT false
 );
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT '#3A90C3',
+  read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created ON notifications(user_id, created_at DESC);
 
 CREATE TABLE IF NOT EXISTS chat_messages (
   id SERIAL PRIMARY KEY,

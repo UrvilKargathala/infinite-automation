@@ -40,7 +40,7 @@ export function UserModal({ open, onClose, user, assignableRoles, onSave }: Prop
   const canSave = fullName.trim() && email.trim();
 
   function handleSave() {
-    onSave({ fullName: fullName.trim(), email: email.trim(), role, status });
+    onSave({ fullName: fullName.trim(), email: email.trim(), role, status, ticketAlerts: true, quoteAlerts: false });
     onClose();
   }
 

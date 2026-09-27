@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction } from "@/lib/api/audit";
+import { createNotifications } from "@/lib/api/notifications";
 import type { Ticket } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,9 @@ export async function POST(req: Request) {
       changes: { after: { subject: created.subject, name: created.name, company: created.company, category: created.category, priority: created.priority, status: created.status, assigned: created.assigned } },
       actor: me,
     });
+
+    const recipients = await sql`SELECT id FROM users WHERE id != ${me.id} AND status = 'Active' AND ticket_alerts = true`;
+    await createNotifications(recipients.map((r) => r.id as number), `New ticket: ${created.subject}`, "#3A90C3");
   }
 
   return NextResponse.json(created, { status: 201 });

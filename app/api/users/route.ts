@@ -14,6 +14,8 @@ function toUser(row: Record<string, unknown>): User {
     email: row.email as string,
     role: row.role as User["role"],
     status: row.status as User["status"],
+    ticketAlerts: row.ticket_alerts as boolean,
+    quoteAlerts: row.quote_alerts as boolean,
   };
 }
 

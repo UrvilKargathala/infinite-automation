@@ -26,8 +26,6 @@ import { Badge } from "@/components/ui/Badge";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useTicketStore } from "@/lib/store/useTicketStore";
-import { useSettingsStore } from "@/lib/store/useSettingsStore";
-import { useNotificationStore } from "@/lib/store/useNotificationStore";
 import { formatCurrency, CURRENCIES, CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
 import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
@@ -65,8 +63,6 @@ export function QuoteModal({
   const { add, update } = useQuoteStore();
   const products = useProductStore((s) => s.products);
   const tickets = useTicketStore((s) => s.tickets);
-  const quoteAlerts = useSettingsStore((s) => s.quoteAlerts);
-  const notify = useNotificationStore((s) => s.add);
   const allCategories = useProductStore((s) => s.categories);
   const brandsByCategory = useProductStore((s) => s.brandsByCategory);
   const productsByBrandCategory = useProductStore((s) => s.productsByBrandCategory);
@@ -167,9 +163,6 @@ export function QuoteModal({
     if (quote) {
       update(quote.id, draft);
       toast.success("Quote updated");
-      if (quoteAlerts && draft.status !== quote.status && (draft.status === "Accepted" || draft.status === "Rejected")) {
-        notify(`Quote ${quote.number} for ${draft.client} was ${draft.status.toLowerCase()}`, draft.status === "Accepted" ? "#10B981" : "#EF4444");
-      }
     } else {
       add(draft);
       toast.success("Quote created");

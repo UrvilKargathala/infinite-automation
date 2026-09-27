@@ -12,6 +12,8 @@ function toUser(row: Record<string, unknown>): User {
     email: row.email as string,
     role: row.role as User["role"],
     status: row.status as User["status"],
+    ticketAlerts: row.ticket_alerts as boolean,
+    quoteAlerts: row.quote_alerts as boolean,
   };
 }
 
@@ -42,7 +44,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const merged = { ...current, ...body };
   const rows = await sql`
     UPDATE users SET full_name = ${merged.fullName}, email = ${merged.email},
-      role = ${merged.role}, status = ${merged.status}
+      role = ${merged.role}, status = ${merged.status},
+      ticket_alerts = ${merged.ticketAlerts}, quote_alerts = ${merged.quoteAlerts}
     WHERE id = ${id}
     RETURNING *
   `;

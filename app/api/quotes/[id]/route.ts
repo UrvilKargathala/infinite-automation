@@ -4,6 +4,7 @@ import { assembleQuotes, replaceQuoteSections } from "@/lib/quotesDb";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { can } from "@/lib/utils/permissions";
 import { logAction, diffFields } from "@/lib/api/audit";
+import { createNotifications } from "@/lib/api/notifications";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import { formatCurrency } from "@/lib/utils/currency";
 import type { Quote, Section } from "@/types";
@@ -80,6 +81,12 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         metadata: sectionLines.length > 0 ? { sectionChanges: sectionLines } : undefined,
         actor: me,
       });
+    }
+
+    if (current.status !== assembled.status && (assembled.status === "Accepted" || assembled.status === "Rejected")) {
+      const recipients = await sql`SELECT id FROM users WHERE id != ${me.id} AND status = 'Active' AND quote_alerts = true`;
+      const color = assembled.status === "Accepted" ? "#10B981" : "#EF4444";
+      await createNotifications(recipients.map((r) => r.id as number), `Quote ${assembled.number} ${assembled.status.toLowerCase()}`, color);
     }
   }
 

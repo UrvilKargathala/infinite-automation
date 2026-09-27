@@ -10,7 +10,7 @@ import { UserMenu } from "@/components/layout/UserMenu";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
 import { SearchPanel } from "@/components/layout/SearchPanel";
 import { useAuthStore } from "@/lib/store/useAuthStore";
-import { useNotificationStore } from "@/lib/store/useNotificationStore";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useAuditUnreadCount } from "@/lib/hooks/useAuditUnreadCount";
 import { can } from "@/lib/utils/permissions";
 import { initials } from "@/lib/utils/initials";
@@ -36,7 +36,7 @@ export function TopNav() {
   function togglePanel(panel: "search" | "notifications" | "user") {
     setOpenPanel((p) => (p === panel ? null : panel));
   }
-  const unreadCount = useNotificationStore((s) => s.notifications.filter((n) => !n.read).length);
+  const { unreadCount } = useNotifications();
   const { count: auditUnread } = useAuditUnreadCount();
 
   const navItems = allNavItems.filter((item) => {

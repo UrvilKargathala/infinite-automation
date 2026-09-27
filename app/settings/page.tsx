@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import { LogOut } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { useSettingsStore } from "@/lib/store/useSettingsStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 
 function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
@@ -29,12 +28,17 @@ function Toggle({ checked, onChange, disabled }: { checked: boolean; onChange: (
 
 export default function SettingsPage() {
   const router = useRouter();
-  const reset = useAuthStore((s) => s.reset);
-  const { ticketAlerts, quoteAlerts, setSetting } = useSettingsStore();
+  const { user, reset, updateProfile } = useAuthStore();
+  const ticketAlerts = user?.ticketAlerts ?? true;
+  const quoteAlerts = user?.quoteAlerts ?? false;
 
-  function handleToggle(key: "ticketAlerts" | "quoteAlerts", value: boolean, label: string) {
-    setSetting(key, value);
-    toast.success(`${label} ${value ? "enabled" : "disabled"}`);
+  async function handleToggle(key: "ticketAlerts" | "quoteAlerts", value: boolean, label: string) {
+    try {
+      await updateProfile({ [key]: value });
+      toast.success(`${label} ${value ? "enabled" : "disabled"}`);
+    } catch {
+      // error toast already shown by the store
+    }
   }
 
   async function handleSignOut() {

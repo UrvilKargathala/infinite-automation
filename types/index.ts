@@ -77,6 +77,16 @@ export interface User {
   email: string;
   role: Role;
   status: UserStatus;
+  ticketAlerts: boolean;
+  quoteAlerts: boolean;
+}
+
+export interface AppNotification {
+  id: number;
+  text: string;
+  color: string;
+  read: boolean;
+  createdAt: string;
 }
 
 export interface ChatMessage {

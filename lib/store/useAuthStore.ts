@@ -7,6 +7,8 @@ interface CurrentUser {
   fullName: string;
   email: string;
   role: Role;
+  ticketAlerts: boolean;
+  quoteAlerts: boolean;
 }
 
 interface AuthStore {
@@ -15,11 +17,11 @@ interface AuthStore {
   loading: boolean;
   error: string | null;
   fetchMe: () => Promise<void>;
-  updateProfile: (patch: Partial<Pick<CurrentUser, "fullName">>) => Promise<void>;
+  updateProfile: (patch: Partial<Pick<CurrentUser, "fullName" | "ticketAlerts" | "quoteAlerts">>) => Promise<void>;
   reset: () => void;
 }
 
-const emptyUser: CurrentUser = { id: 0, fullName: "", email: "", role: "Staff" };
+const emptyUser: CurrentUser = { id: 0, fullName: "", email: "", role: "Staff", ticketAlerts: true, quoteAlerts: false };
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,

@@ -4,8 +4,6 @@ import { useState, useMemo, useEffect } from "react";
 import { ArrowDown, Minus, ArrowUp, AlertTriangle, Search, Plus, Download, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { useTicketStore } from "@/lib/store/useTicketStore";
-import { useSettingsStore } from "@/lib/store/useSettingsStore";
-import { useNotificationStore } from "@/lib/store/useNotificationStore";
 import { Num } from "@/components/ui/Num";
 import { IconTile } from "@/components/ui/IconTile";
 import { IconButton } from "@/components/ui/IconButton";
@@ -30,8 +28,6 @@ const statuses: TicketStatus[] = ["Open", "In Progress", "On Hold", "Resolved", 
 
 export function TicketsPageClient() {
   const { tickets, add, update, remove, updateStatus, loaded } = useTicketStore();
-  const ticketAlerts = useSettingsStore((s) => s.ticketAlerts);
-  const notify = useNotificationStore((s) => s.add);
 
   const loading = !loaded;
   const [filterOpen, setFilterOpen] = useState(false);
@@ -84,7 +80,6 @@ export function TicketsPageClient() {
   function handleCreate(data: Omit<Ticket, "id">) {
     add(data);
     toast.success("Ticket added");
-    if (ticketAlerts) notify(`New ticket: ${data.subject}`, "#3A90C3");
   }
 
   function handlePanelSave(id: number, patch: Partial<Omit<Ticket, "id">>) {
