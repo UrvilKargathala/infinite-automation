@@ -1,4 +1,4 @@
-import type { Ticket, Quote } from "@/types";
+import type { Ticket, Quote, Customer, CustomerSegment } from "@/types";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 
 export function inMonth(dateStr: string, month: number, year: number): boolean {
@@ -72,4 +72,51 @@ export function computeMonthlySeries(quotes: Quote[]) {
       .reduce((s, q) => s + calcQuoteTotal(q).grandTotal, 0);
     return { month, quotes: inThisMonth.length, revenue };
   });
+}
+
+/** Accepted-quote revenue grouped by the linked customer's segment. Quotes with no linked customer are excluded. */
+export function computeRevenueBySegment(quotes: Quote[], customers: Customer[]): { segment: CustomerSegment; revenue: number }[] {
+  const customerById = new Map(customers.map((c) => [c.id, c]));
+  const bySegment = new Map<CustomerSegment, number>();
+  quotes
+    .filter((q) => q.status === "Accepted" && q.customerId != null)
+    .forEach((q) => {
+      const customer = customerById.get(q.customerId!);
+      if (!customer) return;
+      const revenue = calcQuoteTotal(q).grandTotal;
+      bySegment.set(customer.segment, (bySegment.get(customer.segment) ?? 0) + revenue);
+    });
+  return Array.from(bySegment.entries())
+    .map(([segment, revenue]) => ({ segment, revenue }))
+    .sort((a, b) => b.revenue - a.revenue);
+}
+
+/** Customers ranked by accepted-quote revenue, with their linked ticket count. Customers with zero revenue are excluded. */
+export function computeTopCustomers(quotes: Quote[], tickets: Ticket[], customers: Customer[], limit = 5) {
+  const revenueByCustomer = new Map<number, number>();
+  quotes
+    .filter((q) => q.status === "Accepted" && q.customerId != null)
+    .forEach((q) => {
+      revenueByCustomer.set(q.customerId!, (revenueByCustomer.get(q.customerId!) ?? 0) + calcQuoteTotal(q).grandTotal);
+    });
+  const ticketCountByCustomer = new Map<number, number>();
+  tickets
+    .filter((t) => t.customerId != null)
+    .forEach((t) => {
+      ticketCountByCustomer.set(t.customerId!, (ticketCountByCustomer.get(t.customerId!) ?? 0) + 1);
+    });
+  return customers
+    .map((c) => ({ customer: c, revenue: revenueByCustomer.get(c.id) ?? 0, ticketCount: ticketCountByCustomer.get(c.id) ?? 0 }))
+    .filter((c) => c.revenue > 0)
+    .sort((a, b) => b.revenue - a.revenue)
+    .slice(0, limit);
+}
+
+/** Customers with no linked ticket, project, or quote at all. */
+export function countInactiveCustomers(customers: Customer[], tickets: Ticket[], projects: { customerId: number | null }[], quotes: Quote[]): number {
+  const linked = new Set<number>();
+  tickets.forEach((t) => t.customerId != null && linked.add(t.customerId));
+  projects.forEach((p) => p.customerId != null && linked.add(p.customerId));
+  quotes.forEach((q) => q.customerId != null && linked.add(q.customerId));
+  return customers.filter((c) => !linked.has(c.id)).length;
 }

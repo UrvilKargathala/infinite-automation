@@ -15,6 +15,7 @@ import { useTicketStore } from "@/lib/store/useTicketStore";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
+import { useCustomerStore } from "@/lib/store/useCustomerStore";
 import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
 import { Price } from "@/components/ui/Price";
@@ -23,12 +24,14 @@ import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { QuoteExpiryAlerts } from "@/components/dashboard/QuoteExpiryAlerts";
 import { TeamWorkload } from "@/components/dashboard/TeamWorkload";
 import { ProjectsByStage } from "@/components/dashboard/ProjectsByStage";
+import { RevenueBySegment } from "@/components/dashboard/RevenueBySegment";
+import { TopCustomers } from "@/components/dashboard/TopCustomers";
 import { AiSummary } from "@/components/dashboard/AiSummary";
-import { computeMonthlyMetrics, computeMonthlySeries } from "@/lib/utils/dashboardMetrics";
-import { timeAgo } from "@/lib/utils/timeAgo";
+import { computeMonthlyMetrics, computeMonthlySeries, computeRevenueBySegment, computeTopCustomers, countInactiveCustomers } from "@/lib/utils/dashboardMetrics";
 import { relativeTime } from "@/lib/utils/relativeTime";
 import { moduleColors } from "@/components/audit/auditMeta";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useNotifications } from "@/lib/hooks/useNotifications";
 import { can } from "@/lib/utils/permissions";
 import type { AuditLog } from "@/types";
 
@@ -86,11 +89,14 @@ export default function DashboardPage() {
   const projects = useProjectStore((s) => s.projects);
   const quotes = useQuoteStore((s) => s.quotes);
   const products = useProductStore((s) => s.products);
+  const customers = useCustomerStore((s) => s.customers);
   const ticketsLoaded = useTicketStore((s) => s.loaded);
   const projectsLoaded = useProjectStore((s) => s.loaded);
   const quotesLoaded = useQuoteStore((s) => s.loaded);
   const productsLoaded = useProductStore((s) => s.loaded);
-  const loading = !ticketsLoaded || !projectsLoaded || !quotesLoaded || !productsLoaded;
+  const customersLoaded = useCustomerStore((s) => s.loaded);
+  const loading = !ticketsLoaded || !projectsLoaded || !quotesLoaded || !productsLoaded || !customersLoaded;
+  const { notifications } = useNotifications();
 
   const metrics = useMemo(() => computeMonthlyMetrics(tickets, quotes), [tickets, quotes]);
   const openCount = metrics.openTickets.length;
@@ -116,22 +122,9 @@ export default function DashboardPage() {
   }, [tickets]);
 
   const chartData = useMemo(() => computeMonthlySeries(quotes), [quotes]);
-  const activity = useMemo(() => {
-    const ticketEvents = tickets.map((t) => ({
-      text: t.status === "Resolved" ? `${t.subject} resolved` : t.status === "Closed" ? `${t.subject} closed` : `${t.subject} — ${t.status}`,
-      color: t.status === "Resolved" ? "#10B981" : t.status === "Closed" ? "#64748B" : "#3A90C3",
-      date: t.lastContact,
-    }));
-    const quoteEvents = quotes.map((q) => ({
-      text: `Quote ${q.number} for ${q.client} — ${q.status}`,
-      color: q.status === "Accepted" ? "#10B981" : q.status === "Rejected" ? "#EF4444" : "#94A3B8",
-      date: q.date,
-    }));
-    return [...ticketEvents, ...quoteEvents]
-      .filter((e) => e.date)
-      .sort((a, b) => (a.date < b.date ? 1 : -1))
-      .slice(0, 4);
-  }, [tickets, quotes]);
+  const revenueBySegment = useMemo(() => computeRevenueBySegment(quotes, customers), [quotes, customers]);
+  const topCustomers = useMemo(() => computeTopCustomers(quotes, tickets, customers), [quotes, tickets, customers]);
+  const inactiveCustomers = useMemo(() => countInactiveCustomers(customers, tickets, projects, quotes), [customers, tickets, projects, quotes]);
 
   const pctLabel = (v: number | null) => (v === null ? "—" : `${v > 0 ? "+" : ""}${v.toFixed(1)}%`);
   const countLabel = (v: number) => (v > 0 ? `+${v}` : `${v}`);
@@ -278,16 +271,16 @@ export default function DashboardPage() {
                 ))}
               </div>
             )
-          ) : activity.length === 0 ? (
+          ) : notifications.length === 0 ? (
             <div className="text-sm text-text-muted text-center py-6">No activity yet</div>
           ) : (
             <div className="space-y-4">
-              {activity.map((a, i) => (
-                <div key={i} className="flex gap-3">
-                  <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: a.color }} />
+              {notifications.slice(0, 4).map((n) => (
+                <div key={n.id} className="flex gap-3">
+                  <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: n.color }} />
                   <div>
-                    <div className="text-sm text-text-primary">{a.text}</div>
-                    <div className="text-xs text-text-muted mt-0.5">{timeAgo(a.date)}</div>
+                    <div className="text-sm text-text-primary">{n.text}</div>
+                    <div className="text-xs text-text-muted mt-0.5">{relativeTime(n.createdAt)}</div>
                   </div>
                 </div>
               ))}
@@ -305,6 +298,12 @@ export default function DashboardPage() {
       {/* Row 5 — Projects by stage */}
       <div className="mt-4">
         <ProjectsByStage projects={projects} />
+      </div>
+
+      {/* Row 6 — Revenue by segment + Top customers */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+        <RevenueBySegment data={revenueBySegment} />
+        <TopCustomers entries={topCustomers} totalCustomers={customers.length} inactiveCount={inactiveCustomers} />
       </div>
     </div>
   );

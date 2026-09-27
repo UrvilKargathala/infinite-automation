@@ -9,11 +9,11 @@ const stageColors: Record<string, string> = {
 };
 
 export function ProjectsByStage({ projects }: { projects: Project[] }) {
+  const total = projects.length;
   const counts = PIPELINE_STAGES.map((stage) => ({
     stage,
     count: projects.filter((p) => p.stage === stage).length,
   }));
-  const maxCount = Math.max(1, ...counts.map((c) => c.count));
 
   return (
     <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
@@ -21,19 +21,28 @@ export function ProjectsByStage({ projects }: { projects: Project[] }) {
       {projects.length === 0 ? (
         <div className="text-center text-text-muted text-sm py-8">No projects yet</div>
       ) : (
-        <div className="space-y-3">
-          {counts.map(({ stage, count }) => (
-            <div key={stage} className="flex items-center gap-3">
-              <span className="text-xs text-text-secondary w-[130px] shrink-0 truncate">{stage}</span>
-              <div className="flex-1 h-1.5 rounded-full bg-surface-alt overflow-hidden">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${Math.max(count > 0 ? 4 : 0, (count / maxCount) * 100)}%`, backgroundColor: stageColors[stage] }}
-                />
+        <div className="space-y-4">
+          {counts.map(({ stage, count }) => {
+            const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+            return (
+              <div key={stage} className="flex items-center gap-3">
+                <span className="text-xs text-text-secondary w-[130px] shrink-0 truncate">{stage}</span>
+                <div className="flex-1 h-2.5 rounded-full bg-surface-alt overflow-hidden">
+                  {count > 0 ? (
+                    <div
+                      className="h-full rounded-full transition-all"
+                      style={{ width: `${Math.max(2, pct)}%`, backgroundColor: stageColors[stage] }}
+                    />
+                  ) : (
+                    <div className="h-full w-full rounded-full border border-dashed border-border" />
+                  )}
+                </div>
+                <span className="text-xs text-text-muted w-16 text-right shrink-0">
+                  <Num>{count}</Num> <span className="text-text-muted/70">· {pct}%</span>
+                </span>
               </div>
-              <Num className="text-xs text-text-muted w-4 text-right shrink-0">{count}</Num>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
