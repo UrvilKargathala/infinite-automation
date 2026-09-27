@@ -19,6 +19,7 @@ function toMessage(r: Record<string, unknown>): TicketMessage {
     replyToFullName: (r.reply_to_full_name as string) ?? null,
     isForwarded: r.is_forwarded as boolean,
     deleted: r.deleted as boolean,
+    edited: r.edited as boolean,
   };
 }
 
@@ -27,7 +28,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const messageRows = await sql`
     SELECT m.id, m.ticket_id, m.text, m.attachments, m.created_at::text AS created_at,
-           m.reply_to_id, m.is_forwarded, m.deleted,
+           m.reply_to_id, m.is_forwarded, m.deleted, m.edited,
            u.id AS user_id, u.full_name,
            rt.text AS reply_to_text, ru.full_name AS reply_to_full_name
     FROM ticket_messages m
@@ -92,6 +93,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     replyToFullName,
     isForwarded,
     deleted: false,
+    edited: false,
   };
 
   return NextResponse.json(message, { status: 201 });

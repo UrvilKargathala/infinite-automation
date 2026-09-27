@@ -94,6 +94,7 @@ CREATE TABLE IF NOT EXISTS ticket_messages (
   reply_to_id INTEGER REFERENCES ticket_messages(id) ON DELETE SET NULL,
   is_forwarded BOOLEAN NOT NULL DEFAULT false,
   deleted BOOLEAN NOT NULL DEFAULT false,
+  edited BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -136,6 +137,7 @@ CREATE TABLE IF NOT EXISTS project_messages (
   reply_to_id INTEGER REFERENCES project_messages(id) ON DELETE SET NULL,
   is_forwarded BOOLEAN NOT NULL DEFAULT false,
   deleted BOOLEAN NOT NULL DEFAULT false,
+  edited BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 

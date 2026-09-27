@@ -106,6 +106,7 @@ export interface TicketMessage {
   replyToFullName: string | null;
   isForwarded: boolean;
   deleted: boolean;
+  edited: boolean;
 }
 
 export type ProjectStage =
@@ -146,6 +147,7 @@ export interface ProjectMessage {
   replyToFullName: string | null;
   isForwarded: boolean;
   deleted: boolean;
+  edited: boolean;
 }
 
 export type AuditModule = "Master" | "CRM" | "Quote" | "Projects" | "User Management" | "Auth";

@@ -101,6 +101,8 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
   const [preview, setPreview] = useState<{ images: Attachment[]; index: number } | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [editingMsgId, setEditingMsgId] = useState<number | null>(null);
+  const [editText, setEditText] = useState("");
 
   useEffect(() => {
     fetchUsers();
@@ -164,6 +166,25 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
       );
     },
     onError: () => toast.error("You can only delete your own messages"),
+  });
+
+  const editMutation = useMutation({
+    mutationFn: async ({ messageId, text: newText }: { messageId: number; text: string }) => {
+      const res = await fetch(`/api/projects/${project!.id}/messages/${messageId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: newText }),
+      });
+      if (!res.ok) throw new Error("Failed to edit");
+      return { messageId, text: newText };
+    },
+    onSuccess: ({ messageId, text: newText }) => {
+      queryClient.setQueryData<ProjectMessage[]>(["project-messages", project?.id], (prev = []) =>
+        prev.map((m) => (m.id === messageId ? { ...m, text: newText, edited: true } : m))
+      );
+      setEditingMsgId(null);
+    },
+    onError: () => toast.error("Failed to edit message"),
   });
 
   const forwardMutation = useMutation({
@@ -510,6 +531,9 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                             <div className="flex items-baseline gap-2">
                               <span className="text-xs text-text-primary">{m.fullName}</span>
                               <span className="text-[10px] text-text-muted">{msgTimeLabel(m.createdAt)}</span>
+                              {m.edited && !m.deleted && (
+                                <span className="text-[10px] text-text-muted italic">(edited)</span>
+                              )}
                               {m.isForwarded && !m.deleted && (
                                 <span className="text-[10px] text-text-muted italic flex items-center gap-0.5">
                                   <Forward size={10} /> Forwarded
@@ -550,6 +574,14 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                                       </button>
                                       {m.userId === myId && (
                                         <button
+                                          onClick={() => { setEditingMsgId(m.id); setEditText(m.text); setMenuOpenId(null); }}
+                                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-[#F9FAFB] transition-colors"
+                                        >
+                                          <Pencil size={14} /> Edit
+                                        </button>
+                                      )}
+                                      {m.userId === myId && (
+                                        <button
                                           onClick={() => { setMenuOpenId(null); if (window.confirm("Delete this message?")) deleteMutation.mutate(m.id); }}
                                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-[#F9FAFB] transition-colors"
                                         >
@@ -574,10 +606,47 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                                     <div className="text-xs text-text-muted truncate">{m.replyToText || "Attachment"}</div>
                                   </div>
                                 )}
-                                {m.text && (
-                                  <div className="mt-1 text-sm text-text-primary bg-[#F9FAFB] rounded-xl px-3 py-2 inline-block max-w-full whitespace-pre-wrap break-words">
-                                    {highlight(m.text, searchQuery)}
+                                {editingMsgId === m.id ? (
+                                  <div className="mt-1 flex flex-col gap-1.5 max-w-full">
+                                    <textarea
+                                      autoFocus
+                                      className="w-full bg-white border border-brand-blue rounded-lg py-1.5 px-2.5 text-sm text-text-primary focus:outline-none resize-none"
+                                      rows={2}
+                                      value={editText}
+                                      onChange={(e) => setEditText(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter" && !e.shiftKey) {
+                                          e.preventDefault();
+                                          if (editText.trim() || m.attachments.length > 0) {
+                                            editMutation.mutate({ messageId: m.id, text: editText.trim() });
+                                          }
+                                        } else if (e.key === "Escape") {
+                                          setEditingMsgId(null);
+                                        }
+                                      }}
+                                    />
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={() => editMutation.mutate({ messageId: m.id, text: editText.trim() })}
+                                        disabled={(!editText.trim() && m.attachments.length === 0) || editMutation.isPending}
+                                        className="text-xs text-white bg-brand-gradient rounded-full px-3 py-1 disabled:opacity-40"
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        onClick={() => setEditingMsgId(null)}
+                                        className="text-xs text-text-muted hover:text-text-primary"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
                                   </div>
+                                ) : (
+                                  m.text && (
+                                    <div className="mt-1 text-sm text-text-primary bg-[#F9FAFB] rounded-xl px-3 py-2 inline-block max-w-full whitespace-pre-wrap break-words">
+                                      {highlight(m.text, searchQuery)}
+                                    </div>
+                                  )
                                 )}
                                 {m.attachments.length > 0 && (() => {
                                   const images = m.attachments.filter((a) => a.type.startsWith("image/"));
