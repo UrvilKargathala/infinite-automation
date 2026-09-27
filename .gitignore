@@ -10,3 +10,9 @@ tsconfig.tsbuildinfo
 
 # clerk configuration (can include secrets)
 /.clerk/
+
+# /brag skill + generated marketing video (local tooling, not app code)
+/.agents/
+/.claude/skills/
+/brag-output/
+/skills-lock.json
