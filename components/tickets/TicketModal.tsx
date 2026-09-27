@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { CustomerPicker } from "@/components/customers/CustomerPicker";
 import type { Ticket, TicketCategory, TicketPriority, TicketStatus } from "@/types";
 
 const categories: TicketCategory[] = ["Installation", "Repair", "Maintenance", "General"];
@@ -22,6 +23,7 @@ interface Props {
 
 export function TicketModal({ open, onClose, ticket, defaultStatus, onSave, onDelete }: Props) {
   const [subject, setSubject] = useState("");
+  const [customerId, setCustomerId] = useState<number | null>(null);
   const [name, setName] = useState("");
   const [company, setCompany] = useState("");
   const [email, setEmail] = useState("");
@@ -36,6 +38,7 @@ export function TicketModal({ open, onClose, ticket, defaultStatus, onSave, onDe
     if (!open) return;
     if (ticket) {
       setSubject(ticket.subject);
+      setCustomerId(ticket.customerId);
       setName(ticket.name);
       setCompany(ticket.company);
       setEmail(ticket.email);
@@ -47,6 +50,7 @@ export function TicketModal({ open, onClose, ticket, defaultStatus, onSave, onDe
       setLastContact(ticket.lastContact);
     } else {
       setSubject("");
+      setCustomerId(null);
       setName("");
       setCompany("");
       setEmail("");
@@ -60,8 +64,10 @@ export function TicketModal({ open, onClose, ticket, defaultStatus, onSave, onDe
   }, [open, ticket, defaultStatus]);
 
   function handleSave() {
+    if (!customerId) return;
     onSave({
       subject: subject.trim(),
+      customerId,
       name: name.trim(),
       company: company.trim(),
       email: email.trim(),
@@ -107,7 +113,7 @@ export function TicketModal({ open, onClose, ticket, defaultStatus, onSave, onDe
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!subject.trim() || !name.trim()}>Save</Button>
+          <Button onClick={handleSave} disabled={!subject.trim() || !name.trim() || !customerId}>Save</Button>
         </>
       }
     >
@@ -116,13 +122,13 @@ export function TicketModal({ open, onClose, ticket, defaultStatus, onSave, onDe
           <label className={labelClass}>Subject</label>
           <input className={inputClass} value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="e.g. Dimmer switch not responding" />
         </div>
+        <CustomerPicker
+          value={customerId}
+          onChange={(id, custName) => { setCustomerId(id); setCompany(custName); }}
+        />
         <div>
           <label className={labelClass}>Contact name</label>
           <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <div>
-          <label className={labelClass}>Company</label>
-          <input className={inputClass} value={company} onChange={(e) => setCompany(e.target.value)} />
         </div>
         <div>
           <label className={labelClass}>Email</label>

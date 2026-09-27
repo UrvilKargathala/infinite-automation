@@ -7,6 +7,7 @@ import type { Ticket } from "@/types";
 function toTicket(row: Record<string, unknown>): Ticket {
   return {
     id: row.id as number,
+    customerId: (row.customer_id as number) ?? null,
     subject: row.subject as string,
     name: row.name as string,
     company: row.company as string,
@@ -24,16 +25,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const me = await getCurrentAppUser();
   const id = Number(params.id);
   const body = (await req.json()) as Partial<Omit<Ticket, "id">>;
-  const existing = await sql`SELECT id, subject, name, company, email, phone, category, priority, status, assigned, last_contact::text FROM tickets WHERE id = ${id}`;
+  const existing = await sql`SELECT id, customer_id, subject, name, company, email, phone, category, priority, status, assigned, last_contact::text FROM tickets WHERE id = ${id}`;
   if (existing.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const before = toTicket(existing[0]);
   const merged = { ...before, ...body };
   const rows = await sql`
-    UPDATE tickets SET subject = ${merged.subject}, name = ${merged.name}, company = ${merged.company}, email = ${merged.email},
+    UPDATE tickets SET customer_id = ${merged.customerId}, subject = ${merged.subject}, name = ${merged.name}, company = ${merged.company}, email = ${merged.email},
       phone = ${merged.phone}, category = ${merged.category}, priority = ${merged.priority}, status = ${merged.status},
       assigned = ${merged.assigned}, last_contact = ${merged.lastContact}
     WHERE id = ${id}
-    RETURNING id, subject, name, company, email, phone, category, priority, status, assigned, last_contact::text
+    RETURNING id, customer_id, subject, name, company, email, phone, category, priority, status, assigned, last_contact::text
   `;
   const updated = toTicket(rows[0]);
 

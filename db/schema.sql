@@ -22,8 +22,21 @@ CREATE TABLE IF NOT EXISTS product_prices (
 
 CREATE INDEX IF NOT EXISTS idx_product_prices_product_id ON product_prices(product_id);
 
+CREATE TABLE IF NOT EXISTS customers (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  segment TEXT NOT NULL CHECK (segment IN ('Residential', 'Hospitality', 'Government / Council', 'Retail', 'Healthcare / Aged Care', 'Industrial')),
+  contact_name TEXT NOT NULL DEFAULT '',
+  email TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  address TEXT NOT NULL DEFAULT '',
+  notes TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE TABLE IF NOT EXISTS tickets (
   id SERIAL PRIMARY KEY,
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
   subject TEXT NOT NULL DEFAULT '',
   name TEXT NOT NULL,
   company TEXT NOT NULL,
@@ -40,6 +53,7 @@ CREATE TABLE IF NOT EXISTS quotes (
   id SERIAL PRIMARY KEY,
   number TEXT NOT NULL UNIQUE,
   client_id INTEGER REFERENCES tickets(id) ON DELETE SET NULL,
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
   client TEXT NOT NULL,
   date DATE NOT NULL,
   valid_until DATE NOT NULL,
@@ -112,6 +126,7 @@ CREATE TABLE IF NOT EXISTS ticket_messages (
 
 CREATE TABLE IF NOT EXISTS projects (
   id SERIAL PRIMARY KEY,
+  customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
   customer_name TEXT NOT NULL,
   site_address TEXT NOT NULL DEFAULT '',
   assigned TEXT NOT NULL DEFAULT '',

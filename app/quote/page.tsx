@@ -2,10 +2,12 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
-import { Search, FileText, Send, CheckCircle, XCircle, Plus, Eye, Pencil, Trash2 } from "lucide-react";
+import { Search, FileText, Send, CheckCircle, XCircle, Plus, Eye, Pencil, Trash2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useProductStore } from "@/lib/store/useProductStore";
+import { useCustomerStore } from "@/lib/store/useCustomerStore";
 import { can } from "@/lib/utils/permissions";
 import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
@@ -15,6 +17,7 @@ import { Pagination } from "@/components/ui/Pagination";
 import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import { calcQuoteTotal } from "@/lib/utils/quote";
+import { printQuote } from "@/lib/utils/quotePdf";
 import type { Quote, QuoteStatus } from "@/types";
 
 const statusConfig: Record<QuoteStatus, { color: string; icon: typeof FileText }> = {
@@ -28,6 +31,8 @@ export default function QuotePage() {
   const { quotes, remove, loaded } = useQuoteStore();
   const role = useAuthStore((s) => s.user?.role ?? "Staff");
   const canDeleteQuote = can(role, "deleteQuote");
+  const products = useProductStore((s) => s.products);
+  const customers = useCustomerStore((s) => s.customers);
 
   const loading = !loaded;
 
@@ -85,6 +90,10 @@ export default function QuotePage() {
     setEditQuote(q);
     setViewMode(true);
     setModalOpen(true);
+  }
+
+  function handlePrint(q: Quote) {
+    printQuote(q, products, customers);
   }
 
   function handleDelete(id: number) {
@@ -180,6 +189,9 @@ export default function QuotePage() {
                         </button>
                         <button onClick={() => openEdit(q)} className="p-1.5 rounded-lg text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary transition-colors" title="Edit">
                           <Pencil size={16} />
+                        </button>
+                        <button onClick={() => handlePrint(q)} className="p-1.5 rounded-lg text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary transition-colors" title="Print / PDF">
+                          <Printer size={16} />
                         </button>
                         {canDeleteQuote && (
                           <button onClick={() => handleDelete(q.id)} className="p-1.5 rounded-lg text-text-secondary hover:bg-[#F9FAFB] hover:text-danger transition-colors" title="Delete">

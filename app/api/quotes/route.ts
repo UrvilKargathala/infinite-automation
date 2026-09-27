@@ -10,13 +10,14 @@ import type { Quote } from "@/types";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const quoteRows = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status, currency FROM quotes ORDER BY id`;
+  const quoteRows = await sql`SELECT id, number, client_id, customer_id, client, date::text, valid_until::text, status, currency FROM quotes ORDER BY id`;
   return NextResponse.json(await assembleQuotes(quoteRows));
 }
 
 export async function POST(req: Request) {
   const me = await getCurrentAppUser();
   const body = (await req.json()) as Omit<Quote, "id" | "number">;
+  if (!body.customerId) return NextResponse.json({ error: "Customer is required" }, { status: 400 });
 
   const yearRows = await sql`
     SELECT count(*) AS n FROM quotes WHERE number LIKE ${`IA-Q-${new Date().getFullYear()}-%`}
@@ -25,9 +26,9 @@ export async function POST(req: Request) {
   const number = `IA-Q-${new Date().getFullYear()}-${String(seq).padStart(3, "0")}`;
 
   const quoteRows = await sql`
-    INSERT INTO quotes (number, client_id, client, date, valid_until, status, currency)
-    VALUES (${number}, ${body.clientId}, ${body.client}, ${body.date}, ${body.validUntil}, ${body.status}, ${body.currency ?? "INR"})
-    RETURNING id, number, client_id, client, date::text, valid_until::text, status, currency
+    INSERT INTO quotes (number, customer_id, client, date, valid_until, status, currency)
+    VALUES (${number}, ${body.customerId}, ${body.client}, ${body.date}, ${body.validUntil}, ${body.status}, ${body.currency ?? "INR"})
+    RETURNING id, number, client_id, customer_id, client, date::text, valid_until::text, status, currency
   `;
   const quoteId = quoteRows[0].id as number;
   await replaceQuoteSections(quoteId, body.sections);

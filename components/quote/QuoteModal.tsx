@@ -25,11 +25,13 @@ import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
-import { useTicketStore } from "@/lib/store/useTicketStore";
-import { formatCurrency, CURRENCIES, CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
+import { useCustomerStore } from "@/lib/store/useCustomerStore";
+import { CustomerPicker } from "@/components/customers/CustomerPicker";
+import { CURRENCIES, CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
 import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import { calcLineTotal, calcSectionSubtotal, calcQuoteTotal } from "@/lib/utils/quote";
+import { printQuote } from "@/lib/utils/quotePdf";
 import type { Quote, Section, QuoteItem, QuoteStatus, Product } from "@/types";
 
 function uid(): string {
@@ -46,7 +48,7 @@ const numberInputClass =
 function emptyQuoteDraft(): Omit<Quote, "id" | "number"> {
   const today = new Date().toISOString().slice(0, 10);
   const valid = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-  return { clientId: null, client: "", date: today, validUntil: valid, status: "Draft", currency: "INR" as CurrencyCode, sections: [emptySection()] };
+  return { clientId: null, customerId: null, client: "", date: today, validUntil: valid, status: "Draft", currency: "INR" as CurrencyCode, sections: [emptySection()] };
 }
 
 export function QuoteModal({
@@ -62,10 +64,14 @@ export function QuoteModal({
 }) {
   const { add, update } = useQuoteStore();
   const products = useProductStore((s) => s.products);
-  const tickets = useTicketStore((s) => s.tickets);
   const allCategories = useProductStore((s) => s.categories);
   const brandsByCategory = useProductStore((s) => s.brandsByCategory);
   const productsByBrandCategory = useProductStore((s) => s.productsByBrandCategory);
+  const { customers, fetchAll: fetchCustomers } = useCustomerStore();
+
+  useEffect(() => {
+    fetchCustomers();
+  }, [fetchCustomers]);
 
   const [draft, setDraft] = useState<Omit<Quote, "id" | "number">>(emptyQuoteDraft());
 
@@ -172,38 +178,7 @@ export function QuoteModal({
 
   function handlePrint() {
     const q = quote ? { ...quote, ...draft } : { ...draft, id: 0, number: "PREVIEW" } as Quote;
-    const t = calcQuoteTotal(q);
-    let sectionRows = "";
-    q.sections.forEach((sec, si) => {
-      const sn = si + 1;
-      sectionRows += `<tr class="sec-header"><td colspan="6" style="background:#3A90C3;color:#fff;padding:10px 12px;font-weight:400;"><span class="num">${sn}.</span> ${sec.name || "Untitled Section"}</td></tr>`;
-      sec.items.forEach((item, ii) => {
-        const lt = calcLineTotal(item.qty, item.price, item.discount);
-        sectionRows += `<tr>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;" class="num">${sn}.${ii + 1}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;">${item.name} - ${products.find((p) => p.id === item.productId)?.sku ?? "N/A"} (<span class="num">${item.qty}</span> PCS)</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;" class="num">${formatCurrency(item.price, q.currency)}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;" class="num">${item.qty}</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;" class="num">${item.discount}%</td>
-          <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;" class="num">${formatCurrency(lt, q.currency)}</td>
-        </tr>`;
-      });
-    });
-    const html = `<!DOCTYPE html><html><head><title>Quote ${q.number}</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400&family=Montserrat:wght@500&display=swap" rel="stylesheet">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Fredoka',Arial,sans-serif;font-weight:400;color:#0F172A;padding:40px}.num{font-family:'Montserrat',ui-monospace,system-ui,sans-serif;font-weight:500;font-variant-numeric:tabular-nums}
-.header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #3A90C3;margin-bottom:24px}
-table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;padding:10px 12px;text-align:left;font-weight:400;text-transform:uppercase;font-size:11px;letter-spacing:0.05em;color:#64748B}
-.totals{margin-top:24px;text-align:right}.totals .row{margin:4px 0;font-size:14px}.totals .grand{font-size:20px;font-weight:300;color:#44BE4A;margin-top:8px}
-@media print{body{padding:20px}}</style></head><body>
-<div class="header"><div><div style="font-size:24px;font-weight:300">Infinite Automation</div><div style="font-size:12px;color:#64748B;margin-top:4px">Smart Home & Building Automation</div></div>
-<div style="text-align:right"><div style="font-size:18px;font-weight:300">${q.number}</div><div style="font-size:12px;color:#64748B;margin-top:4px">Date: ${q.date}</div><div style="font-size:12px;color:#64748B">Valid until: ${q.validUntil}</div></div></div>
-<div style="margin-bottom:24px"><div style="font-size:12px;color:#64748B;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Client</div><div style="font-size:16px">${q.client}</div></div>
-<table><thead><tr><th>Sr.</th><th>Description</th><th style="text-align:right">Price</th><th style="text-align:center">Qty</th><th style="text-align:center">Disc.</th><th style="text-align:right">Total</th></tr></thead><tbody>${sectionRows}</tbody></table>
-<div class="totals"><div class="row">Subtotal: <span class="num">${formatCurrency(t.subtotal, q.currency)}</span></div>${t.taxRate > 0 ? `<div class="row">${t.taxLabel} (<span class="num">${Math.round(t.taxRate * 100)}</span>%): <span class="num">${formatCurrency(t.tax, q.currency)}</span></div>` : ""}<div class="grand">Grand Total: <span class="num">${formatCurrency(t.grandTotal, q.currency)}</span></div></div>
-<script>window.onload=function(){window.print()}<\/script></body></html>`;
-    const w = window.open("", "_blank");
-    if (w) { w.document.write(html); w.document.close(); }
+    printQuote(q, products, customers);
   }
 
   const isEditing = !viewMode;
@@ -229,7 +204,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
           <>
             <Button variant="ghost" onClick={onClose}>Cancel</Button>
             <Button variant="secondary" icon={Printer} onClick={handlePrint}>Print / PDF</Button>
-            <Button onClick={handleSave} disabled={!draft.client.trim()}>
+            <Button onClick={handleSave} disabled={!draft.client.trim() || !draft.customerId}>
               {quote ? "Save changes" : "Create quote"}
             </Button>
           </>
@@ -243,27 +218,18 @@ table{width:100%;border-collapse:collapse;font-size:14px}th{background:#F9FAFB;p
     >
       {/* Header fields */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
-        <div>
-          <label className="block text-sm text-text-primary mb-1">Client</label>
-          {isEditing ? (
-            <select
-              className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
-              value={draft.clientId ?? ""}
-              onChange={(e) => {
-                const tid = Number(e.target.value);
-                const ticket = tickets.find((t) => t.id === tid);
-                patchDraft({ clientId: tid || null, client: ticket?.company ?? "" });
-              }}
-            >
-              <option value="">Select client...</option>
-              {tickets.map((t) => (
-                <option key={t.id} value={t.id}>{t.company}</option>
-              ))}
-            </select>
-          ) : (
+        {isEditing ? (
+          <CustomerPicker
+            label="Client"
+            value={draft.customerId}
+            onChange={(id, name) => patchDraft({ customerId: id, client: name })}
+          />
+        ) : (
+          <div>
+            <label className="block text-sm text-text-primary mb-1">Client</label>
             <div className="text-sm text-text-primary py-2.5">{draft.client}</div>
-          )}
-        </div>
+          </div>
+        )}
         <Input label="Date" type="date" value={draft.date} onChange={(e) => patchDraft({ date: e.target.value })} disabled={!isEditing} />
         <Input label="Valid Until" type="date" value={draft.validUntil} onChange={(e) => patchDraft({ validUntil: e.target.value })} disabled={!isEditing} />
         <div>

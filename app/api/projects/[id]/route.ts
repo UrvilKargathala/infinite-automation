@@ -7,6 +7,7 @@ import type { Project } from "@/types";
 function toProject(row: Record<string, unknown>): Project {
   return {
     id: row.id as number,
+    customerId: (row.customer_id as number) ?? null,
     customerName: row.customer_name as string,
     siteAddress: row.site_address as string,
     assigned: row.assigned as string,
@@ -24,7 +25,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const id = Number(params.id);
   const body = (await req.json()) as Partial<Omit<Project, "id">>;
   const existing = await sql`
-    SELECT id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
+    SELECT id, customer_id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
            created_at::text, last_stage_change::text
     FROM projects WHERE id = ${id}
   `;
@@ -35,11 +36,11 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const lastStageChange = stageChanged ? new Date().toISOString() : merged.lastStageChange;
 
   const rows = await sql`
-    UPDATE projects SET customer_name = ${merged.customerName}, site_address = ${merged.siteAddress},
+    UPDATE projects SET customer_id = ${merged.customerId}, customer_name = ${merged.customerName}, site_address = ${merged.siteAddress},
       assigned = ${merged.assigned}, architect = ${merged.architect}, quote_id = ${merged.quoteId},
       notes = ${merged.notes}, stage = ${merged.stage}, last_stage_change = ${lastStageChange}
     WHERE id = ${id}
-    RETURNING id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
+    RETURNING id, customer_id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
               created_at::text, last_stage_change::text
   `;
 

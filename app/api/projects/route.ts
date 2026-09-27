@@ -9,6 +9,7 @@ export const dynamic = "force-dynamic";
 function toProject(row: Record<string, unknown>): Project {
   return {
     id: row.id as number,
+    customerId: (row.customer_id as number) ?? null,
     customerName: row.customer_name as string,
     siteAddress: row.site_address as string,
     assigned: row.assigned as string,
@@ -23,7 +24,7 @@ function toProject(row: Record<string, unknown>): Project {
 
 export async function GET() {
   const rows = await sql`
-    SELECT id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
+    SELECT id, customer_id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
            created_at::text, last_stage_change::text
     FROM projects ORDER BY id
   `;
@@ -33,10 +34,11 @@ export async function GET() {
 export async function POST(req: Request) {
   const me = await getCurrentAppUser();
   const body = (await req.json()) as Omit<Project, "id" | "quoteId" | "notes" | "createdAt" | "lastStageChange">;
+  if (!body.customerId) return NextResponse.json({ error: "Customer is required" }, { status: 400 });
   const rows = await sql`
-    INSERT INTO projects (customer_name, site_address, assigned, architect, stage)
-    VALUES (${body.customerName}, ${body.siteAddress}, ${body.assigned}, ${body.architect}, ${body.stage})
-    RETURNING id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
+    INSERT INTO projects (customer_id, customer_name, site_address, assigned, architect, stage)
+    VALUES (${body.customerId}, ${body.customerName}, ${body.siteAddress}, ${body.assigned}, ${body.architect}, ${body.stage})
+    RETURNING id, customer_id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
               created_at::text, last_stage_change::text
   `;
   await sql`INSERT INTO project_stage_events (project_id, stage) VALUES (${rows[0].id}, ${body.stage})`;

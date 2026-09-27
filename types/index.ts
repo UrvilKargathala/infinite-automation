@@ -29,6 +29,7 @@ export interface Product {
 
 export interface Ticket {
   id: number;
+  customerId: number | null;
   subject: string;
   name: string;
   company: string;
@@ -39,6 +40,22 @@ export interface Ticket {
   status: TicketStatus;
   assigned: string;
   lastContact: string;
+}
+
+export type CustomerSegment =
+  | "Residential" | "Hospitality" | "Government / Council"
+  | "Retail" | "Healthcare / Aged Care" | "Industrial";
+
+export interface Customer {
+  id: number;
+  name: string;
+  segment: CustomerSegment;
+  contactName: string;
+  email: string;
+  phone: string;
+  address: string;
+  notes: string;
+  createdAt: string;
 }
 
 export interface QuoteItem {
@@ -63,6 +80,7 @@ export interface Quote {
   id: number;
   number: string;
   clientId: number | null;
+  customerId: number | null;
   client: string;
   date: string;
   validUntil: string;
@@ -126,6 +144,7 @@ export type ProjectStage =
 
 export interface Project {
   id: number;
+  customerId: number | null;
   customerName: string;
   siteAddress: string;
   assigned: string;

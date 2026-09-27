@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 function toTicket(row: Record<string, unknown>): Ticket {
   return {
     id: row.id as number,
+    customerId: (row.customer_id as number) ?? null,
     subject: row.subject as string,
     name: row.name as string,
     company: row.company as string,
@@ -24,17 +25,18 @@ function toTicket(row: Record<string, unknown>): Ticket {
 }
 
 export async function GET() {
-  const rows = await sql`SELECT id, subject, name, company, email, phone, category, priority, status, assigned, last_contact::text FROM tickets ORDER BY id`;
+  const rows = await sql`SELECT id, customer_id, subject, name, company, email, phone, category, priority, status, assigned, last_contact::text FROM tickets ORDER BY id`;
   return NextResponse.json(rows.map(toTicket));
 }
 
 export async function POST(req: Request) {
   const me = await getCurrentAppUser();
   const body = (await req.json()) as Omit<Ticket, "id">;
+  if (!body.customerId) return NextResponse.json({ error: "Customer is required" }, { status: 400 });
   const rows = await sql`
-    INSERT INTO tickets (subject, name, company, email, phone, category, priority, status, assigned, last_contact)
-    VALUES (${body.subject}, ${body.name}, ${body.company}, ${body.email}, ${body.phone}, ${body.category}, ${body.priority}, ${body.status}, ${body.assigned}, ${body.lastContact})
-    RETURNING id, subject, name, company, email, phone, category, priority, status, assigned, last_contact::text
+    INSERT INTO tickets (customer_id, subject, name, company, email, phone, category, priority, status, assigned, last_contact)
+    VALUES (${body.customerId}, ${body.subject}, ${body.name}, ${body.company}, ${body.email}, ${body.phone}, ${body.category}, ${body.priority}, ${body.status}, ${body.assigned}, ${body.lastContact})
+    RETURNING id, customer_id, subject, name, company, email, phone, category, priority, status, assigned, last_contact::text
   `;
   const created = toTicket(rows[0]);
 

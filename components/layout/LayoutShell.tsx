@@ -9,6 +9,7 @@ import { useTicketStore } from "@/lib/store/useTicketStore";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useUserStore } from "@/lib/store/useUserStore";
+import { useCustomerStore } from "@/lib/store/useCustomerStore";
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -20,6 +21,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
   const fetchProjects = useProjectStore((s) => s.fetchAll);
   const fetchQuotes = useQuoteStore((s) => s.fetchAll);
   const fetchUsers = useUserStore((s) => s.fetchAll);
+  const fetchCustomers = useCustomerStore((s) => s.fetchAll);
 
   useEffect(() => {
     if (isAuthRoute) return;
@@ -29,7 +31,8 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
     fetchProjects();
     fetchQuotes();
     fetchUsers();
-  }, [isAuthRoute, fetchMe, fetchProducts, fetchTickets, fetchProjects, fetchQuotes, fetchUsers]);
+    fetchCustomers();
+  }, [isAuthRoute, fetchMe, fetchProducts, fetchTickets, fetchProjects, fetchQuotes, fetchUsers, fetchCustomers]);
 
   if (isAuthRoute) return <>{children}</>;
 

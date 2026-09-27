@@ -18,6 +18,7 @@ import { initials } from "@/lib/utils/initials";
 const allNavItems = [
   { label: "Dashboard", href: "/dashboard" },
   { label: "CRM", href: "/tickets", activeMatch: ["/tickets", "/projects"] },
+  { label: "Customers", href: "/customers" },
   { label: "Quote", href: "/quote" },
   { label: "Master File", href: "/master" },
   { label: "Users", href: "/users" },

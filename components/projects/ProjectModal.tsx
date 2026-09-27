@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { CustomerPicker } from "@/components/customers/CustomerPicker";
 import { PIPELINE_STAGES } from "./KanbanBoard";
 import type { ProjectStage } from "@/types";
 
 const supportTeam = ["Urvil Kargathala", "Henil Patel", "Tirth", "Chirag"];
 
 export interface NewProjectData {
+  customerId: number;
   customerName: string;
   siteAddress: string;
   assigned: string;
@@ -24,6 +26,7 @@ interface Props {
 }
 
 export function ProjectModal({ open, onClose, defaultStage, onSave }: Props) {
+  const [customerId, setCustomerId] = useState<number | null>(null);
   const [customerName, setCustomerName] = useState("");
   const [siteAddress, setSiteAddress] = useState("");
   const [assigned, setAssigned] = useState(supportTeam[0]);
@@ -32,6 +35,7 @@ export function ProjectModal({ open, onClose, defaultStage, onSave }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    setCustomerId(null);
     setCustomerName("");
     setSiteAddress("");
     setAssigned(supportTeam[0]);
@@ -40,7 +44,9 @@ export function ProjectModal({ open, onClose, defaultStage, onSave }: Props) {
   }, [open, defaultStage]);
 
   function handleSave() {
+    if (!customerId) return;
     onSave({
+      customerId,
       customerName: customerName.trim(),
       siteAddress: siteAddress.trim(),
       assigned,
@@ -62,14 +68,16 @@ export function ProjectModal({ open, onClose, defaultStage, onSave }: Props) {
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={!customerName.trim()}>Save</Button>
+          <Button onClick={handleSave} disabled={!customerId}>Save</Button>
         </>
       }
     >
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
-          <label className={labelClass}>Customer name</label>
-          <input className={inputClass} value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
+          <CustomerPicker
+            value={customerId}
+            onChange={(id, name) => { setCustomerId(id); setCustomerName(name); }}
+          />
         </div>
         <div className="sm:col-span-2">
           <label className={labelClass}>Site address</label>

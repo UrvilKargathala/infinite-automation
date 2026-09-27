@@ -43,6 +43,7 @@ export async function assembleQuotes(quoteRows: Record<string, unknown>[]): Prom
     id: q.id as number,
     number: q.number as string,
     clientId: q.client_id as number | null,
+    customerId: (q.customer_id as number) ?? null,
     client: q.client as string,
     date: q.date as string,
     validUntil: q.valid_until as string,

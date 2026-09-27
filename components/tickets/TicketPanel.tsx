@@ -96,7 +96,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
   useEffect(() => {
     if (ticket) {
       setForm({
-        subject: ticket.subject, name: ticket.name, company: ticket.company, email: ticket.email, phone: ticket.phone,
+        customerId: ticket.customerId, subject: ticket.subject, name: ticket.name, company: ticket.company, email: ticket.email, phone: ticket.phone,
         category: ticket.category, priority: ticket.priority, status: ticket.status, assigned: ticket.assigned,
         lastContact: ticket.lastContact,
       });

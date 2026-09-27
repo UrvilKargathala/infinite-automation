@@ -40,16 +40,16 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const id = Number(params.id);
   const body = (await req.json()) as Partial<Quote>;
 
-  const existing = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status, currency FROM quotes WHERE id = ${id}`;
+  const existing = await sql`SELECT id, number, client_id, customer_id, client, date::text, valid_until::text, status, currency FROM quotes WHERE id = ${id}`;
   if (existing.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const [current] = await assembleQuotes(existing);
   const merged = { ...current, ...body };
 
   const quoteRows = await sql`
-    UPDATE quotes SET client_id = ${merged.clientId}, client = ${merged.client}, date = ${merged.date},
+    UPDATE quotes SET customer_id = ${merged.customerId}, client = ${merged.client}, date = ${merged.date},
       valid_until = ${merged.validUntil}, status = ${merged.status}, currency = ${merged.currency ?? "INR"}
     WHERE id = ${id}
-    RETURNING id, number, client_id, client, date::text, valid_until::text, status, currency
+    RETURNING id, number, client_id, customer_id, client, date::text, valid_until::text, status, currency
   `;
   if (body.sections) await replaceQuoteSections(id, body.sections);
 
@@ -99,7 +99,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!can(me.role, "deleteQuote")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const id = Number(params.id);
-  const existing = await sql`SELECT id, number, client_id, client, date::text, valid_until::text, status, currency FROM quotes WHERE id = ${id}`;
+  const existing = await sql`SELECT id, number, client_id, customer_id, client, date::text, valid_until::text, status, currency FROM quotes WHERE id = ${id}`;
   const [toDelete] = existing.length > 0 ? await assembleQuotes(existing) : [null];
   await sql`DELETE FROM quotes WHERE id = ${id}`;
 
