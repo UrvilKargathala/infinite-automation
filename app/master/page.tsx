@@ -47,6 +47,7 @@ export default function MasterPage() {
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
   const [catFilter, setCatFilter] = useState("");
+  const [currencyFilter, setCurrencyFilter] = useState<CurrencyCode | "">("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -54,9 +55,10 @@ export default function MasterPage() {
   const filteredCategories = brandFilter ? categoriesByBrand(brandFilter) : [];
 
   const filtered = useMemo(() => {
-    let list = products;
+    let list = [...products].sort((a, b) => b.id - a.id); // newest first, so a just-added product shows on page 1
     if (brandFilter) list = list.filter((p) => p.brand === brandFilter);
     if (catFilter) list = list.filter((p) => p.category === catFilter);
+    if (currencyFilter) list = list.filter((p) => p.prices?.[currencyFilter] != null || (currencyFilter === "INR" && p.price != null));
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -68,7 +70,7 @@ export default function MasterPage() {
       );
     }
     return list;
-  }, [products, brandFilter, catFilter, search]);
+  }, [products, brandFilter, catFilter, currencyFilter, search]);
 
   const totalActive = products.filter((p) => p.status === "Active").length;
   const totalBrands = new Set(products.map((p) => p.brand)).size;
@@ -238,6 +240,16 @@ export default function MasterPage() {
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
+          <select
+            className="bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
+            value={currencyFilter}
+            onChange={(e) => setCurrencyFilter(e.target.value as CurrencyCode | "")}
+          >
+            <option value="">All prices</option>
+            {CURRENCY_CODES.map((c) => (
+              <option key={c} value={c}>{c} only</option>
+            ))}
+          </select>
 
           <div className="ml-auto flex items-center gap-2">
             {canImport && (
@@ -261,6 +273,7 @@ export default function MasterPage() {
 
         <ProductTable
           products={filtered}
+          currency={currencyFilter || undefined}
           total={products.length}
           onEdit={handleEdit}
           onDelete={handleDelete}

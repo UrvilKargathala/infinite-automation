@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
-import { Search, Users2, Building2, Plus } from "lucide-react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import * as XLSX from "xlsx";
+import { Search, Users2, Building2, Plus, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useCustomerStore } from "@/lib/store/useCustomerStore";
 import { IconTile } from "@/components/ui/IconTile";
@@ -25,6 +26,7 @@ export default function CustomersPage() {
     fetchAll();
   }, [fetchAll]);
 
+  const fileRef = useRef<HTMLInputElement>(null);
   const [search, setSearch] = useState("");
   const [segmentFilter, setSegmentFilter] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -44,6 +46,45 @@ export default function CustomersPage() {
   }, [customers, segmentFilter, search]);
 
   const totalSegments = new Set(customers.map((c) => c.segment)).size;
+
+  function handleExport() {
+    const rows = filtered.map((c) => ({
+      Name: c.name, Segment: c.segment, Contact: c.contactName, Email: c.email, Phone: c.phone, Address: c.address, Notes: c.notes,
+    }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Customers");
+    XLSX.writeFile(wb, "infinite_customers_export.xlsx");
+    toast.success(`${rows.length} customers exported`);
+  }
+
+  // Appends only; rows whose Name already exists (or repeats in the file) are skipped.
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+    const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[wb.SheetNames[0]]);
+    const col = (r: Record<string, unknown>, k: string) => {
+      const key = Object.keys(r).find((x) => x.trim().toLowerCase() === k.toLowerCase());
+      return key ? String(r[key] ?? "").trim() : "";
+    };
+    const seen = new Set(customers.map((c) => c.name.toLowerCase()));
+    let added = 0;
+    try {
+      for (const r of rows) {
+        const name = col(r, "Name");
+        if (!name || seen.has(name.toLowerCase())) continue;
+        seen.add(name.toLowerCase());
+        const seg = segments.find((x) => x.toLowerCase() === col(r, "Segment").toLowerCase());
+        await add({ name, segment: seg ?? "Residential", contactName: col(r, "Contact"), email: col(r, "Email"), phone: col(r, "Phone"), address: col(r, "Address"), notes: col(r, "Notes") });
+        added++;
+      }
+    } catch {
+      // error toast already shown by the store
+    }
+    if (added) toast.success(`${added} customers imported`);
+    else toast.error("No new customers found (needs a Name column; existing names are skipped)");
+  }
 
   function handleEdit(c: Customer) {
     setEditCustomer(c);
@@ -109,7 +150,10 @@ export default function CustomersPage() {
             <option value="">All segments</option>
             {segments.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+            <Button variant="secondary" icon={Upload} onClick={() => fileRef.current?.click()}>Import Excel</Button>
+            <Button variant="secondary" icon={Download} onClick={handleExport}>Export</Button>
             <Button icon={Plus} onClick={() => { setEditCustomer(null); setModalOpen(true); }}>
               Add customer
             </Button>

@@ -74,6 +74,7 @@ function PriceEditor({ prices, onChange, inputClass }: { prices: Partial<Record<
               placeholder="Price"
               value={priceValue}
               onChange={(e) => setPriceValue(e.target.value)}
+              onBlur={handleAdd} // commit a typed price even if "+ Add" wasn't clicked before Save
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleAdd(); } }}
             />
           </div>

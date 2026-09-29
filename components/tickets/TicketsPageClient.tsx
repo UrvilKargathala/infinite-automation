@@ -158,6 +158,7 @@ export function TicketsPageClient() {
             <IconButton icon={Download} ariaLabel="Export" onClick={handleExport} />
             <div className="relative">
               <IconButton icon={SlidersHorizontal} ariaLabel="Filter by assignee" onClick={() => setFilterOpen((o) => !o)} />
+              {assigneeFilter && <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-brand-blue pointer-events-none" />}
               {filterOpen && (
                 <div className="absolute mt-2 right-0 bg-white shadow-dropdown rounded-2xl p-3 z-50">
                   <AssigneeStack
@@ -165,6 +166,15 @@ export function TicketsPageClient() {
                     selected={assigneeFilter}
                     onToggle={(name) => setAssigneeFilter((prev) => (prev === name ? null : name))}
                   />
+                  {assigneeFilter && (
+                    <button
+                      type="button"
+                      onClick={() => { setAssigneeFilter(null); setFilterOpen(false); }}
+                      className="mt-2 w-full text-xs text-brand-blue hover:underline"
+                    >
+                      Reset filter
+                    </button>
+                  )}
                 </div>
               )}
             </div>

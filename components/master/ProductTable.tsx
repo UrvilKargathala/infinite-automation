@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
+import { PriceCell } from "@/components/master/PriceCell";
 import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import type { CurrencyCode } from "@/lib/utils/currency";
@@ -16,9 +17,10 @@ interface Props {
   onEdit: (p: Product) => void;
   onDelete: (id: number) => void;
   canManage?: boolean;
+  currency?: CurrencyCode;
 }
 
-export function ProductTable({ products, total, onEdit, onDelete, canManage = true }: Props) {
+export function ProductTable({ products, total, onEdit, onDelete, canManage = true, currency }: Props) {
   const [page, setPage] = useState(1);
   const totalPages = Math.ceil(products.length / PAGE_SIZE);
   const safePage = Math.min(page, totalPages || 1);
@@ -63,17 +65,12 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
                   <td className={`${tdClass} text-text-secondary text-xs max-w-[200px] truncate`} title={p.description}>{p.description || "—"}</td>
                   <td className={`${tdClass} font-mono text-xs text-text-secondary`}><Num>{p.hsn || "—"}</Num></td>
                   <td className={tdClass}>
-                    {Object.keys(p.prices ?? {}).length > 0 ? (
-                      <div className="space-y-0.5">
-                        {Object.entries(p.prices).map(([c, v]) => (
-                          <div key={c} className="flex items-center gap-1">
-                            <span className="text-xs text-text-muted w-8">{c}</span>
-                            <Price value={v} currency={c as CurrencyCode} className="text-xs" />
-                          </div>
-                        ))}
-                      </div>
+                    {currency ? (
+                      <Price value={p.prices?.[currency] ?? p.price} currency={currency} className="text-xs" />
+                    ) : Object.keys(p.prices ?? {}).length > 0 ? (
+                      <PriceCell prices={p.prices} />
                     ) : p.price != null ? (
-                      <Price value={p.price} currency="INR" />
+                      <PriceCell prices={{ INR: p.price }} />
                     ) : (
                       <span className="text-warning">Not set</span>
                     )}

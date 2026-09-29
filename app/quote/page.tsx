@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
-import { Search, FileText, Send, CheckCircle, XCircle, Plus, Eye, Pencil, Trash2, Printer } from "lucide-react";
+import { Search, FileText, Send, CheckCircle, XCircle, Plus, Eye, Pencil, Trash2, Printer, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
@@ -18,6 +18,7 @@ import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import { printQuote } from "@/lib/utils/quotePdf";
+import { exportQuotes, parseQuotes } from "@/lib/utils/quoteExcel";
 import type { Quote, QuoteStatus } from "@/types";
 
 const statusConfig: Record<QuoteStatus, { color: string; icon: typeof FileText }> = {
@@ -28,7 +29,8 @@ const statusConfig: Record<QuoteStatus, { color: string; icon: typeof FileText }
 };
 
 export default function QuotePage() {
-  const { quotes, remove, loaded } = useQuoteStore();
+  const { quotes, remove, add, loaded } = useQuoteStore();
+  const fileRef = useRef<HTMLInputElement>(null);
   const role = useAuthStore((s) => s.user?.role ?? "Staff");
   const canDeleteQuote = can(role, "deleteQuote");
   const products = useProductStore((s) => s.products);
@@ -104,6 +106,25 @@ export default function QuotePage() {
     }
   }
 
+  function handleExport() {
+    const n = exportQuotes(filtered, products);
+    toast.success(n ? `${n} line items exported` : "No quotes to export");
+  }
+
+  async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const parsed = parseQuotes(await file.arrayBuffer(), products, customers);
+    if (parsed.length === 0) return toast.error("No valid quotes found (check Client and SKU/Product Name columns)");
+    try {
+      for (const q of parsed) await add(q);
+      toast.success(`${parsed.length} quotes imported`);
+    } catch {
+      toast.error("Import failed part-way. Check the list and retry.");
+    }
+  }
+
   if (loading) return <TablePageSkeleton statCards={4} />;
 
   return (
@@ -145,7 +166,10 @@ export default function QuotePage() {
             <option value="Accepted">Accepted</option>
             <option value="Rejected">Rejected</option>
           </select>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
+            <Button variant="secondary" icon={Upload} onClick={() => fileRef.current?.click()}>Import Excel</Button>
+            <Button variant="secondary" icon={Download} onClick={handleExport}>Export</Button>
             <Button icon={Plus} onClick={() => { setEditQuote(null); setViewMode(false); setModalOpen(true); }}>
               New quote
             </Button>
