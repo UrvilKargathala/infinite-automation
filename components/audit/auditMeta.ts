@@ -11,6 +11,7 @@ export const moduleColors: Record<AuditModule, string> = {
   Projects: "#8B5CF6",
   "User Management": "#F59E0B",
   Auth: "#3B82F6",
+  Inventory: "#14B8A6",
 };
 
 export const actionMeta: Record<AuditAction, { icon: LucideIcon; color: string; label: string }> = {

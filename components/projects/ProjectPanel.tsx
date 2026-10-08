@@ -15,6 +15,7 @@ import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import { PIPELINE_STAGES } from "./KanbanBoard";
+import { ProjectFulfilment } from "./ProjectFulfilment";
 import type { Project, ProjectStage, ProjectStageEvent, ProjectMessage, Attachment } from "@/types";
 
 const supportTeam = ["Urvil Kargathala", "Henil Patel", "Tirth", "Chirag"];
@@ -443,6 +444,8 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 className={inputClass}
                 value={form.quoteId ?? ""}
                 onChange={(e) => setForm({ ...form, quoteId: e.target.value ? Number(e.target.value) : null })}
+                disabled={!!project.confirmedAt}
+                title={project.confirmedAt ? "Locked — stock is reserved against this quote" : undefined}
               >
                 <option value="">No quote linked</option>
                 {quotes.map((q) => <option key={q.id} value={q.id}>{q.number} — {q.client}</option>)}
@@ -484,6 +487,8 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 </div>
               </div>
             )}
+
+            <ProjectFulfilment project={project} />
 
             <div>
               <div className="text-xs text-text-muted mb-1">Notes</div>

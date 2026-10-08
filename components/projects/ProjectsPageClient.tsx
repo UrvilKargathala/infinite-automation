@@ -30,7 +30,8 @@ export function ProjectsPageClient() {
   const [assigneeFilter, setAssigneeFilter] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [defaultStage, setDefaultStage] = useState<ProjectStage>("Inquiry");
-  const [panelProject, setPanelProject] = useState<Project | null>(null);
+  const [panelProjectId, setPanelProjectId] = useState<number | null>(null);
+  const panelProject = projects.find((p) => p.id === panelProjectId) ?? null;
   const [panelOpen, setPanelOpen] = useState(false);
 
   useEffect(() => {
@@ -85,7 +86,7 @@ export function ProjectsPageClient() {
   }
 
   function openEdit(project: Project) {
-    setPanelProject(project);
+    setPanelProjectId(project.id);
     setPanelOpen(true);
   }
 
@@ -95,9 +96,12 @@ export function ProjectsPageClient() {
   }
 
   async function handlePanelSave(id: number, patch: Partial<Omit<Project, "id">>) {
-    await update(id, patch);
-    setPanelProject((prev) => (prev && prev.id === id ? { ...prev, ...patch } : prev));
-    toast.success("Project updated");
+    try {
+      await update(id, patch);
+      toast.success("Project updated");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Couldn't update the project");
+    }
   }
 
   function handleExport() {
@@ -231,7 +235,7 @@ export function ProjectsPageClient() {
 
       <ProjectPanel
         open={panelOpen}
-        onClose={() => { setPanelOpen(false); setPanelProject(null); }}
+        onClose={() => { setPanelOpen(false); setPanelProjectId(null); }}
         project={panelProject}
         projects={projects}
         onSave={handlePanelSave}

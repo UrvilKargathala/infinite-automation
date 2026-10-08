@@ -20,7 +20,7 @@ import { moduleColors, actionMeta, formatShortTimestamp, formatFullTimestamp } f
 import type { AuditLog, AuditModule, AuditAction } from "@/types";
 import type { AuditStats } from "@/lib/api/audit";
 
-const MODULES: AuditModule[] = ["Master", "CRM", "Quote", "Projects", "User Management", "Auth"];
+const MODULES: AuditModule[] = ["Master", "CRM", "Quote", "Projects", "User Management", "Auth", "Inventory"];
 const ACTIONS: AuditAction[] = [
   "create", "update", "delete", "import", "export", "status_change", "stage_change", "login", "logout", "role_change",
 ];

@@ -154,6 +154,8 @@ export interface Project {
   stage: ProjectStage;
   createdAt: string;
   lastStageChange: string;
+  /** Set once the deal is confirmed and its quote's items are reserved from stock. */
+  confirmedAt: string | null;
 }
 
 export interface ProjectStageEvent {
@@ -179,7 +181,7 @@ export interface ProjectMessage {
   edited: boolean;
 }
 
-export type AuditModule = "Master" | "CRM" | "Quote" | "Projects" | "User Management" | "Auth";
+export type AuditModule = "Master" | "CRM" | "Quote" | "Projects" | "User Management" | "Auth" | "Inventory";
 
 export type AuditAction =
   | "create" | "update" | "delete" | "import" | "export"
@@ -204,4 +206,67 @@ export interface AuditLog {
   summary: string;
   changes: AuditChanges | null;
   metadata: Record<string, unknown> | null;
+}
+
+// ── Inventory & Procurement ────────────────────────────────────────────────
+
+export type AllocationStatus = "Reserved" | "Shipped" | "Released";
+
+/** Stock reserved for a confirmed project. Outstanding units = qty - shippedQty while Reserved. */
+export interface InventoryAllocation {
+  id: number;
+  projectId: number;
+  productId: number;
+  qty: number;
+  shippedQty: number;
+  status: AllocationStatus;
+  createdAt: string;
+}
+
+export type VendorPOStatus = "Draft" | "Issued" | "Partially Received" | "Received" | "Cancelled";
+
+export interface VendorPOItem {
+  id: number;
+  productId: number;
+  qtyOrdered: number;
+  qtyReceived: number;
+  unitCost: number | null;
+}
+
+export interface VendorPO {
+  id: number;
+  number: string;
+  brand: string;
+  vendorName: string;
+  status: VendorPOStatus;
+  currency: CurrencyCode;
+  notes: string;
+  createdBy: number | null;
+  createdAt: string;
+  issuedAt: string | null;
+  items: VendorPOItem[];
+}
+
+/** Per-product stock inputs from GET /api/inventory/stock — feed to stockStatus() in lib/utils/inventory. */
+export interface StockRow {
+  productId: number;
+  physical: number;
+  minBuffer: number;
+  allocated: number; // outstanding reserved units on confirmed projects
+  quoted: number;    // units on Draft/Sent quotes
+  incoming: number;  // units still to arrive on Issued / Partially Received POs
+}
+
+export type StockMovementReason = "GRN" | "SHIP" | "ADJUST";
+
+export interface StockMovement {
+  id: number;
+  productId: number;
+  delta: number;
+  reason: StockMovementReason;
+  note: string;
+  projectId: number | null;
+  poId: number | null;
+  userId: number | null;
+  createdAt: string;
 }

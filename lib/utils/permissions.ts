@@ -12,7 +12,8 @@ export type Action =
   | "editOwnRoleUser"
   | "deleteUser"
   | "viewAuditLog"
-  | "exportAuditLog";
+  | "exportAuditLog"
+  | "editStock";
 
 export function can(role: Role, action: Action): boolean {
   switch (action) {
@@ -36,6 +37,9 @@ export function can(role: Role, action: Action): boolean {
       return role === "Super Admin" || role === "Admin";
     case "exportAuditLog":
       return role === "Super Admin";
+    case "editStock":
+      // Stock counts, min buffer, POs and deliveries are open to every role (unlike product details)
+      return true;
     default:
       return false;
   }

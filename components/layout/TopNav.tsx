@@ -21,6 +21,7 @@ const allNavItems = [
   { label: "Customers", href: "/customers" },
   { label: "Quote", href: "/quote" },
   { label: "Master File", href: "/master" },
+  { label: "Procurement", href: "/procurement" },
   { label: "Users", href: "/users" },
   { label: "Audit Log", href: "/audit"},
 ];
@@ -47,7 +48,7 @@ export function TopNav() {
   });
 
   return (
-    <nav className="sticky top-0 z-40 bg-white shadow-card w-full">
+    <nav className="sticky top-0 z-40 bg-white shadow-card w-full print:hidden">
       <div className="max-w-[1860px] mx-auto px-4 sm:px-6 lg:px-8 h-[60px] sm:h-[72px] flex items-center justify-between">
         {/* LEFT — Logo + hamburger */}
         <div className="flex items-center gap-2 sm:gap-3">

@@ -92,7 +92,15 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   const id = Number(params.id);
   const existing = await sql`SELECT * FROM products WHERE id = ${id}`;
   const existingPrices = await sql`SELECT * FROM product_prices WHERE product_id = ${id}`;
-  await sql`DELETE FROM products WHERE id = ${id}`;
+  try {
+    await sql`DELETE FROM products WHERE id = ${id}`;
+  } catch (err) {
+    // 23503 = foreign key: the product is reserved on a confirmed project or listed on a vendor PO
+    if ((err as { code?: string }).code === "23503") {
+      return NextResponse.json({ error: "This product has stock reservations or purchase orders, so it can't be deleted. Set it to Inactive instead." }, { status: 409 });
+    }
+    throw err;
+  }
 
   if (existing.length > 0) {
     const deleted = toProduct(existing[0], existingPrices);

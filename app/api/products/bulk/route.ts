@@ -11,16 +11,26 @@ export async function POST(req: Request) {
   if (!me) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   if (!can(me.role, "excelImport")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const body = (await req.json()) as { items: (Omit<Product, "id"> & { prices?: Partial<Record<CurrencyCode, number>> })[]; filename?: string };
+  const body = (await req.json()) as {
+    items: (Omit<Product, "id"> & { prices?: Partial<Record<CurrencyCode, number>>; physicalStock?: number; minBuffer?: number })[];
+    filename?: string;
+  };
+  // Stock columns are optional in the sheet; anything that isn't a whole number ≥ 0 counts as 0.
+  const whole = (n: unknown) => (typeof n === "number" && Number.isInteger(n) && n > 0 ? n : 0);
   const items = body.items;
   let count = 0;
   for (const p of items) {
     const rows = await sql`
-      INSERT INTO products (name, sku, brand, category, hsn, description, price, status)
-      VALUES (${p.name}, ${p.sku}, ${p.brand}, ${p.category}, ${p.hsn}, ${p.description}, ${p.prices?.INR ?? p.price}, ${p.status})
+      INSERT INTO products (name, sku, brand, category, hsn, description, price, status, physical_stock, min_buffer)
+      VALUES (${p.name}, ${p.sku}, ${p.brand}, ${p.category}, ${p.hsn}, ${p.description}, ${p.prices?.INR ?? p.price}, ${p.status},
+              ${whole(p.physicalStock)}, ${whole(p.minBuffer)})
       RETURNING id
     `;
     const productId = rows[0].id as number;
+    if (whole(p.physicalStock) > 0) {
+      await sql`INSERT INTO stock_movements (product_id, delta, reason, note, user_id)
+                VALUES (${productId}, ${whole(p.physicalStock)}, 'ADJUST', ${`Opening stock from ${body.filename ?? "Excel import"}`}, ${me.id})`;
+    }
     const prices = p.prices ?? {};
     if (p.price != null && !prices.INR) prices.INR = p.price;
     for (const [currency, price] of Object.entries(prices)) {

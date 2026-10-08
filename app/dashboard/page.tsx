@@ -18,6 +18,7 @@ import { CurrencyPipeline } from "@/components/dashboard/CurrencyPipeline";
 import { TicketsByStatus, TicketsByCategory } from "@/components/dashboard/TicketCharts";
 import { QuoteExpiryAlerts } from "@/components/dashboard/QuoteExpiryAlerts";
 import { TeamWorkload } from "@/components/dashboard/TeamWorkload";
+import { StockAlerts } from "@/components/dashboard/StockAlerts";
 import { ProjectsByStage } from "@/components/dashboard/ProjectsByStage";
 import { RevenueBySegment } from "@/components/dashboard/RevenueBySegment";
 import { TopCustomers } from "@/components/dashboard/TopCustomers";
@@ -100,6 +101,9 @@ export default function DashboardPage() {
         <QuoteExpiryAlerts quotes={quotes} />
       </div>
 
+      <div className="mb-4">
+        <StockAlerts />
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4">
         <TicketsByStatus tickets={tickets} />

@@ -7,11 +7,13 @@ interface ProjectStore {
   loaded: boolean;
   loading: boolean;
   fetchAll: () => Promise<void>;
-  add: (project: Omit<Project, "id" | "quoteId" | "notes" | "createdAt" | "lastStageChange">) => Promise<void>;
+  add: (project: Omit<Project, "id" | "quoteId" | "notes" | "createdAt" | "lastStageChange" | "confirmedAt">) => Promise<void>;
   update: (id: number, patch: Partial<Omit<Project, "id">>) => Promise<void>;
   remove: (id: number) => Promise<void>;
   setAll: (projects: Project[]) => void;
   updateStage: (id: number, stage: ProjectStage) => Promise<void>;
+  /** Confirms the deal and reserves its quote's stock. Resolves to an error message, or null on success. */
+  confirm: (id: number) => Promise<string | null>;
 }
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
@@ -39,6 +41,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   update: async (id, patch) => {
     const res = await fetch(`/api/projects/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
     const updated = await res.json();
+    if (!res.ok) throw new Error(updated.error ?? "Couldn't update the project");
     set((s) => ({ projects: s.projects.map((p) => (p.id === id ? updated : p)) }));
   },
   remove: async (id) => {
@@ -57,5 +60,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     } catch {
       if (prevStage) set((s) => ({ projects: s.projects.map((p) => (p.id === id ? { ...p, stage: prevStage } : p)) }));
     }
+  },
+  confirm: async (id) => {
+    const res = await fetch(`/api/projects/${id}/confirm`, { method: "POST" });
+    const body = await res.json().catch(() => ({ error: "Couldn't confirm the project" }));
+    if (!res.ok) return (body.error as string) ?? "Couldn't confirm the project";
+    set((s) => ({ projects: s.projects.map((p) => (p.id === id ? body : p)) }));
+    return null;
   },
 }));

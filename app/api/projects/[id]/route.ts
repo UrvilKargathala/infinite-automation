@@ -2,23 +2,8 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction, diffFields } from "@/lib/api/audit";
+import { toProject } from "@/lib/inventoryDb";
 import type { Project } from "@/types";
-
-function toProject(row: Record<string, unknown>): Project {
-  return {
-    id: row.id as number,
-    customerId: (row.customer_id as number) ?? null,
-    customerName: row.customer_name as string,
-    siteAddress: row.site_address as string,
-    assigned: row.assigned as string,
-    architect: row.architect as string,
-    quoteId: (row.quote_id as number) ?? null,
-    notes: row.notes as string,
-    stage: row.stage as Project["stage"],
-    createdAt: row.created_at as string,
-    lastStageChange: row.last_stage_change as string,
-  };
-}
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentAppUser();
@@ -26,11 +11,14 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const body = (await req.json()) as Partial<Omit<Project, "id">>;
   const existing = await sql`
     SELECT id, customer_id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
-           created_at::text, last_stage_change::text
+           created_at::text, last_stage_change::text, confirmed_at::text
     FROM projects WHERE id = ${id}
   `;
   if (existing.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const current = toProject(existing[0]);
+  if (current.confirmedAt && body.quoteId !== undefined && body.quoteId !== current.quoteId) {
+    return NextResponse.json({ error: "This project is confirmed — its stock is reserved against the linked quote, so the quote can't be changed." }, { status: 409 });
+  }
   const merged = { ...current, ...body };
   const stageChanged = body.stage !== undefined && body.stage !== current.stage;
   const lastStageChange = stageChanged ? new Date().toISOString() : merged.lastStageChange;
@@ -41,12 +29,17 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
       notes = ${merged.notes}, stage = ${merged.stage}, last_stage_change = ${lastStageChange}
     WHERE id = ${id}
     RETURNING id, customer_id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
-              created_at::text, last_stage_change::text
+              created_at::text, last_stage_change::text, confirmed_at::text
   `;
 
   if (stageChanged) {
     await sql`INSERT INTO project_stage_events (project_id, stage) VALUES (${id}, ${merged.stage})`;
   }
+
+  // Cancelling frees whatever is still reserved; units already shipped stay shipped.
+  const released = merged.stage === "Cancelled" && stageChanged
+    ? await sql`UPDATE inventory_allocations SET status = 'Released' WHERE project_id = ${id} AND status = 'Reserved' RETURNING id`
+    : [];
 
   const updated = toProject(rows[0]);
 
@@ -58,7 +51,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         entityType: "project",
         entityId: updated.id,
         entityName: updated.customerName,
-        summary: `Moved project ${updated.customerName} from ${current.stage} to ${updated.stage}`,
+        summary: `Moved project ${updated.customerName} from ${current.stage} to ${updated.stage}` +
+          (released.length > 0 ? ` and released ${released.length} reserved item(s) back to stock` : ""),
         changes: { before: { stage: current.stage }, after: { stage: updated.stage } },
         actor: me,
       });
@@ -89,7 +83,7 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   const id = Number(params.id);
   const existing = await sql`
     SELECT id, customer_name, site_address, assigned, architect, quote_id, notes, stage,
-           created_at::text, last_stage_change::text
+           created_at::text, last_stage_change::text, confirmed_at::text
     FROM projects WHERE id = ${id}
   `;
   await sql`DELETE FROM projects WHERE id = ${id}`;

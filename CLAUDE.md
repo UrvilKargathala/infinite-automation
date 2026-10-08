@@ -11,7 +11,7 @@ For all visual, color, typography, and component-styling rules see the companion
 **Name:** Infinite Automation Dashboard
 **Purpose:** Internal operations dashboard for Infinite Automation (infiniteautomation.com.au), a Melbourne-based smart home and building automation company.
 **Users:** Internal team — Super Admin, Admin, Staff.
-**Modules:** 7 modules — Dashboard, Tickets (Kanban), Projects (Kanban), Quote, Master File, User Management, Audit Log.
+**Modules:** Dashboard, Tickets (Kanban), Projects (Kanban), Customers, Quote, Master File, Procurement, User Management, Audit Log.
 **Navigation style:** Top horizontal nav bar with pill-style active state. No left sidebar. See DESIGN_SYSTEM.md.
 
 The company sells hardware (smart switches, controllers, cameras, sensors, Unifi networking gear) and installation services across 6 customer segments: Residential, Hospitality, Government / Council, Retail, Healthcare / Aged Care, Industrial.
@@ -91,6 +91,7 @@ When adding a product to a quote, the picker cascades: user picks **Brand** firs
 | View Master File | Yes | Yes | Yes |
 | Create / edit / delete Products | Yes | Yes | No |
 | Excel import in Master | Yes | Yes | No |
+| Confirm a project / ship stock / adjust stock & min buffer / draft, issue & receive vendor POs | Yes | Yes | Yes |
 | View User Management | Yes | Yes | No |
 | Create Staff | Yes | Yes | — |
 | Create Admin | Yes | No | — |
@@ -113,6 +114,8 @@ Enforce this in the UI (hide/disable actions via `can(role, action)`) and again 
   /projects/page.tsx
   /quote/page.tsx
   /master/page.tsx
+  /procurement/page.tsx     (Additive — Inventory & Procurement)
+  /projects/[id]/order-slip/page.tsx
   /users/page.tsx           (Phase 7)
   /audit/page.tsx           (Additive — Audit Log)
   /login/page.tsx           (Phase 6)
@@ -127,6 +130,7 @@ Enforce this in the UI (hide/disable actions via `can(role, action)`) and again 
   /quote                    (QuoteTable, QuoteModal, SectionBlock, ProductPicker, QuotePrintView)
   /master                   (ProductTable, ProductModal, BrandFilter)
   /users                    (UserTable, UserModal, RoleBadge)
+  /procurement              (ReorderQueue, CreatePOModal, VendorPOList, ReceiveDeliveryModal)
   /audit                    (AuditPageClient, AuditDetailModal, AuditPageSkeleton, auditMeta — module colors/action icons)
 /lib
   /utils                    (formatINR, calcQuoteTotal, generateQuoteNumber, uuid, permissions, initials, timeAgo, relativeTime)
@@ -181,6 +185,13 @@ DESIGN_SYSTEM.md
 - **Phase 7:** User Management module.
 - **Additive (post-Phase 7):** Projects Kanban board (sales-to-delivery pipeline, drag projects between stage columns, stage-change history log, optional linked Quote). Modeled directly on the Phase 3 Tickets board's components/patterns; not part of the original 7-phase sequence, added as its own sibling module.
 - **Additive (post-Phase 7):** Per-record chat on both Tickets (`TicketPanel`) and Projects (`ProjectPanel`, under a Details/Chat tab switcher) — reply, forward-to-another-record-of-the-same-type, delete-for-me (soft delete), image/file attachments via Vercel Blob, @mention autocomplete, in-panel search with highlighting, avatar + sender name per message. Backed by `ticket_messages` / `project_messages` tables (same shape) and `/api/{tickets,projects}/[id]/messages*` routes. Forwarding does not cross module boundaries (a ticket message can only forward to another ticket, a project message only to another project).
+- **Additive (post-Phase 7):** Inventory & Procurement — stock tracking, deal confirmation, vendor POs. Rules:
+  - Products carry `physical_stock` and `min_buffer`. **Allocated is never stored**: it is the sum of outstanding `inventory_allocations` (status `Reserved`, qty − shipped_qty). Available = physical − allocated (can go negative = confirmed shortage).
+  - **All stock maths lives in `lib/utils/inventory.ts`** (`stockStatus`, `splitReadyBackordered`); loaders in `lib/inventoryDb.ts`. Never recompute stock in a component. Self-check: `node db/check-inventory.mts`.
+  - Reorder: triggered when available < min buffer. Suggested = ceil(shortage + buffer gap + 0.5 × units on Draft/Sent quotes − incoming), never below 0. Incoming = outstanding units on `Issued`/`Partially Received` POs only (a Draft PO is not incoming).
+  - "Inquiry" = a **Project with a linked quote**. `POST /api/projects/[id]/confirm` locks the project, sets the quote Accepted and reserves its products; the quote is then locked on that project. Cancelling the project releases unshipped reservations. Ready-to-ship vs backordered is first-confirmed-first-served across projects, so receiving stock clears backorders with no flag to maintain.
+  - Stock changes happen only inside `withTransaction()` (`lib/db.ts`, Pool + `SELECT … FOR UPDATE`; the Neon HTTP `sql` client cannot lock) and each writes a `stock_movements` row (GRN / SHIP / ADJUST). Audit module: `Inventory`.
+  - One PO per brand (brand = vendor). Receiving over the ordered quantity is allowed and noted in the audit log; a partially received PO can be closed short.
 - **Additive (post-Phase 7):** Audit Log — an append-only `audit_logs` table records every meaningful create/update/delete/import/export/status-change/stage-change/login/logout/role-change across Master, CRM (Tickets), Quote, Projects, User Management, and Auth. Logged via `logAction()` in `/lib/api/audit.ts`, called directly from each mutating API route right after its DB write (no separate data-access layer — this app has none, so the logger is the one new shared piece, not a new architectural layer). The `/audit` page (Super Admin/Admin only, gated in middleware via the session cookie's embedded role, and again server-side via `can(role, "viewAuditLog")` on every read route) supports filtering, search, cursor-paginated infinite scroll, a detail modal with before/after diffs, and CSV export (`can(role, "exportAuditLog")`, Super Admin only). The Dashboard's "Recent activity" card and the notification panel's unread-count row both read live from this table for Super Admin/Admin; Staff see the original ticket/quote-derived activity feed instead, since Staff cannot access the audit log itself.
 
 Do not build features from a later phase during an earlier one. If a prompt asks for something out of phase, flag it back to the user.
