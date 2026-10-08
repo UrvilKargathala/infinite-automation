@@ -58,7 +58,7 @@ export function computeMonthlyMetrics(tickets: Ticket[], quotes: Quote[]) {
   };
 }
 
-/** Last 6 months (oldest first) of quote counts + accepted revenue, for the dashboard line chart. */
+/** Last 6 months (oldest first) of quote counts, accepted revenue and open (Draft/Sent) pipeline value. */
 export function computeMonthlySeries(quotes: Quote[]) {
   const now = new Date();
   const months = Array.from({ length: 6 }).map((_, i) => {
@@ -70,7 +70,10 @@ export function computeMonthlySeries(quotes: Quote[]) {
     const revenue = inThisMonth
       .filter((q) => q.status === "Accepted")
       .reduce((s, q) => s + calcQuoteTotal(q).grandTotal, 0);
-    return { month, quotes: inThisMonth.length, revenue };
+    const pipeline = inThisMonth
+      .filter((q) => q.status === "Draft" || q.status === "Sent")
+      .reduce((s, q) => s + calcQuoteTotal(q).grandTotal, 0);
+    return { month, quotes: inThisMonth.length, revenue, pipeline };
   });
 }
 
