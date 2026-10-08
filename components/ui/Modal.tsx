@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { IconButton } from "./IconButton";
 
@@ -29,7 +30,8 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
+  // Portal to <body>: a blurred/transformed ancestor (e.g. a backdrop-blur card) would otherwise trap position:fixed.
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm"
       onClick={onClose}
@@ -49,6 +51,7 @@ export function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -62,7 +62,9 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
   if (isLoading) return <div className="text-center text-text-muted text-sm py-16">Loading purchase orders…</div>;
   if (isError || !pos) return <div className="text-center text-danger text-sm py-16">Couldn&apos;t load purchase orders</div>;
 
+  // Dialogs sit outside the card: backdrop-blur makes the card the containing block for position:fixed.
   return (
+    <>
     <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
       {pos.length === 0 ? (
         <div className="text-center py-12">
@@ -126,7 +128,8 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
           </table>
         </div>
       )}
-      {receiving && <ReceiveDeliveryModal po={receiving} products={products} onClose={() => setReceiving(null)} />}
     </div>
+      {receiving && <ReceiveDeliveryModal po={receiving} products={products} onClose={() => setReceiving(null)} />}
+    </>
   );
 }

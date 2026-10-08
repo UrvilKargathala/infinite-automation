@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2, PackagePlus } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { PriceCell } from "@/components/master/PriceCell";
 import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import type { CurrencyCode } from "@/lib/utils/currency";
 import { Pagination } from "@/components/ui/Pagination";
 import type { Product } from "@/types";
-import type { StockStatus } from "@/lib/utils/inventory";
 
 const PAGE_SIZE = 10;
 
@@ -19,30 +18,9 @@ interface Props {
   onDelete: (id: number) => void;
   canManage?: boolean;
   currency?: CurrencyCode;
-  stock: Map<number, StockStatus>;
-  canAdjustStock?: boolean;
-  onAdjustStock: (p: Product) => void;
 }
 
-/** "available / physical", a reserved hint, and a Low stock flag when available < min buffer. */
-function StockCell({ s }: { s: StockStatus | undefined }) {
-  if (!s) return <span className="text-text-muted">—</span>;
-  return (
-    <div className="whitespace-nowrap">
-      <Num className={s.available < 0 ? "text-danger" : "text-text-primary"}>{s.available}</Num>
-      <span className="text-text-muted"> / </span>
-      <Num className="text-text-secondary">{s.physical}</Num>
-      {s.low && (
-        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-danger/10 text-danger">Low stock</span>
-      )}
-      {s.allocated > 0 && <div className="text-xs text-text-muted"><Num>{s.allocated}</Num> reserved</div>}
-    </div>
-  );
-}
-
-export function ProductTable({ products, total, onEdit, onDelete, canManage = true, currency, stock, canAdjustStock = false, onAdjustStock }: Props) {
-  const showActions = canManage || canAdjustStock;
-  const colCount = 11 + (showActions ? 1 : 0);
+export function ProductTable({ products, total, onEdit, onDelete, canManage = true, currency }: Props) {
   const [page, setPage] = useState(1);
   const totalPages = Math.ceil(products.length / PAGE_SIZE);
   const safePage = Math.min(page, totalPages || 1);
@@ -54,7 +32,7 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
   return (
     <>
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[1200px]">
+        <table className="w-full min-w-[1000px]">
           <thead>
             <tr className="bg-surface-alt">
               <th className={thClass}>Sr.</th>
@@ -65,16 +43,14 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
               <th className={thClass}>Description</th>
               <th className={thClass}>HSN Code</th>
               <th className={thClass}>Price</th>
-              <th className={thClass} title="Available (physical minus reserved) / physical">Avail / Phys</th>
-              <th className={thClass}>Min buffer</th>
               <th className={thClass}>Status</th>
-              {showActions && <th className={`${thClass} text-right`}>Actions</th>}
+              {canManage && <th className={`${thClass} text-right`}>Actions</th>}
             </tr>
           </thead>
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={colCount} className="text-center text-text-muted py-12">
+                <td colSpan={canManage ? 10 : 9} className="text-center text-text-muted py-12">
                   No products found
                 </td>
               </tr>
@@ -99,8 +75,6 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
                       <span className="text-warning">Not set</span>
                     )}
                   </td>
-                  <td className={tdClass}><StockCell s={stock.get(p.id)} /></td>
-                  <td className={tdClass}><Num className="text-text-secondary">{stock.get(p.id)?.minBuffer ?? "—"}</Num></td>
                   <td className={tdClass}>
                     <span
                       className="inline-flex items-center px-2.5 py-1 rounded-full text-xs"
@@ -112,20 +86,9 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
                       {p.status}
                     </span>
                   </td>
-                  {showActions && (
+                  {canManage && (
                     <td className={`${tdClass} text-right`}>
                       <div className="flex items-center justify-end gap-1">
-                        {canAdjustStock && (
-                          <button
-                            onClick={() => onAdjustStock(p)}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-brand-blue hover:bg-[#F9FAFB] transition-colors"
-                            aria-label="Adjust stock"
-                            title="Adjust stock"
-                          >
-                            <PackagePlus size={15} />
-                          </button>
-                        )}
-                        {canManage && (<>
                         <button
                           onClick={() => onEdit(p)}
                           className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-[#F9FAFB] transition-colors"
@@ -140,7 +103,6 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
                         >
                           <Trash2 size={15} />
                         </button>
-                        </>)}
                       </div>
                     </td>
                   )}

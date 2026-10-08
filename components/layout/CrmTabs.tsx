@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const tabs = [
-  { label: "Tickets", href: "/tickets" },
   { label: "Projects", href: "/projects" },
+  { label: "Tickets", href: "/tickets" },
 ];
 
 export function CrmTabs() {

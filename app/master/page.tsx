@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Search, Package, CheckCircle, PackageX, AlertCircle, Upload, Download, Plus } from "lucide-react";
+import { Search, Package, CheckCircle, Layers, AlertCircle, Upload, Download, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
@@ -10,7 +10,6 @@ import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
 import { ProductTable } from "@/components/master/ProductTable";
 import { ProductModal } from "@/components/master/ProductModal";
-import { StockAdjustModal } from "@/components/master/StockAdjustModal";
 import { useStock } from "@/lib/hooks/useStock";
 import { Num } from "@/components/ui/Num";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
@@ -39,7 +38,6 @@ export default function MasterPage() {
   const role = useAuthStore((s) => s.user?.role ?? "Staff");
   const canManage = can(role, "editProducts");
   const canImport = can(role, "excelImport");
-  const canAdjustStock = can(role, "editStock");
   const { byProduct: stock } = useStock();
   const allBrands = brands();
 
@@ -54,8 +52,6 @@ export default function MasterPage() {
   const [currencyFilter, setCurrencyFilter] = useState<CurrencyCode | "">("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
-  const [stockProduct, setStockProduct] = useState<Product | null>(null);
-  const [lowOnly, setLowOnly] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const filteredCategories = brandFilter ? categoriesByBrand(brandFilter) : [];
@@ -64,7 +60,6 @@ export default function MasterPage() {
     let list = [...products].sort((a, b) => b.id - a.id); // newest first, so a just-added product shows on page 1
     if (brandFilter) list = list.filter((p) => p.brand === brandFilter);
     if (catFilter) list = list.filter((p) => p.category === catFilter);
-    if (lowOnly) list = list.filter((p) => stock.get(p.id)?.low);
     if (currencyFilter) list = list.filter((p) => p.prices?.[currencyFilter] != null || (currencyFilter === "INR" && p.price != null));
     if (search.trim()) {
       const q = search.trim().toLowerCase();
@@ -77,10 +72,10 @@ export default function MasterPage() {
       );
     }
     return list;
-  }, [products, brandFilter, catFilter, currencyFilter, search, lowOnly, stock]);
+  }, [products, brandFilter, catFilter, currencyFilter, search]);
 
   const totalActive = products.filter((p) => p.status === "Active").length;
-  const lowStock = products.filter((p) => stock.get(p.id)?.low).length;
+  const totalBrands = new Set(products.map((p) => p.brand)).size;
   const missingPrice = products.filter((p) => Object.keys(p.prices ?? {}).length === 0 && p.price == null).length;
 
   function handleEdit(p: Product) {
@@ -195,7 +190,7 @@ export default function MasterPage() {
   const stats = [
     { label: "Total products", value: products.length, icon: Package, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
     { label: "Active", value: totalActive, icon: CheckCircle, valueClass: "text-success", bg: "bg-[#10B98118]", accent: "#10B981" },
-    { label: "Low stock", value: lowStock, icon: PackageX, valueClass: lowStock > 0 ? "text-danger" : undefined, bg: "bg-[#EF444418]", accent: "#EF4444" },
+    { label: "Brands", value: totalBrands, icon: Layers, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
     { label: "Missing price", value: missingPrice, icon: AlertCircle, valueClass: "text-warning", bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
   ];
 
@@ -266,10 +261,6 @@ export default function MasterPage() {
             ))}
           </select>
 
-          <label className="inline-flex items-center gap-2 text-sm text-text-secondary cursor-pointer select-none">
-            <input type="checkbox" checked={lowOnly} onChange={(e) => setLowOnly(e.target.checked)} className="accent-brand-blue" />
-            Low stock only
-          </label>
 
           <div className="ml-auto flex items-center gap-2">
             {canImport && (
@@ -298,9 +289,6 @@ export default function MasterPage() {
           onEdit={handleEdit}
           onDelete={handleDelete}
           canManage={canManage}
-          stock={stock}
-          canAdjustStock={canAdjustStock}
-          onAdjustStock={setStockProduct}
         />
       </div>
 
@@ -308,12 +296,6 @@ export default function MasterPage() {
         open={modalOpen}
         onClose={() => { setModalOpen(false); setEditProduct(null); }}
         product={editProduct}
-      />
-
-      <StockAdjustModal
-        product={stockProduct}
-        stock={stockProduct ? stock.get(stockProduct.id) : undefined}
-        onClose={() => setStockProduct(null)}
       />
     </div>
   );
