@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { Price } from "@/components/ui/Price";
-import { DEFAULT_CURRENCY, type CurrencyCode } from "@/lib/utils/currency";
+import type { CurrencyCode } from "@/lib/utils/currency";
 
-export function PriceCell({ prices }: { prices: Partial<Record<CurrencyCode, number>> }) {
+/** Price in the user's Settings currency, with a "+N" popover for the product's prices in other currencies. */
+export function PriceCell({ prices, primary }: { prices: Partial<Record<CurrencyCode, number>>; primary: CurrencyCode }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -18,9 +19,9 @@ export function PriceCell({ prices }: { prices: Partial<Record<CurrencyCode, num
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", esc); };
   }, [open]);
 
-  const entries = Object.entries(prices) as [CurrencyCode, number][];
-  const main = entries.find(([c]) => c === DEFAULT_CURRENCY) ?? entries[0];
-  const extra = entries.length - 1;
+  const entries = (Object.entries(prices) as [CurrencyCode, number][]).filter(([, v]) => v != null);
+  const main = entries.find(([c]) => c === primary);
+  const extra = entries.length - (main ? 1 : 0);
 
   return (
     <div ref={ref} className="relative inline-block">
@@ -29,7 +30,7 @@ export function PriceCell({ prices }: { prices: Partial<Record<CurrencyCode, num
         onClick={() => extra > 0 && setOpen((o) => !o)}
         className={`flex items-center gap-1.5 ${extra > 0 ? "cursor-pointer" : "cursor-default"}`}
       >
-        <Price value={main[1]} currency={main[0]} className="text-sm" />
+        {main ? <Price value={main[1]} currency={main[0]} className="text-sm" /> : <span className="text-sm text-warning">Not set</span>}
         {extra > 0 && (
           <span className="flex items-center gap-0.5 text-[10px] text-brand-blue bg-surface-alt border border-border rounded-full px-1.5 py-0.5">
             +{extra}<ChevronDown size={10} />
@@ -37,7 +38,7 @@ export function PriceCell({ prices }: { prices: Partial<Record<CurrencyCode, num
         )}
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-20 min-w-[150px] bg-white border border-border rounded-lg shadow-lg p-2 space-y-1.5">
+        <div className="absolute left-0 top-full mt-1 z-20 min-w-[150px] glass-pop rounded-xl p-2 space-y-1.5">
           {entries.map(([c, v]) => (
             <div key={c} className="flex items-center justify-between gap-4">
               <span className="text-[10px] text-text-secondary bg-surface-alt border border-border rounded px-1.5 py-0.5">{c}</span>

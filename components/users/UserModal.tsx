@@ -5,6 +5,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { DEFAULT_CURRENCY } from "@/lib/utils/currency";
 import type { Role, User } from "@/types";
 
 interface Props {
@@ -18,7 +19,7 @@ interface Props {
 export function UserModal({ open, onClose, user, assignableRoles, onSave }: Props) {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [role, setRole] = useState<Role>("Staff");
+  const [role, setRole] = useState<Role>("Purchase");
   const [status, setStatus] = useState<"Active" | "Inactive">("Active");
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export function UserModal({ open, onClose, user, assignableRoles, onSave }: Prop
       } else {
         setFullName("");
         setEmail("");
-        setRole(assignableRoles[assignableRoles.length - 1] ?? "Staff");
+        setRole(assignableRoles[assignableRoles.length - 1] ?? "Purchase");
         setStatus("Active");
       }
     }
@@ -40,7 +41,7 @@ export function UserModal({ open, onClose, user, assignableRoles, onSave }: Prop
   const canSave = fullName.trim() && email.trim();
 
   function handleSave() {
-    onSave({ fullName: fullName.trim(), email: email.trim(), role, status, ticketAlerts: true, quoteAlerts: false });
+    onSave({ fullName: fullName.trim(), email: email.trim(), role, status, ticketAlerts: true, quoteAlerts: false, currency: user?.currency ?? DEFAULT_CURRENCY });
     onClose();
   }
 

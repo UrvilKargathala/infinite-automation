@@ -29,7 +29,7 @@ export default function ProcurementPage() {
       <h1 className="text-3xl font-light text-text-primary">Procurement</h1>
       <p className="text-sm text-text-secondary mt-1">What to reorder, and what&apos;s on order from vendors</p>
 
-      <div className="inline-flex gap-1 p-1 rounded-full bg-white shadow-card mt-6 mb-4">
+      <div className="inline-flex gap-1 p-1 rounded-full glass mt-6 mb-4">
         {([["stock", "Stock"], ["reorder", "Reorder queue"], ["pos", "Vendor POs"]] as const).map(([t, label]) => (
           <button
             key={t}

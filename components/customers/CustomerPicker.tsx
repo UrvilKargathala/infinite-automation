@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useCustomerStore } from "@/lib/store/useCustomerStore";
 import type { CustomerSegment } from "@/types";
+import { Select } from "@/components/ui/Select";
 
 const segments: CustomerSegment[] = [
   "Residential", "Hospitality", "Government / Council", "Retail", "Healthcare / Aged Care", "Industrial",
@@ -64,9 +65,9 @@ export function CustomerPicker({ value, onChange, label = "Customer" }: Props) {
         </div>
         <div className="grid grid-cols-1 min-[480px]:grid-cols-2 gap-3">
           <input className={`${inputClass} min-w-0`} placeholder="Customer / company name" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-          <select className={`${inputClass} min-w-0`} value={segment} onChange={(e) => setSegment(e.target.value as CustomerSegment)}>
+          <Select className={`${inputClass} min-w-0`} value={segment} onChange={(e) => setSegment(e.target.value as CustomerSegment)}>
             {segments.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          </Select>
           <input className={`${inputClass} min-w-0`} placeholder="Contact name (optional)" value={contactName} onChange={(e) => setContactName(e.target.value)} />
           <input className={`${inputClass} min-w-0`} placeholder="Email (optional)" value={email} onChange={(e) => setEmail(e.target.value)} />
           <input className={`${inputClass} min-w-0`} placeholder="Phone (optional)" value={phone} onChange={(e) => setPhone(e.target.value)} />
@@ -86,7 +87,7 @@ export function CustomerPicker({ value, onChange, label = "Customer" }: Props) {
   return (
     <div>
       <label className="block text-sm text-text-primary mb-1">{label}</label>
-      <select
+      <Select
         className={inputClass}
         value={value ?? ""}
         onChange={(e) => {
@@ -104,7 +105,7 @@ export function CustomerPicker({ value, onChange, label = "Customer" }: Props) {
           <option key={c.id} value={c.id}>{c.name}</option>
         ))}
         <option value="__new__">+ Add new customer</option>
-      </select>
+      </Select>
     </div>
   );
 }

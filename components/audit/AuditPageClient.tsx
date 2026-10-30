@@ -19,6 +19,8 @@ import { AuditDetailModal } from "./AuditDetailModal";
 import { moduleColors, actionMeta, formatShortTimestamp, formatFullTimestamp } from "./auditMeta";
 import type { AuditLog, AuditModule, AuditAction } from "@/types";
 import type { AuditStats } from "@/lib/api/audit";
+import { Select } from "@/components/ui/Select";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 const MODULES: AuditModule[] = ["Master", "CRM", "Quote", "Projects", "User Management", "Auth", "Inventory"];
 const ACTIONS: AuditAction[] = [
@@ -29,7 +31,7 @@ const ENTITY_LINKS: Record<string, string> = {
   ticket: "/tickets",
   quote: "/quote",
   user: "/users",
-  project: "/projects",
+  project: "/crm",
 };
 
 interface Filters {
@@ -74,7 +76,7 @@ async function fetchStats(): Promise<AuditStats> {
 
 export function AuditPageClient() {
   const router = useRouter();
-  const role = useAuthStore((s) => s.user?.role ?? "Staff");
+  const role = useAuthStore((s) => s.user?.role ?? "Purchase");
   const canExport = can(role, "exportAuditLog");
   const users = useUserStore((s) => s.users);
 
@@ -138,7 +140,7 @@ export function AuditPageClient() {
   }
 
   const inputClass =
-    "bg-white border border-border rounded-lg py-2 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors";
+    "glass-control border border-border rounded-lg py-2 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors";
   const thClass = "px-4 py-3 text-xs uppercase tracking-wider text-text-muted font-normal text-left";
   const tdClass = "px-4 py-3 text-sm align-top";
 
@@ -151,40 +153,40 @@ export function AuditPageClient() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 mb-6">
-        <div className="bg-white rounded-2xl shadow-card p-5">
+        <div className="glass rounded-3xl p-5">
           <div className="text-xs uppercase tracking-wider text-text-muted">Total events</div>
           <div className="text-2xl font-light text-text-primary mt-1"><Num>{stats?.total ?? 0}</Num></div>
         </div>
-        <div className="bg-white rounded-2xl shadow-card p-5">
+        <div className="glass rounded-3xl p-5">
           <div className="text-xs uppercase tracking-wider text-text-muted">Today</div>
           <div className="text-2xl font-light text-brand-blue mt-1"><Num>{stats?.today ?? 0}</Num></div>
         </div>
-        <div className="bg-white rounded-2xl shadow-card p-5">
+        <div className="glass rounded-3xl p-5">
           <div className="text-xs uppercase tracking-wider text-text-muted">This week</div>
           <div className="text-2xl font-light text-text-primary mt-1"><Num>{stats?.thisWeek ?? 0}</Num></div>
         </div>
-        <div className="bg-white rounded-2xl shadow-card p-5">
+        <div className="glass rounded-3xl p-5">
           <div className="text-xs uppercase tracking-wider text-text-muted">Modules active</div>
           <div className="text-2xl font-light text-text-primary mt-1"><Num>{stats?.modulesActiveToday ?? 0}</Num></div>
         </div>
       </div>
 
       {/* Filter bar */}
-      <div className="bg-white rounded-2xl shadow-card p-4 mb-4 flex items-center gap-3 flex-wrap">
-        <input type="date" value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className={inputClass} aria-label="From date" />
-        <input type="date" value={filters.to} onChange={(e) => updateFilter("to", e.target.value)} className={inputClass} aria-label="To date" />
-        <select value={filters.module} onChange={(e) => updateFilter("module", e.target.value as AuditModule | "")} className={inputClass}>
+      <div className="glass rounded-3xl p-4 mb-4 flex items-center gap-3 flex-wrap">
+        <DatePicker value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className={inputClass} aria-label="From date" />
+        <DatePicker value={filters.to} onChange={(e) => updateFilter("to", e.target.value)} className={inputClass} aria-label="To date" />
+        <Select value={filters.module} onChange={(e) => updateFilter("module", e.target.value as AuditModule | "")} className={inputClass}>
           <option value="">All modules</option>
           {MODULES.map((m) => <option key={m} value={m}>{m}</option>)}
-        </select>
-        <select value={filters.action} onChange={(e) => updateFilter("action", e.target.value as AuditAction | "")} className={inputClass}>
+        </Select>
+        <Select value={filters.action} onChange={(e) => updateFilter("action", e.target.value as AuditAction | "")} className={inputClass}>
           <option value="">All actions</option>
           {ACTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-        <select value={filters.userId} onChange={(e) => updateFilter("userId", e.target.value)} className={inputClass}>
+        </Select>
+        <Select value={filters.userId} onChange={(e) => updateFilter("userId", e.target.value)} className={inputClass}>
           <option value="">All users</option>
           {users.map((u) => <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>)}
-        </select>
+        </Select>
         <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
           <input
@@ -205,11 +207,11 @@ export function AuditPageClient() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl shadow-card overflow-hidden">
+      <div className="glass rounded-3xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[900px]">
             <thead>
-              <tr className="bg-surface-alt">
+              <tr className="bg-white/35">
                 <th className={thClass}>Timestamp</th>
                 <th className={thClass}>User</th>
                 <th className={thClass}>Module</th>
@@ -231,7 +233,7 @@ export function AuditPageClient() {
                   const action = actionMeta[log.action];
                   const href = entityHref(log);
                   return (
-                    <tr key={log.id} className="border-t border-border hover:bg-[#F9FAFB]/60">
+                    <tr key={log.id} className="border-t border-border hover:bg-white/50">
                       <td className={tdClass} title={formatFullTimestamp(log.timestamp)}>
                         <Num className="text-xs text-text-secondary">{formatShortTimestamp(log.timestamp)}</Num>
                       </td>

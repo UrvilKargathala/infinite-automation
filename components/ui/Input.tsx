@@ -11,7 +11,7 @@ export const Input = forwardRef<
       )}
       <input
         ref={ref}
-        className={`w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors ${className}`}
+        className={`w-full glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors ${className}`}
         {...props}
       />
     </div>

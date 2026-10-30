@@ -8,13 +8,18 @@ import { Button } from "@/components/ui/Button";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { CURRENCIES, CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
 import type { Product } from "@/types";
+import { Select } from "@/components/ui/Select";
+import { useCurrency } from "@/lib/hooks/useCurrency";
 
 function PriceEditor({ prices, onChange, inputClass }: { prices: Partial<Record<CurrencyCode, string>>; onChange: (p: Partial<Record<CurrencyCode, string>>) => void; inputClass: string }) {
-  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>("INR");
+  // Start on the user's Settings currency and list it first; other currencies stay available.
+  const myCurrency = useCurrency();
+  const order = [myCurrency, ...CURRENCY_CODES.filter((c) => c !== myCurrency)];
+  const [selectedCurrency, setSelectedCurrency] = useState<CurrencyCode>(myCurrency);
   const [priceValue, setPriceValue] = useState("");
 
   const setCurrencies = Object.keys(prices).filter((c) => prices[c as CurrencyCode] !== undefined && prices[c as CurrencyCode] !== "") as CurrencyCode[];
-  const availableCurrencies = CURRENCY_CODES.filter((c) => !setCurrencies.includes(c));
+  const availableCurrencies = order.filter((c) => !setCurrencies.includes(c));
 
   useEffect(() => {
     if (availableCurrencies.length > 0 && !availableCurrencies.includes(selectedCurrency)) {
@@ -26,7 +31,7 @@ function PriceEditor({ prices, onChange, inputClass }: { prices: Partial<Record<
     if (!priceValue.trim() || isNaN(Number(priceValue))) return;
     onChange({ ...prices, [selectedCurrency]: priceValue });
     setPriceValue("");
-    const remaining = CURRENCY_CODES.filter((c) => c !== selectedCurrency && !setCurrencies.includes(c));
+    const remaining = order.filter((c) => c !== selectedCurrency && !setCurrencies.includes(c));
     if (remaining.length > 0) setSelectedCurrency(remaining[0]);
   }
 
@@ -57,7 +62,7 @@ function PriceEditor({ prices, onChange, inputClass }: { prices: Partial<Record<
       )}
       {availableCurrencies.length > 0 && (
         <div className="flex items-center gap-2">
-          <select
+          <Select
             className={`${inputClass} !w-auto min-w-[120px]`}
             value={selectedCurrency}
             onChange={(e) => setSelectedCurrency(e.target.value as CurrencyCode)}
@@ -65,7 +70,7 @@ function PriceEditor({ prices, onChange, inputClass }: { prices: Partial<Record<
             {availableCurrencies.map((c) => (
               <option key={c} value={c}>{c} ({CURRENCIES[c].symbol})</option>
             ))}
-          </select>
+          </Select>
           <div className="relative flex-1">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-text-muted">{CURRENCIES[selectedCurrency].symbol}</span>
             <input
@@ -230,7 +235,7 @@ export function ProductModal({ open, onClose, product }: Props) {
               </button>
             </div>
           ) : (
-            <select
+            <Select
               className={inputClass}
               value={brand}
               onChange={(e) => {
@@ -250,7 +255,7 @@ export function ProductModal({ open, onClose, product }: Props) {
                 <option key={b} value={b}>{b}</option>
               ))}
               <option value="__new__">+ Add new brand</option>
-            </select>
+            </Select>
           )}
         </div>
 
@@ -273,7 +278,7 @@ export function ProductModal({ open, onClose, product }: Props) {
               </button>
             </div>
           ) : (
-            <select
+            <Select
               className={inputClass}
               value={category}
               onChange={(e) => {
@@ -290,7 +295,7 @@ export function ProductModal({ open, onClose, product }: Props) {
                 <option key={c} value={c}>{c}</option>
               ))}
               <option value="__new__">+ Add new category</option>
-            </select>
+            </Select>
           )}
         </div>
 
@@ -311,10 +316,10 @@ export function ProductModal({ open, onClose, product }: Props) {
 
         <div className="col-span-2">
           <label className={labelClass}>Status</label>
-          <select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value as "Active" | "Inactive")}>
+          <Select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value as "Active" | "Inactive")}>
             <option value="Active">Active</option>
             <option value="Inactive">Inactive</option>
-          </select>
+          </Select>
         </div>
       </div>
     </Modal>

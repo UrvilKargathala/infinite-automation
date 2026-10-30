@@ -14,6 +14,7 @@ import { STOCK_QUERY_KEY } from "@/lib/hooks/useStock";
 import { printPO } from "@/lib/utils/poPdf";
 import { ReceiveDeliveryModal } from "./ReceiveDeliveryModal";
 import type { VendorPO, VendorPOStatus } from "@/types";
+import { SkeletonList } from "@/components/ui/Skeleton";
 
 export const poStatusColor: Record<VendorPOStatus, string> = {
   Draft: "#64748B",
@@ -59,13 +60,13 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
     toast.success(done);
   }
 
-  if (isLoading) return <div className="text-center text-text-muted text-sm py-16">Loading purchase orders…</div>;
+  if (isLoading) return <SkeletonList rows={5} className="p-4 sm:p-6" />;
   if (isError || !pos) return <div className="text-center text-danger text-sm py-16">Couldn&apos;t load purchase orders</div>;
 
   // Dialogs sit outside the card: backdrop-blur makes the card the containing block for position:fixed.
   return (
     <>
-    <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
+    <div className="glass rounded-3xl p-4 sm:p-6">
       {pos.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-text-primary">No purchase orders yet</div>

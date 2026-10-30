@@ -38,7 +38,7 @@ export function TicketCard({ ticket, onClick }: { ticket: Ticket; onClick: () =>
           onClick();
         }
       }}
-      className={`bg-white rounded-2xl p-4 cursor-grab active:cursor-grabbing select-none ${isDragging ? "shadow-drag" : "shadow-card hover:shadow-cardHover"}`}
+      className={`glass-tile rounded-2xl p-4 cursor-grab active:cursor-grabbing select-none transition-transform hover:-translate-y-0.5 ${isDragging ? "!shadow-drag" : ""}`}
     >
       {/* Row 1: subject + priority badge */}
       <div className="flex items-start justify-between gap-2">

@@ -6,6 +6,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { CustomerPicker } from "@/components/customers/CustomerPicker";
 import type { Ticket, TicketCategory, TicketPriority, TicketStatus } from "@/types";
+import { Select } from "@/components/ui/Select";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 const categories: TicketCategory[] = ["Installation", "Repair", "Maintenance", "General"];
 const priorities: TicketPriority[] = ["Low", "Medium", "High", "Urgent"];
@@ -140,31 +142,31 @@ export function TicketModal({ open, onClose, ticket, defaultStatus, onSave, onDe
         </div>
         <div>
           <label className={labelClass}>Category</label>
-          <select className={inputClass} value={category} onChange={(e) => setCategory(e.target.value as TicketCategory)}>
+          <Select className={inputClass} value={category} onChange={(e) => setCategory(e.target.value as TicketCategory)}>
             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
           <label className={labelClass}>Priority</label>
-          <select className={inputClass} value={priority} onChange={(e) => setPriority(e.target.value as TicketPriority)}>
+          <Select className={inputClass} value={priority} onChange={(e) => setPriority(e.target.value as TicketPriority)}>
             {priorities.map((p) => <option key={p} value={p}>{p}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
           <label className={labelClass}>Status</label>
-          <select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value as TicketStatus)}>
+          <Select className={inputClass} value={status} onChange={(e) => setStatus(e.target.value as TicketStatus)}>
             {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
           <label className={labelClass}>Assigned to</label>
-          <select className={inputClass} value={assigned} onChange={(e) => setAssigned(e.target.value)}>
+          <Select className={inputClass} value={assigned} onChange={(e) => setAssigned(e.target.value)}>
             {supportTeam.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          </Select>
         </div>
         <div className="sm:col-span-2">
           <label className={labelClass}>Last contact</label>
-          <input className={inputClass} type="date" value={lastContact} onChange={(e) => setLastContact(e.target.value)} />
+          <DatePicker className={inputClass} value={lastContact} onChange={(e) => setLastContact(e.target.value)} />
         </div>
       </div>
     </Modal>

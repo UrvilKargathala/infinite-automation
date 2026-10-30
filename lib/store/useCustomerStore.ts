@@ -1,14 +1,14 @@
 import { create } from "zustand";
 import { toast } from "sonner";
-import type { Customer } from "@/types";
+import type { Customer, CustomerInput } from "@/types";
 
 interface CustomerStore {
   customers: Customer[];
   loaded: boolean;
   loading: boolean;
   fetchAll: () => Promise<void>;
-  add: (customer: Omit<Customer, "id" | "createdAt">) => Promise<Customer>;
-  update: (id: number, patch: Partial<Omit<Customer, "id" | "createdAt">>) => Promise<void>;
+  add: (customer: CustomerInput) => Promise<Customer>;
+  update: (id: number, patch: Partial<CustomerInput>) => Promise<void>;
   remove: (id: number) => Promise<void>;
 }
 

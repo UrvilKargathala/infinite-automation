@@ -19,7 +19,10 @@ import { Num } from "@/components/ui/Num";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import { printQuote } from "@/lib/utils/quotePdf";
 import { exportQuotes, parseQuotes } from "@/lib/utils/quoteExcel";
+import { useCurrency } from "@/lib/hooks/useCurrency";
+import { useKits } from "@/lib/hooks/useKits";
 import type { Quote, QuoteStatus } from "@/types";
+import { Select } from "@/components/ui/Select";
 
 const statusConfig: Record<QuoteStatus, { color: string; icon: typeof FileText }> = {
   Draft: { color: "#64748B", icon: FileText },
@@ -30,11 +33,13 @@ const statusConfig: Record<QuoteStatus, { color: string; icon: typeof FileText }
 
 export default function QuotePage() {
   const { quotes, remove, add, loaded } = useQuoteStore();
+  const currency = useCurrency();
   const fileRef = useRef<HTMLInputElement>(null);
-  const role = useAuthStore((s) => s.user?.role ?? "Staff");
+  const role = useAuthStore((s) => s.user?.role ?? "Purchase");
   const canDeleteQuote = can(role, "deleteQuote");
   const products = useProductStore((s) => s.products);
   const customers = useCustomerStore((s) => s.customers);
+  const { kits } = useKits();
 
   const loading = !loaded;
 
@@ -115,7 +120,7 @@ export default function QuotePage() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-    const parsed = parseQuotes(await file.arrayBuffer(), products, customers);
+    const parsed = parseQuotes(await file.arrayBuffer(), products, customers, currency, kits);
     if (parsed.length === 0) return toast.error("No valid quotes found (check Client and SKU/Product Name columns)");
     try {
       for (const q of parsed) await add(q);
@@ -129,7 +134,7 @@ export default function QuotePage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-text-primary">Quotes</h1>
+      <h1 className="text-3xl font-normal text-text-primary">Quotes</h1>
       <p className="text-sm text-text-secondary mt-1">Manage and track all quotations</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
@@ -144,19 +149,19 @@ export default function QuotePage() {
         ))}
       </div>
 
-      <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 overflow-hidden mt-6">
+      <div className="glass rounded-3xl overflow-hidden mt-6">
         <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
           <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
-              className="w-full sm:w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              className="w-full sm:w-64 glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search quotes..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <select
-            className="bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
+          <Select
+            className="glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -165,7 +170,7 @@ export default function QuotePage() {
             <option value="Sent">Sent</option>
             <option value="Accepted">Accepted</option>
             <option value="Rejected">Rejected</option>
-          </select>
+          </Select>
           <div className="ml-auto flex items-center gap-2">
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
             <Button variant="secondary" icon={Upload} onClick={() => fileRef.current?.click()}>Import Excel</Button>
@@ -179,7 +184,7 @@ export default function QuotePage() {
         <div className="overflow-x-auto">
         <table className="w-full min-w-[700px]">
           <thead>
-            <tr className="bg-surface-alt">
+            <tr className="bg-white/35">
               <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-text-muted font-normal">Quote #</th>
               <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-text-muted font-normal">Client</th>
               <th className="px-4 py-3 text-left text-xs uppercase tracking-wider text-text-muted font-normal">Date</th>
@@ -199,8 +204,8 @@ export default function QuotePage() {
                 const { grandTotal } = calcQuoteTotal(q);
                 const sc = statusConfig[q.status];
                 return (
-                  <tr key={q.id} className="border-t border-border hover:bg-[#F9FAFB]/60 transition-colors">
-                    <td className="px-4 py-3 text-sm font-mono text-brand-blue">{q.number}</td>
+                  <tr key={q.id} className="border-t border-border hover:bg-white/50 transition-colors">
+                    <td className="px-4 py-3 text-sm font-numeric tabular-nums text-brand-blue">{q.number}</td>
                     <td className="px-4 py-3 text-sm text-text-primary">{q.client}</td>
                     <td className="px-4 py-3 text-sm text-text-secondary">{q.date}</td>
                     <td className="px-4 py-3 text-sm text-text-secondary">{q.validUntil}</td>

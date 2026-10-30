@@ -1,4 +1,5 @@
-import type { Ticket, Quote, Customer, CustomerSegment } from "@/types";
+import type { Ticket, Quote, Customer, CustomerSegment, Complaint, PipelineStage, Project } from "@/types";
+import { CANCELLED } from "@/lib/utils/pipeline";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 
 export function inMonth(dateStr: string, month: number, year: number): boolean {
@@ -18,43 +19,37 @@ export function pctChange(cur: number, prev: number): number | null {
   return ((cur - prev) / prev) * 100;
 }
 
-/** Shared month-over-month numbers used by the dashboard KPI cards and the AI summary. */
-export function computeMonthlyMetrics(tickets: Ticket[], quotes: Quote[]) {
+/** This month vs last month, for a "3 this month · 1 last month" trend chip. */
+export interface MonthTrend { cur: number; prev: number }
+
+function monthBounds() {
   const now = new Date();
-  const curMonth = now.getMonth();
-  const curYear = now.getFullYear();
-  const prevDate = new Date(curYear, curMonth - 1, 1);
-  const prevMonth = prevDate.getMonth();
-  const prevYear = prevDate.getFullYear();
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+  return { m: now.getMonth(), y: now.getFullYear(), pm: prev.getMonth(), py: prev.getFullYear() };
+}
 
-  const openTickets = tickets.filter((t) => t.status !== "Resolved" && t.status !== "Closed");
-  const openThisMonth = openTickets.filter((t) => inMonth(t.lastContact, curMonth, curYear)).length;
-  const openLastMonth = openTickets.filter((t) => inMonth(t.lastContact, prevMonth, prevYear)).length;
-
-  const urgentTickets = openTickets.filter((t) => t.priority === "Urgent");
-  const urgentThisMonth = urgentTickets.filter((t) => inMonth(t.lastContact, curMonth, curYear)).length;
-  const urgentLastMonth = urgentTickets.filter((t) => inMonth(t.lastContact, prevMonth, prevYear)).length;
-
-  const quotesThisMonth = quotes.filter((q) => inMonth(q.date, curMonth, curYear));
-  const quotesLastMonth = quotes.filter((q) => inMonth(q.date, prevMonth, prevYear));
-
-  const resolvedThisMonth = tickets.filter((t) => (t.status === "Resolved" || t.status === "Closed") && inMonth(t.lastContact, curMonth, curYear));
-  const resolvedLastMonth = tickets.filter((t) => (t.status === "Resolved" || t.status === "Closed") && inMonth(t.lastContact, prevMonth, prevYear));
-
-  const activeQuotes = quotes.filter((q) => q.status === "Draft" || q.status === "Sent");
-  const activeQuotesThisMonth = activeQuotes.filter((q) => inMonth(q.date, curMonth, curYear)).length;
-  const activeQuotesLastMonth = activeQuotes.filter((q) => inMonth(q.date, prevMonth, prevYear)).length;
-
+function trend<T>(items: T[], date: (x: T) => string | null | undefined): MonthTrend {
+  const { m, y, pm, py } = monthBounds();
   return {
-    curMonth, curYear, prevMonth, prevYear,
-    openTickets, urgentTickets,
-    openDeltaCount: openThisMonth - openLastMonth,
-    urgentDeltaCount: urgentThisMonth - urgentLastMonth,
-    quotesThisMonth, quotesLastMonth,
-    activeQuotesThisMonth, activeQuotesLastMonth,
-    activeQuotesDeltaCount: activeQuotesThisMonth - activeQuotesLastMonth,
-    resolvedThisMonth, resolvedLastMonth,
-    resolvedDeltaPct: pctChange(resolvedThisMonth.length, resolvedLastMonth.length),
+    cur: items.filter((x) => inMonth(date(x) ?? "", m, y)).length,
+    prev: items.filter((x) => inMonth(date(x) ?? "", pm, py)).length,
+  };
+}
+
+/** Headline numbers for the dashboard cards: complaints, CRM records, quotes, installs. */
+export function computeHeadline(projects: Project[], quotes: Quote[], complaints: Complaint[], stages: PipelineStage[]) {
+  const lastStage = [...stages].sort((a, b) => a.position - b.position).at(-1)?.name ?? "Install";
+  const live = projects.filter((p) => p.stage !== CANCELLED);
+  const installed = projects.filter((p) => p.stage === lastStage);
+  return {
+    lastStage,
+    pendingComplaints: complaints.filter((c) => c.status === "Pending").length,
+    complaintsRaised: trend(complaints, (c) => c.createdAt),
+    activeRecords: live.length,
+    recordsCreated: trend(live, (p) => p.createdAt),
+    activeQuotes: quotes.filter((q) => q.status === "Draft" || q.status === "Sent").length,
+    quotesCreated: trend(quotes, (q) => q.date),
+    installed: trend(installed, (p) => p.lastStageChange),
   };
 }
 

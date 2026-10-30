@@ -49,7 +49,7 @@ export function UserMenu({ onClose }: { onClose: () => void }) {
   return (
     <div
       ref={ref}
-      className="absolute mt-2 right-0 w-[260px] rounded-2xl bg-white shadow-dropdown p-2 z-50"
+      className="absolute mt-2 right-0 w-[260px] rounded-2xl glass-pop p-2 z-50"
     >
       <div className="px-3 py-3 border-b border-border mb-2">
         <div className="flex items-center gap-3">

@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   X, Trash2, Pencil, Check, Ban, Paperclip, Send, Reply, Forward, Copy, MoreVertical,
-  ChevronLeft, ChevronRight, Search, MessageSquare, History,
+  ChevronLeft, ChevronRight, Search, MessageCircle, Phone, Mail, Star, Info, Mic, ArrowLeft,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
@@ -13,18 +13,19 @@ import { Price } from "@/components/ui/Price";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useCustomerStore } from "@/lib/store/useCustomerStore";
+import { useDictation } from "@/lib/hooks/useDictation";
+import { UNREAD_QUERY_KEY } from "@/lib/hooks/useProjectUnread";
+import { CustomerFormFields, useCustomerForm } from "@/components/customers/CustomerForm";
 import { calcQuoteTotal } from "@/lib/utils/quote";
-import { PIPELINE_STAGES } from "./KanbanBoard";
+import { usePipelineStages } from "@/lib/hooks/usePipelineStages";
+import { CANCELLED, CANCELLED_COLOR, stageColor } from "@/lib/utils/pipeline";
 import { ProjectFulfilment } from "./ProjectFulfilment";
 import type { Project, ProjectStage, ProjectStageEvent, ProjectMessage, Attachment } from "@/types";
+import { Select } from "@/components/ui/Select";
 
 const supportTeam = ["Urvil Kargathala", "Henil Patel", "Tirth", "Chirag"];
 
-const stageColors: Record<ProjectStage, string> = {
-  Inquiry: "#3B82F6", Design: "#8B5CF6", Quotation: "#F59E0B", Measurement: "#06B6D4",
-  Marking: "#0EA5E9", Production: "#EAB308", "Material Requirement": "#F97316",
-  "Ready to Dispatch": "#14B8A6", Installation: "#22C55E", Completed: "#10B981", Cancelled: "#EF4444",
-};
 
 function historyTimeLabel(iso: string): string {
   return new Date(iso).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) +
@@ -82,6 +83,7 @@ interface Props {
 export function ProjectPanel({ open, onClose, project, projects, onSave, onDelete }: Props) {
   const quotes = useQuoteStore((s) => s.quotes);
   const queryClient = useQueryClient();
+  const { stages } = usePipelineStages();
   const { users, fetchAll: fetchUsers } = useUserStore();
   const myId = useAuthStore((s) => s.user?.id);
   const listRef = useRef<HTMLDivElement>(null);
@@ -90,7 +92,9 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
 
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState<{ siteAddress: string; assigned: string; architect: string; quoteId: number | null; notes: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"details" | "chat">("details");
+  // Chat is the main view (CRM conversation); Details is one tap away via the info button.
+  const [activeTab, setActiveTab] = useState<"details" | "chat">("chat");
+  const [starredOnly, setStarredOnly] = useState(false);
 
   const [text, setText] = useState("");
   const [pendingFiles, setPendingFiles] = useState<Attachment[]>([]);
@@ -117,7 +121,8 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
       });
     }
     setEditing(false);
-    setActiveTab("details");
+    setActiveTab("chat");
+    setStarredOnly(false);
     setText("");
     setPendingFiles([]);
     setReplyingTo(null);
@@ -235,11 +240,47 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
     return () => document.removeEventListener("mousedown", handle);
   }, [menuOpenId]);
 
+  const starMutation = useMutation({
+    mutationFn: async ({ messageId, starred }: { messageId: number; starred: boolean }) => {
+      const res = await fetch(`/api/projects/${project?.id}/messages/${messageId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ starred }),
+      });
+      if (!res.ok) throw new Error("Couldn't update the star");
+    },
+    onMutate: ({ messageId, starred }) => {
+      queryClient.setQueryData<ProjectMessage[]>(["project-messages", project?.id], (prev = []) =>
+        prev.map((m) => (m.id === messageId ? { ...m, starred } : m))
+      );
+    },
+    onError: () => {
+      toast.error("Couldn't update the star");
+      queryClient.invalidateQueries({ queryKey: ["project-messages", project?.id] });
+    },
+  });
+
+  // Reading the chat clears this record's unread badge — re-marked as messages arrive while it's open.
+  useEffect(() => {
+    if (!open || !project || activeTab !== "chat") return;
+    fetch(`/api/projects/${project.id}/messages/read`, { method: "POST" })
+      .then(() => queryClient.invalidateQueries({ queryKey: UNREAD_QUERY_KEY }))
+      .catch(() => {});
+  }, [open, project?.id, activeTab, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const customer = useCustomerStore((s) => s.customers.find((c) => c.id === project?.customerId));
+  const updateCustomer = useCustomerStore((s) => s.update);
+  // The edit view edits the linked customer too, so details can be fixed without leaving the CRM.
+  const customerForm = useCustomerForm(customer ?? null, editing);
+  const [savingEdit, setSavingEdit] = useState(false);
+  const dictation = useDictation((spoken) => setText((t) => (t.trim() ? `${t.trimEnd()} ${spoken}` : spoken)));
+
   const grouped = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const filtered = q
+    let filtered = q
       ? messages.filter((m) => !m.deleted && m.text.toLowerCase().includes(q))
       : messages;
+    if (starredOnly) filtered = filtered.filter((m) => m.starred && !m.deleted);
     const map = new Map<string, ProjectMessage[]>();
     for (const m of filtered) {
       const key = dateLabel(m.createdAt);
@@ -247,7 +288,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
       map.get(key)!.push(m);
     }
     return [...map.entries()];
-  }, [messages, searchQuery]);
+  }, [messages, searchQuery, starredOnly]);
 
   const mentionMatches = useMemo(() => {
     if (mentionQuery === null) return [];
@@ -300,16 +341,31 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
 
   async function handleCancel() {
     if (!project) return;
-    if (window.confirm("Cancel this project? It will be removed from the active board.")) {
-      await onSave(project.id, { stage: "Cancelled" });
+    if (window.confirm("Cancel this record? It will be removed from the active CRM board.")) {
+      await onSave(project.id, { stage: CANCELLED });
       queryClient.invalidateQueries({ queryKey: ["project-history", project.id] });
     }
   }
 
-  function handleFieldSave() {
+  async function handleFieldSave() {
     if (!project || !form) return;
-    onSave(project.id, form);
-    setEditing(false);
+    if (customer && !customerForm.valid) return toast.error("Customer name is required");
+    setSavingEdit(true);
+    try {
+      let customerName = project.customerName;
+      if (customer && customerForm.isDirty()) {
+        const input = customerForm.toInput();
+        await updateCustomer(customer.id, input);
+        customerName = input.name;
+      }
+      // Keep the card's name in step with the customer's.
+      await onSave(project.id, customerName !== project.customerName ? { ...form, customerName } : form);
+      setEditing(false);
+    } catch {
+      // the stores already showed an error toast
+    } finally {
+      setSavingEdit(false);
+    }
   }
 
   if (!open || !project || !form) return null;
@@ -318,129 +374,102 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
     "w-full bg-white border border-border rounded-lg py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors";
   const labelClass = "block text-xs text-text-muted mb-1";
   const linkedQuote = quotes.find((q) => q.id === form.quoteId);
-  const isCancelled = project.stage === "Cancelled";
+  const isCancelled = project.stage === CANCELLED;
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-slate-900/40 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white w-full sm:w-[420px] h-full shadow-modal flex flex-col" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-border shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3 min-w-0">
-              <Avatar name={project.assigned} size="sm" />
-              <div className="min-w-0">
-                <div className="text-sm text-text-primary truncate">{project.customerName}</div>
-                <div className="text-xs text-text-muted truncate">{project.siteAddress}</div>
-              </div>
+      <div className="bg-white w-full sm:w-[460px] h-full shadow-modal flex flex-col" onClick={(e) => e.stopPropagation()}>
+        {/* Header — name, quick actions, stage pill */}
+        <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-xl text-text-primary uppercase tracking-wide truncate">{project.customerName}</h2>
+              {project.siteAddress && <div className="text-xs text-text-muted truncate mt-0.5">{project.siteAddress}</div>}
             </div>
-            <div className="flex items-center gap-1 shrink-0">
-              {!editing && activeTab === "chat" && (
-                <button
-                  onClick={() => setSearchOpen((v) => { if (v) setSearchQuery(""); return !v; })}
-                  aria-label="Search chat"
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${searchOpen ? "bg-brand-gradient-tint text-brand-blue" : "text-text-muted hover:bg-[#F9FAFB]"}`}
-                >
-                  <Search size={15} />
-                </button>
-              )}
+            <div className="flex items-center shrink-0 -mr-1.5">
+              <a
+                href={customer?.phone ? `tel:${customer.phone.replace(/\s+/g, "")}` : undefined}
+                aria-label="Call customer"
+                title={customer?.phone || "No phone number on this customer"}
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:bg-[#F3F5F7] hover:text-text-primary transition-colors ${customer?.phone ? "" : "opacity-40 pointer-events-none"}`}
+              >
+                <Phone size={17} />
+              </a>
+              <a
+                href={customer?.email ? `mailto:${customer.email}` : undefined}
+                aria-label="Email customer"
+                title={customer?.email || "No email on this customer"}
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:bg-[#F3F5F7] hover:text-text-primary transition-colors ${customer?.email ? "" : "opacity-40 pointer-events-none"}`}
+              >
+                <Mail size={17} />
+              </a>
               <button
                 onClick={() => setEditing((v) => !v)}
-                aria-label="Edit project"
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${editing ? "bg-brand-gradient-tint text-brand-blue" : "text-text-muted hover:bg-[#F9FAFB]"}`}
+                aria-label="Edit details"
+                title="Edit details"
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:bg-[#F3F5F7] hover:text-text-primary transition-colors ${editing ? "!bg-brand-gradient-tint !text-brand-blue" : ""}`}
               >
-                <Pencil size={15} />
+                <Pencil size={16} />
               </button>
-              {!isCancelled && (
-                <button
-                  onClick={handleCancel}
-                  aria-label="Cancel project"
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-danger hover:bg-[#F9FAFB] transition-colors"
-                >
-                  <Ban size={15} />
-                </button>
-              )}
               <button
-                onClick={() => { if (window.confirm("Delete this project?")) { onDelete(project.id); onClose(); } }}
-                aria-label="Delete project"
-                className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-danger hover:bg-[#F9FAFB] transition-colors"
+                onClick={() => { if (window.confirm("Delete this CRM record?")) { onDelete(project.id); onClose(); } }}
+                aria-label="Delete"
+                title="Delete"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:bg-[#F3F5F7] hover:text-text-primary transition-colors hover:!text-danger"
               >
-                <Trash2 size={15} />
+                <Trash2 size={16} />
               </button>
-              <button onClick={onClose} aria-label="Close" className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:bg-[#F9FAFB] transition-colors">
-                <X size={16} />
+              <button onClick={onClose} aria-label="Close" className="w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:bg-[#F3F5F7] hover:text-text-primary transition-colors">
+                <X size={18} />
               </button>
             </div>
           </div>
 
           {isCancelled ? (
-            <span className="inline-flex items-center gap-1.5 mt-3 text-xs px-3 py-1.5 rounded-full" style={{ backgroundColor: stageColors.Cancelled + "18", color: stageColors.Cancelled }}>
-              Cancelled
+            <span className="inline-flex items-center gap-1.5 mt-2 text-sm px-3 py-1.5 rounded-full" style={{ backgroundColor: CANCELLED_COLOR + "18", color: CANCELLED_COLOR }}>
+              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: CANCELLED_COLOR }} /> Cancelled
             </span>
           ) : (
-            <select
-              className="mt-3 bg-white border border-border rounded-full py-1.5 px-3 text-xs text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
-              value={project.stage}
-              onChange={(e) => handleStageChange(e.target.value as ProjectStage)}
-            >
-              {PIPELINE_STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
-            </select>
-          )}
-
-          {!editing && (
-            <div className="inline-flex items-center gap-1 bg-surface-alt rounded-full p-1 mt-3">
-              <button
-                onClick={() => setActiveTab("details")}
-                className={`px-3 py-1 rounded-full text-xs flex items-center gap-1.5 transition-colors ${
-                  activeTab === "details" ? "bg-white shadow-card text-text-primary" : "text-text-secondary hover:text-text-primary"
-                }`}
+            <div className="relative inline-flex mt-2">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full pointer-events-none z-10" style={{ backgroundColor: stageColor(stages, project.stage) }} />
+              <Select
+                className="bg-white/70 border border-border/70 rounded-full py-1.5 pl-6 pr-3 text-sm text-text-secondary hover:text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
+                value={project.stage}
+                onChange={(e) => handleStageChange(e.target.value as ProjectStage)}
               >
-                <History size={12} /> Details
-              </button>
-              <button
-                onClick={() => setActiveTab("chat")}
-                className={`px-3 py-1 rounded-full text-xs flex items-center gap-1.5 transition-colors ${
-                  activeTab === "chat" ? "bg-white shadow-card text-text-primary" : "text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                <MessageSquare size={12} /> Chat
-              </button>
-            </div>
-          )}
-
-          {searchOpen && !editing && activeTab === "chat" && (
-            <div className="relative mt-3">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
-              <input
-                autoFocus
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search this chat..."
-                className="w-full bg-white border border-border rounded-full py-2 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
-              />
+                {stages.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
+              </Select>
             </div>
           )}
         </div>
 
         {editing ? (
-          /* Edit-fields view */
+          /* Edit view: the linked customer's full details, then this CRM record's fields */
           <div className="flex-1 overflow-y-auto p-5 space-y-4">
+            <div className="text-xs uppercase tracking-wider text-text-muted">Customer</div>
+            {customer ? (
+              <CustomerFormFields form={customerForm} customer={customer} notesLabel="Customer notes" />
+            ) : (
+              <div className="text-sm text-text-muted bg-[#F9FAFB] rounded-xl px-3 py-2.5">No customer is linked to this record.</div>
+            )}
+            <div className="pt-3 border-t border-border text-xs uppercase tracking-wider text-text-muted">CRM record</div>
             <div>
               <label className={labelClass}>Site address</label>
               <input className={inputClass} value={form.siteAddress} onChange={(e) => setForm({ ...form, siteAddress: e.target.value })} />
             </div>
             <div>
               <label className={labelClass}>Assigned to</label>
-              <select className={inputClass} value={form.assigned} onChange={(e) => setForm({ ...form, assigned: e.target.value })}>
+              <Select className={inputClass} value={form.assigned} onChange={(e) => setForm({ ...form, assigned: e.target.value })}>
                 {supportTeam.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              </Select>
             </div>
             <div>
-              <label className={labelClass}>Architect</label>
+              <label className={labelClass}>Site architect</label>
               <input className={inputClass} value={form.architect} onChange={(e) => setForm({ ...form, architect: e.target.value })} placeholder="Optional" />
             </div>
             <div>
               <label className={labelClass}>Linked quote</label>
-              <select
+              <Select
                 className={inputClass}
                 value={form.quoteId ?? ""}
                 onChange={(e) => setForm({ ...form, quoteId: e.target.value ? Number(e.target.value) : null })}
@@ -449,7 +478,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
               >
                 <option value="">No quote linked</option>
                 {quotes.map((q) => <option key={q.id} value={q.id}>{q.number} — {q.client}</option>)}
-              </select>
+              </Select>
             </div>
             <div>
               <label className={labelClass}>Notes</label>
@@ -460,13 +489,21 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
             </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="secondary" onClick={() => setEditing(false)}>Cancel</Button>
-              <Button icon={Check} onClick={handleFieldSave}>Save</Button>
+            <div className="flex items-center gap-2 pt-2">
+              {!isCancelled && (
+                <Button variant="ghost" icon={Ban} onClick={handleCancel} className="text-danger hover:!text-danger mr-auto">Cancel record</Button>
+              )}
+              <div className="ml-auto flex gap-2">
+                <Button variant="secondary" onClick={() => setEditing(false)}>Close</Button>
+                <Button icon={Check} onClick={handleFieldSave} disabled={savingEdit}>{savingEdit ? "Saving…" : "Save"}</Button>
+              </div>
             </div>
           </div>
         ) : activeTab === "details" ? (
           <div className="flex-1 overflow-y-auto p-5 space-y-5">
+            <button onClick={() => setActiveTab("chat")} className="flex items-center gap-1.5 text-sm text-brand-blue hover:underline">
+              <ArrowLeft size={15} /> Back to chat
+            </button>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
                 <div className="text-xs text-text-muted mb-1">Architect</div>
@@ -505,7 +542,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 <div className="space-y-3">
                   {history.map((h) => (
                     <div key={h.id} className="flex items-start gap-2.5">
-                      <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: stageColors[h.stage] }} />
+                      <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: stageColor(stages, h.stage) }} />
                       <div>
                         <div className="text-sm text-text-primary">{h.stage}</div>
                         <div className="text-xs text-text-muted">{historyTimeLabel(h.changedAt)}</div>
@@ -518,11 +555,52 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
           </div>
         ) : (
           <>
-            {/* Chat feed */}
-            <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            {/* Chat feed on a patterned backdrop, with floating info / star / search controls */}
+            <div className="relative flex-1 min-h-0 chat-pattern">
+              <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
+                {[
+                  { label: "Details", icon: Info, active: false, onClick: () => setActiveTab("details") },
+                  { label: starredOnly ? "Show all messages" : "Starred messages", icon: Star, active: starredOnly, onClick: () => setStarredOnly((v) => !v) },
+                  { label: "Search chat", icon: Search, active: searchOpen, onClick: () => setSearchOpen((v) => { if (v) setSearchQuery(""); return !v; }) },
+                ].map(({ label, icon: Icon, active, onClick }) => (
+                  <button
+                    key={label}
+                    onClick={onClick}
+                    aria-label={label}
+                    title={label}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shadow-iconBtn border transition-colors ${
+                      active ? "bg-brand-blue text-white border-brand-blue" : "bg-white text-text-secondary border-white hover:text-text-primary"
+                    }`}
+                  >
+                    <Icon size={17} className={active && Icon === Star ? "fill-current" : ""} />
+                  </button>
+                ))}
+              </div>
+              {searchOpen && (
+                <div className="absolute top-3 left-3 right-[150px] z-10">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <input
+                    autoFocus
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search this chat..."
+                    className="w-full h-10 bg-white border border-border rounded-full pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted shadow-iconBtn focus:border-brand-blue focus:outline-none"
+                  />
+                </div>
+              )}
+            <div ref={listRef} className="absolute inset-0 overflow-y-auto px-4 pt-16 pb-4 space-y-4">
               {grouped.length === 0 ? (
-                <div className="text-center text-text-muted text-sm py-10">
-                  {searchQuery.trim() ? "No messages match your search" : "No activity yet — start the conversation"}
+                <div className="mx-2 mt-2 rounded-2xl border border-dashed border-text-primary/10 bg-white/30 py-16 flex flex-col items-center text-center px-6">
+                  <span className="w-14 h-14 rounded-full bg-white shadow-iconBtn flex items-center justify-center text-brand-blue">
+                    <MessageCircle size={24} />
+                  </span>
+                  <p className="mt-4 text-text-secondary">
+                    {searchQuery.trim()
+                      ? "No messages match your search."
+                      : starredOnly
+                        ? "No starred messages yet — star one from its menu."
+                        : "No messages yet — start the conversation."}
+                  </p>
                 </div>
               ) : (
                 grouped.map(([label, msgs]) => (
@@ -539,6 +617,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                               {m.edited && !m.deleted && (
                                 <span className="text-[10px] text-text-muted italic">(edited)</span>
                               )}
+                              {m.starred && !m.deleted && <Star size={11} className="text-warning fill-current self-center" aria-label="Starred" />}
                               {m.isForwarded && !m.deleted && (
                                 <span className="text-[10px] text-text-muted italic flex items-center gap-0.5">
                                   <Forward size={10} /> Forwarded
@@ -557,6 +636,12 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                                   </button>
                                   {menuOpenId === m.id && (
                                     <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-xl shadow-dropdown border border-border overflow-hidden z-10 text-left">
+                                      <button
+                                        onClick={() => { starMutation.mutate({ messageId: m.id, starred: !m.starred }); setMenuOpenId(null); }}
+                                        className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-[#F9FAFB] transition-colors"
+                                      >
+                                        <Star size={14} className={m.starred ? "fill-current text-warning" : ""} /> {m.starred ? "Unstar" : "Star"}
+                                      </button>
                                       <button
                                         onClick={() => { setReplyingTo(m); setMenuOpenId(null); }}
                                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-[#F9FAFB] transition-colors"
@@ -590,7 +675,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                                           onClick={() => { setMenuOpenId(null); if (window.confirm("Delete this message?")) deleteMutation.mutate(m.id); }}
                                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-[#F9FAFB] transition-colors"
                                         >
-                                          <Trash2 size={14} /> Delete for me
+                                          <Trash2 size={14} /> Delete
                                         </button>
                                       )}
                                     </div>
@@ -648,7 +733,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                                   </div>
                                 ) : (
                                   m.text && (
-                                    <div className="mt-1 text-sm text-text-primary bg-[#F9FAFB] rounded-xl px-3 py-2 inline-block max-w-full whitespace-pre-wrap break-words">
+                                    <div className="mt-1 text-sm text-text-primary bg-white shadow-iconBtn rounded-2xl rounded-tl-md px-3 py-2 inline-block max-w-full whitespace-pre-wrap break-words">
                                       {highlight(m.text, searchQuery)}
                                     </div>
                                   )
@@ -686,9 +771,10 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 ))
               )}
             </div>
+            </div>
 
             {/* Composer */}
-            <div className="border-t border-border p-3 shrink-0 relative">
+            <div className="border-t border-border px-4 py-3 shrink-0 relative bg-white">
               {mentionQuery !== null && mentionMatches.length > 0 && (
                 <div className="absolute bottom-full left-3 mb-1 w-56 bg-white rounded-xl shadow-dropdown border border-border overflow-hidden">
                   {mentionMatches.map((u) => (
@@ -727,18 +813,19 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 </div>
               )}
 
-              <div className="flex items-end gap-2">
+              <div className="flex items-center gap-2">
                 <input ref={fileRef} type="file" multiple className="hidden" onChange={handleFilePick} />
                 <button
                   onClick={() => fileRef.current?.click()}
                   disabled={uploading}
                   aria-label="Attach file"
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted hover:bg-[#F9FAFB] shrink-0 transition-colors disabled:opacity-40"
+                  title="Attach file"
+                  className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary hover:bg-[#F3F5F7] shrink-0 transition-colors disabled:opacity-40"
                 >
-                  <Paperclip size={16} />
+                  <Paperclip size={18} />
                 </button>
                 <textarea
-                  className="flex-1 bg-white border border-border rounded-lg py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors resize-none"
+                  className="flex-1 bg-white border border-border rounded-full py-2.5 px-4 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors resize-none max-h-32"
                   placeholder="Message... use @ to mention"
                   rows={1}
                   value={text}
@@ -750,13 +837,25 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                     }
                   }}
                 />
+                {dictation.supported && (
+                  <button
+                    onClick={dictation.toggle}
+                    aria-label={dictation.listening ? "Stop voice typing" : "Voice typing"}
+                    title={dictation.listening ? "Listening… tap to stop" : "Voice typing"}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${
+                      dictation.listening ? "bg-danger/10 text-danger animate-pulse" : "text-text-secondary hover:bg-[#F3F5F7]"
+                    }`}
+                  >
+                    <Mic size={18} />
+                  </button>
+                )}
                 <button
                   onClick={handleSend}
                   disabled={(!text.trim() && pendingFiles.length === 0) || sendMutation.isPending}
-                  className="w-9 h-9 rounded-full bg-brand-gradient flex items-center justify-center text-white shrink-0 disabled:opacity-40"
+                  className="w-11 h-11 rounded-full bg-brand-gradient flex items-center justify-center text-white shrink-0 shadow-iconBtn disabled:opacity-40 disabled:bg-none disabled:bg-text-primary/10 disabled:text-text-muted"
                   aria-label="Send"
                 >
-                  <Send size={15} />
+                  <Send size={17} />
                 </button>
               </div>
             </div>

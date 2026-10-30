@@ -14,7 +14,7 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-card p-4 sm:p-6 mt-6 sm:mt-8 mb-6">
+      <div className="glass rounded-3xl p-4 sm:p-6 mt-6 sm:mt-8 mb-6">
         <Skeleton className="h-5 w-36 mb-3" />
         <Skeleton className="h-3.5 w-full mb-2" />
         <Skeleton className="h-3.5 w-4/5" />
@@ -23,7 +23,7 @@ export function DashboardSkeleton() {
       {/* Row 1 — KPI cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-2xl shadow-card p-5 bg-white">
+          <div key={i} className="glass rounded-3xl p-5">
             <Skeleton className="h-3 w-24" />
             <Skeleton className="h-7 w-20 mt-3" />
             <Skeleton className="h-3 w-28 mt-3" />
@@ -33,11 +33,11 @@ export function DashboardSkeleton() {
 
       {/* Row 2 — Line chart + Donut */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-card p-4 sm:p-6">
+        <div className="lg:col-span-2 glass rounded-3xl p-4 sm:p-6">
           <Skeleton className="h-5 w-40 mb-6" />
           <Skeleton className="h-64 w-full" />
         </div>
-        <div className="lg:col-span-1 bg-white rounded-2xl shadow-card p-4 sm:p-6">
+        <div className="lg:col-span-1 glass rounded-3xl p-4 sm:p-6">
           <Skeleton className="h-5 w-36 mb-4" />
           <div className="flex justify-center">
             <Skeleton className="h-[190px] w-[190px] rounded-full" />
@@ -52,11 +52,11 @@ export function DashboardSkeleton() {
 
       {/* Row 3 — Bar chart + Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 bg-white rounded-2xl shadow-card p-4 sm:p-6">
+        <div className="lg:col-span-2 glass rounded-3xl p-4 sm:p-6">
           <Skeleton className="h-5 w-32 mb-6" />
           <Skeleton className="h-64 w-full" />
         </div>
-        <div className="lg:col-span-1 bg-white rounded-2xl shadow-card p-4 sm:p-6">
+        <div className="lg:col-span-1 glass rounded-3xl p-4 sm:p-6">
           <Skeleton className="h-5 w-32 mb-4" />
           <div className="space-y-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -75,7 +75,7 @@ export function DashboardSkeleton() {
       {/* Row 4 — Quote expiry + leaderboard */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
         {Array.from({ length: 2 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-2xl shadow-card p-4 sm:p-6">
+          <div key={i} className="glass rounded-3xl p-4 sm:p-6">
             <Skeleton className="h-5 w-40 mb-4" />
             <div className="space-y-3">
               {Array.from({ length: 3 }).map((_, j) => (

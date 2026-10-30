@@ -40,7 +40,7 @@ export function KanbanBoard({
     return (
       <div className="flex gap-4 overflow-x-auto pb-2 scroll-hover">
         {statuses.map((status) => (
-          <div key={status} className="w-[260px] sm:w-72 lg:w-80 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl p-3 bg-surface-alt" />
+          <div key={status} className="w-[260px] sm:w-72 lg:w-80 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl p-3 bg-white/40 border border-white/70" />
         ))}
       </div>
     );

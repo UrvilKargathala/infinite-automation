@@ -1,5 +1,5 @@
 import { sql } from "@/lib/db";
-import type { Quote, Section, QuoteItem } from "@/types";
+import type { Quote, Section, QuoteItem, QuoteKitComponent } from "@/types";
 import type { CurrencyCode } from "@/lib/utils/currency";
 
 export async function assembleQuotes(quoteRows: Record<string, unknown>[]): Promise<Quote[]> {
@@ -19,7 +19,8 @@ export async function assembleQuotes(quoteRows: Record<string, unknown>[]): Prom
     const list = itemsBySection.get(sid) ?? [];
     list.push({
       id: it.id as string,
-      productId: it.product_id as number,
+      productId: (it.product_id as number) ?? null,
+      ...(it.kit_components ? { kitId: (it.kit_id as number) ?? null, kitSku: (it.kit_sku as string) ?? "", components: it.kit_components as QuoteKitComponent[] } : {}),
       name: it.name as string,
       category: it.category as string,
       brand: it.brand as string,
@@ -61,8 +62,9 @@ export async function replaceQuoteSections(quoteId: number, sections: Section[])
     for (let ii = 0; ii < s.items.length; ii++) {
       const it = s.items[ii];
       await sql`
-        INSERT INTO quote_items (id, section_id, product_id, name, category, brand, description, qty, price, discount, position)
-        VALUES (${it.id}, ${s.id}, ${it.productId}, ${it.name}, ${it.category}, ${it.brand}, ${it.description}, ${it.qty}, ${it.price}, ${it.discount}, ${ii})
+        INSERT INTO quote_items (id, section_id, product_id, kit_id, kit_sku, kit_components, name, category, brand, description, qty, price, discount, position)
+        VALUES (${it.id}, ${s.id}, ${it.components ? null : it.productId}, (SELECT id FROM kits WHERE id = ${it.components ? it.kitId ?? null : null}), ${it.components ? it.kitSku ?? "" : null},
+                ${it.components ? JSON.stringify(it.components) : null}::jsonb, ${it.name}, ${it.category}, ${it.brand}, ${it.description}, ${it.qty}, ${it.price}, ${it.discount}, ${ii})
       `;
     }
   }

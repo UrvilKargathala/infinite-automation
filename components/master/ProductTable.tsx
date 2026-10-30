@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { PriceCell } from "@/components/master/PriceCell";
-import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import type { CurrencyCode } from "@/lib/utils/currency";
 import { Pagination } from "@/components/ui/Pagination";
@@ -17,7 +16,8 @@ interface Props {
   onEdit: (p: Product) => void;
   onDelete: (id: number) => void;
   canManage?: boolean;
-  currency?: CurrencyCode;
+  /** The user's Settings currency — the price column shows this one first. */
+  currency: CurrencyCode;
 }
 
 export function ProductTable({ products, total, onEdit, onDelete, canManage = true, currency }: Props) {
@@ -34,7 +34,7 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
       <div className="overflow-x-auto">
         <table className="w-full min-w-[1000px]">
           <thead>
-            <tr className="bg-surface-alt">
+            <tr className="bg-white/35">
               <th className={thClass}>Sr.</th>
               <th className={thClass}>Product name</th>
               <th className={thClass}>SKU</th>
@@ -56,24 +56,16 @@ export function ProductTable({ products, total, onEdit, onDelete, canManage = tr
               </tr>
             ) : (
               paged.map((p, i) => (
-                <tr key={p.id} className="border-t border-border hover:bg-[#F9FAFB]/60">
+                <tr key={p.id} className="border-t border-border hover:bg-white/50">
                   <td className={tdClass}><Num>{(safePage - 1) * PAGE_SIZE + i + 1}</Num></td>
                   <td className={`${tdClass} text-text-primary`}>{p.name}</td>
-                  <td className={`${tdClass} font-mono text-xs text-brand-blue`}>{p.sku}</td>
+                  <td className={`${tdClass} font-numeric tabular-nums text-xs text-brand-blue`}>{p.sku}</td>
                   <td className={tdClass}>{p.brand}</td>
                   <td className={tdClass}>{p.category}</td>
                   <td className={`${tdClass} text-text-secondary text-xs max-w-[200px] truncate`} title={p.description}>{p.description || "—"}</td>
-                  <td className={`${tdClass} font-mono text-xs text-text-secondary`}><Num>{p.hsn || "—"}</Num></td>
+                  <td className={`${tdClass} font-numeric tabular-nums text-xs text-text-secondary`}><Num>{p.hsn || "—"}</Num></td>
                   <td className={tdClass}>
-                    {currency ? (
-                      <Price value={p.prices?.[currency] ?? p.price} currency={currency} className="text-xs" />
-                    ) : Object.keys(p.prices ?? {}).length > 0 ? (
-                      <PriceCell prices={p.prices} />
-                    ) : p.price != null ? (
-                      <PriceCell prices={{ INR: p.price }} />
-                    ) : (
-                      <span className="text-warning">Not set</span>
-                    )}
+                    <PriceCell prices={Object.keys(p.prices ?? {}).length > 0 ? p.prices : p.price != null ? { INR: p.price } : {}} primary={currency} />
                   </td>
                   <td className={tdClass}>
                     <span

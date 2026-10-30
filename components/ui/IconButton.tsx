@@ -19,7 +19,7 @@ export function IconButton({
     <button
       onClick={onClick}
       aria-label={ariaLabel}
-      className={`relative w-10 h-10 rounded-full bg-white border border-border shadow-iconBtn flex items-center justify-center text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary active:bg-brand-gradient-tint active:text-brand-blue transition-colors ${className}`}
+      className={`relative w-10 h-10 rounded-full glass-control border border-white/90 shadow-iconBtn flex items-center justify-center text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary active:bg-brand-gradient-tint active:text-brand-blue transition-colors ${className}`}
     >
       <Icon size={18} />
       {indicator && (

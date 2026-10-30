@@ -38,6 +38,8 @@ export const useQuoteStore = create<QuoteStore>((set, get) => ({
   update: async (id, patch) => {
     const res = await fetch(`/api/quotes/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
     const updated = await res.json();
+    // Don't let an error body replace the quote in the list.
+    if (!res.ok) throw new Error((updated as { error?: string }).error ?? "Failed to update quote");
     set((s) => ({ quotes: s.quotes.map((q) => (q.id === id ? updated : q)) }));
   },
   remove: async (id) => {

@@ -40,7 +40,7 @@ export function ProjectFulfilment({ project }: { project: Project }) {
             <div className="text-xs text-text-muted">{project.confirmedAt.slice(0, 10)}</div>
           </div>
         </div>
-        <Link href={`/projects/${project.id}/order-slip`}>
+        <Link href={`/crm/${project.id}/order-slip`}>
           <Button variant="secondary" icon={ClipboardList}>Order slip</Button>
         </Link>
       </div>

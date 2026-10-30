@@ -2,26 +2,34 @@
 
 import { useState, useEffect, useId } from "react";
 import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { Plus } from "lucide-react";
 import { KanbanColumn } from "./KanbanColumn";
-import type { Project, ProjectStage } from "@/types";
+import { CANCELLED, CANCELLED_COLOR } from "@/lib/utils/pipeline";
+import type { PipelineStage, Project, ProjectStage } from "@/types";
 
-export const PIPELINE_STAGES: ProjectStage[] = [
-  "Inquiry", "Design", "Quotation", "Measurement", "Marking",
-  "Production", "Material Requirement", "Ready to Dispatch", "Installation", "Completed",
-];
+const COLUMN = "w-[260px] sm:w-72 lg:w-80 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl";
 
 export function KanbanBoard({
   projects,
   stages,
+  showCancelled,
   onMoveStage,
   onAddProject,
   onEditProject,
+  onAddStage,
+  onRenameStage,
+  onDeleteStage,
 }: {
   projects: Project[];
-  stages: ProjectStage[];
+  /** CRM pipeline columns in order (defaults + custom). */
+  stages: PipelineStage[];
+  showCancelled: boolean;
   onMoveStage: (id: number, stage: ProjectStage) => void;
   onAddProject: (stage: ProjectStage) => void;
   onEditProject: (project: Project) => void;
+  onAddStage: () => void;
+  onRenameStage: (stage: PipelineStage) => void;
+  onDeleteStage: (stage: PipelineStage) => void;
 }) {
   const dndId = useId();
   const [mounted, setMounted] = useState(false);
@@ -31,12 +39,17 @@ export function KanbanBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
+  const columns: { name: ProjectStage; color: string; custom?: PipelineStage }[] = [
+    ...stages.map((s) => ({ name: s.name, color: s.color, custom: s.isDefault ? undefined : s })),
+    ...(showCancelled ? [{ name: CANCELLED, color: CANCELLED_COLOR }] : []),
+  ];
+
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     if (!over) return;
     const projectId = active.id as number;
     const targetStage = over.id as ProjectStage;
-    if (stages.includes(targetStage)) {
+    if (columns.some((c) => c.name === targetStage)) {
       onMoveStage(projectId, targetStage);
     }
   }
@@ -44,8 +57,8 @@ export function KanbanBoard({
   if (!mounted) {
     return (
       <div className="flex gap-4 overflow-x-auto pb-2 scroll-hover">
-        {stages.map((stage) => (
-          <div key={stage} className="w-[260px] sm:w-72 lg:w-80 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl p-3 bg-surface-alt" />
+        {columns.map((c) => (
+          <div key={c.name} className={`${COLUMN} p-3 bg-white/40 border border-white/70`} />
         ))}
       </div>
     );
@@ -54,15 +67,29 @@ export function KanbanBoard({
   return (
     <DndContext id={dndId} sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="flex gap-4 overflow-x-auto pb-2 scroll-hover">
-        {stages.map((stage) => (
+        {columns.map((c) => (
           <KanbanColumn
-            key={stage}
-            stage={stage}
-            projects={projects.filter((p) => p.stage === stage)}
+            key={c.name}
+            stage={c.name}
+            color={c.color}
+            custom={c.custom}
+            projects={projects.filter((p) => p.stage === c.name)}
             onAddProject={onAddProject}
             onEditProject={onEditProject}
+            onRenameStage={onRenameStage}
+            onDeleteStage={onDeleteStage}
           />
         ))}
+        <button
+          onClick={onAddStage}
+          className={`w-[200px] sm:w-56 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl border-2 border-dashed border-white/80 bg-white/20 hover:bg-white/40 text-text-secondary hover:text-brand-blue transition-colors flex flex-col items-center justify-center gap-2`}
+        >
+          <span className="w-10 h-10 rounded-xl bg-white/70 flex items-center justify-center">
+            <Plus size={18} />
+          </span>
+          <span className="text-sm">Add stage</span>
+          <span className="text-xs text-text-muted px-6 text-center">Add your own column to the pipeline</span>
+        </button>
       </div>
     </DndContext>
   );

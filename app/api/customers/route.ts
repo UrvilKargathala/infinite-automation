@@ -2,23 +2,11 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction } from "@/lib/api/audit";
-import type { Customer } from "@/types";
+import { toCustomer, nextCustomerCode } from "@/lib/customersDb";
+import { customerFullName } from "@/lib/utils/customer";
+import type { CustomerInput } from "@/types";
 
 export const dynamic = "force-dynamic";
-
-function toCustomer(row: Record<string, unknown>): Customer {
-  return {
-    id: row.id as number,
-    name: row.name as string,
-    segment: row.segment as Customer["segment"],
-    contactName: row.contact_name as string,
-    email: row.email as string,
-    phone: row.phone as string,
-    address: row.address as string,
-    notes: row.notes as string,
-    createdAt: row.created_at as string,
-  };
-}
 
 export async function GET() {
   const rows = await sql`SELECT * FROM customers ORDER BY name`;
@@ -27,11 +15,20 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const me = await getCurrentAppUser();
-  const body = (await req.json()) as Omit<Customer, "id" | "createdAt">;
+  const body = (await req.json()) as CustomerInput;
+  // Quick-add callers send only `name`; the full form sends firstName + surname.
+  const firstName = (body.firstName ?? body.name ?? "").trim();
+  const surname = (body.surname ?? "").trim();
+  if (!firstName) return NextResponse.json({ error: "Name is required" }, { status: 400 });
+  const name = customerFullName(firstName, surname);
+  const code = await nextCustomerCode(firstName, surname);
 
   const rows = await sql`
-    INSERT INTO customers (name, segment, contact_name, email, phone, address, notes)
-    VALUES (${body.name}, ${body.segment}, ${body.contactName}, ${body.email}, ${body.phone}, ${body.address}, ${body.notes})
+    INSERT INTO customers (name, prefix, first_name, surname, customer_code, segment, contact_name, email, phone,
+      architect, gst_no, address, city, state, postcode, birthday, notes)
+    VALUES (${name}, ${body.prefix ?? ""}, ${firstName}, ${surname}, ${code}, ${body.segment}, ${body.contactName ?? ""},
+      ${body.email ?? ""}, ${body.phone ?? ""}, ${body.architect ?? ""}, ${body.gstNo ?? ""}, ${body.address ?? ""},
+      ${body.city ?? ""}, ${body.state ?? ""}, ${body.postcode ?? ""}, ${body.birthday ?? ""}, ${body.notes ?? ""})
     RETURNING *
   `;
   const created = toCustomer(rows[0]);
@@ -43,8 +40,8 @@ export async function POST(req: Request) {
       entityType: "customer",
       entityId: created.id,
       entityName: created.name,
-      summary: `Added customer ${created.name} (${created.segment})`,
-      changes: { after: { name: created.name, segment: created.segment, email: created.email, phone: created.phone } },
+      summary: `Added customer ${created.name} (${created.customerCode}, ${created.segment})`,
+      changes: { after: { name: created.name, code: created.customerCode, segment: created.segment, email: created.email, phone: created.phone, gstNo: created.gstNo, city: created.city } },
       actor: me,
     });
   }

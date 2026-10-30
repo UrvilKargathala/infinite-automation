@@ -38,15 +38,15 @@ const tickets = [
 
 const projects = [
   { id: 1, customerName: "Rohan Kulkarni", siteAddress: "14 Fitzroy St, St Kilda VIC", assigned: "Urvil Kargathala", architect: "", stage: "Inquiry", daysAgo: 2 },
-  { id: 2, customerName: "Emma Whitfield", siteAddress: "22 Chapel St, South Yarra VIC", assigned: "Henil Patel", architect: "DesignWorks Studio", stage: "Design", daysAgo: 5 },
-  { id: 3, customerName: "Priyanka Deshmukh", siteAddress: "8 Marine Pde, St Kilda VIC", assigned: "Urvil Kargathala", architect: "", stage: "Quotation", daysAgo: 8 },
-  { id: 4, customerName: "James Faulkner", siteAddress: "101 Collins St, Melbourne VIC", assigned: "Tirth", architect: "Faulkner & Co Architects", stage: "Measurement", daysAgo: 12 },
-  { id: 5, customerName: "Ananya Reddy", siteAddress: "45 Toorak Rd, Toorak VIC", assigned: "Henil Patel", architect: "", stage: "Marking", daysAgo: 15 },
-  { id: 6, customerName: "Liam O'Sullivan", siteAddress: "3 Beaconsfield Pde, Albert Park VIC", assigned: "Chirag", architect: "", stage: "Production", daysAgo: 20 },
+  { id: 2, customerName: "Emma Whitfield", siteAddress: "22 Chapel St, South Yarra VIC", assigned: "Henil Patel", architect: "DesignWorks Studio", stage: "Quote", daysAgo: 5 },
+  { id: 3, customerName: "Priyanka Deshmukh", siteAddress: "8 Marine Pde, St Kilda VIC", assigned: "Urvil Kargathala", architect: "", stage: "Quote", daysAgo: 8 },
+  { id: 4, customerName: "James Faulkner", siteAddress: "101 Collins St, Melbourne VIC", assigned: "Tirth", architect: "Faulkner & Co Architects", stage: "Site Instruction", daysAgo: 12 },
+  { id: 5, customerName: "Ananya Reddy", siteAddress: "45 Toorak Rd, Toorak VIC", assigned: "Henil Patel", architect: "", stage: "Site Instruction", daysAgo: 15 },
+  { id: 6, customerName: "Liam O'Sullivan", siteAddress: "3 Beaconsfield Pde, Albert Park VIC", assigned: "Chirag", architect: "", stage: "Material Requirement", daysAgo: 20 },
   { id: 7, customerName: "Meera Iyer", siteAddress: "77 High St, Prahran VIC", assigned: "Urvil Kargathala", architect: "Iyer Interiors", stage: "Material Requirement", daysAgo: 25 },
-  { id: 8, customerName: "Oliver Bennett", siteAddress: "19 Church St, Brighton VIC", assigned: "Henil Patel", architect: "", stage: "Ready to Dispatch", daysAgo: 30 },
-  { id: 9, customerName: "Kavya Nair", siteAddress: "5 Bay St, Port Melbourne VIC", assigned: "Tirth", architect: "", stage: "Installation", daysAgo: 35 },
-  { id: 10, customerName: "Daniel Foster", siteAddress: "12 Glenferrie Rd, Hawthorn VIC", assigned: "Urvil Kargathala", architect: "Foster Design Group", stage: "Completed", daysAgo: 3 },
+  { id: 8, customerName: "Oliver Bennett", siteAddress: "19 Church St, Brighton VIC", assigned: "Henil Patel", architect: "", stage: "Install", daysAgo: 30 },
+  { id: 9, customerName: "Kavya Nair", siteAddress: "5 Bay St, Port Melbourne VIC", assigned: "Tirth", architect: "", stage: "Install", daysAgo: 35 },
+  { id: 10, customerName: "Daniel Foster", siteAddress: "12 Glenferrie Rd, Hawthorn VIC", assigned: "Urvil Kargathala", architect: "Foster Design Group", stage: "Install", daysAgo: 3 },
   { id: 11, customerName: "Sanjana Rao", siteAddress: "60 Dandenong Rd, Windsor VIC", assigned: "Chirag", architect: "", stage: "Cancelled", daysAgo: 18 },
 ];
 

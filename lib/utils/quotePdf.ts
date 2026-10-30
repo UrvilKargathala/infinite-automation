@@ -1,5 +1,6 @@
 import { formatCurrency } from "@/lib/utils/currency";
 import { calcLineTotal, calcSectionSubtotal, calcQuoteTotal } from "@/lib/utils/quote";
+import { kitContents } from "@/lib/utils/kits";
 import type { Quote, Product, Customer } from "@/types";
 
 /** Opens a new window with a printable HTML quote and triggers window.print(). No PDF library — matches the app's locked print-based export approach. */
@@ -16,7 +17,9 @@ export function printQuote(quote: Quote, products: Product[], customers: Custome
       const lt = calcLineTotal(item.qty, item.price, item.discount);
       sectionRows += `<tr>
         <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;" class="num">${sn}.${ii + 1}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;">${item.name} - ${products.find((p) => p.id === item.productId)?.sku ?? "N/A"} (<span class="num">${item.qty}</span> PCS)</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;">${item.name} - ${item.components ? item.kitSku || "KIT" : products.find((p) => p.id === item.productId)?.sku ?? "N/A"} (<span class="num">${item.qty}</span> PCS)${
+          item.components ? `<div style="font-size:12px;color:#64748B;margin-top:2px">Includes: ${kitContents(item.components)}</div>` : ""
+        }</td>
         <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:right;" class="num">${formatCurrency(item.price, q.currency)}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;" class="num">${item.qty}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #E5E7EB;text-align:center;" class="num">${item.discount}%</td>
@@ -36,8 +39,8 @@ export function printQuote(quote: Quote, products: Product[], customers: Custome
     : `<div style="font-size:16px;font-weight:400">${q.client}</div>`;
 
   const html = `<!DOCTYPE html><html><head><title>Quote ${q.number}</title>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400&family=Montserrat:wght@500&display=swap" rel="stylesheet">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Fredoka',Arial,sans-serif;font-weight:400;color:#0F172A;padding:40px}.num{font-family:'Montserrat',ui-monospace,system-ui,sans-serif;font-weight:500;font-variant-numeric:tabular-nums}
+<link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Questrial',Arial,sans-serif;font-weight:400;color:#0F172A;padding:40px}.num{font-family:'Questrial',system-ui,sans-serif;font-weight:400;font-variant-numeric:tabular-nums}
 .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #3A90C3;margin-bottom:24px}
 .info-blocks{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
 .info-card{background:#F9FAFB;padding:15px;border-radius:6px}

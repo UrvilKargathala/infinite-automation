@@ -40,8 +40,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left — sign-in form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 bg-white">
-        <div className="w-full max-w-sm">
+      <div className="flex-1 relative flex items-center justify-center px-6 py-12 overflow-hidden">
+        <div className="app-aurora" aria-hidden />
+        <div className="w-full max-w-sm glass rounded-[28px] p-8">
           <div className="flex items-center gap-3 mb-10">
             <Image src="/logo.png" alt="Infinite Automation" width={44} height={44} className="rounded-xl" />
             <div>
@@ -83,11 +84,13 @@ export default function LoginPage() {
         <Image src="/login-bg.jpg" alt="Smart home automation" fill className="object-cover" priority />
         <div className="absolute inset-0" style={{ background: "linear-gradient(135deg, #3A90C3CC 0%, #44BE4ACC 100%)" }} />
         <div className="relative z-10 flex flex-col items-center justify-center w-full text-center text-white px-12">
-          <Image src="/logo.png" alt="" width={72} height={72} className="mb-6 rounded-2xl shadow-lg" />
-          <h2 className="text-3xl font-light mb-3">Smart Automation</h2>
-          <p className="text-sm opacity-80 max-w-xs leading-relaxed">
-            Building intelligent homes and commercial spaces across Australia
-          </p>
+          <div className="flex flex-col items-center rounded-[28px] bg-white/10 border border-white/25 backdrop-blur-xl px-10 py-10 shadow-sidebar">
+            <Image src="/logo.png" alt="" width={72} height={72} className="mb-6 rounded-2xl shadow-lg" />
+            <h2 className="text-3xl font-light mb-3">Smart Automation</h2>
+            <p className="text-sm opacity-80 max-w-xs leading-relaxed">
+              Building intelligent homes and commercial spaces across Australia
+            </p>
+          </div>
         </div>
       </div>
     </div>

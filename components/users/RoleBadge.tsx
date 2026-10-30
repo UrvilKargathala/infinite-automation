@@ -3,7 +3,7 @@ import type { Role } from "@/types";
 const roleColors: Record<Role, string> = {
   "Super Admin": "#8B5CF6",
   Admin: "#3A90C3",
-  Staff: "#64748B",
+  Purchase: "#64748B",
 };
 
 export function RoleBadge({ role }: { role: Role }) {

@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { CustomerPicker } from "@/components/customers/CustomerPicker";
-import { PIPELINE_STAGES } from "./KanbanBoard";
+import { usePipelineStages } from "@/lib/hooks/usePipelineStages";
+import { STAGE_INQUIRY } from "@/lib/utils/pipeline";
 import type { ProjectStage } from "@/types";
+import { Select } from "@/components/ui/Select";
 
 const supportTeam = ["Urvil Kargathala", "Henil Patel", "Tirth", "Chirag"];
 
@@ -31,7 +33,8 @@ export function ProjectModal({ open, onClose, defaultStage, onSave }: Props) {
   const [siteAddress, setSiteAddress] = useState("");
   const [assigned, setAssigned] = useState(supportTeam[0]);
   const [architect, setArchitect] = useState("");
-  const [stage, setStage] = useState<ProjectStage>("Inquiry");
+  const { stages } = usePipelineStages();
+  const [stage, setStage] = useState<ProjectStage>(STAGE_INQUIRY);
 
   useEffect(() => {
     if (!open) return;
@@ -40,7 +43,7 @@ export function ProjectModal({ open, onClose, defaultStage, onSave }: Props) {
     setSiteAddress("");
     setAssigned(supportTeam[0]);
     setArchitect("");
-    setStage(defaultStage ?? "Inquiry");
+    setStage(defaultStage ?? STAGE_INQUIRY);
   }, [open, defaultStage]);
 
   function handleSave() {
@@ -64,7 +67,7 @@ export function ProjectModal({ open, onClose, defaultStage, onSave }: Props) {
     <Modal
       open={open}
       onClose={onClose}
-      title="New project"
+      title={stage === STAGE_INQUIRY ? "New inquiry" : `New CRM record · ${stage}`}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>Cancel</Button>
@@ -85,9 +88,9 @@ export function ProjectModal({ open, onClose, defaultStage, onSave }: Props) {
         </div>
         <div>
           <label className={labelClass}>Assigned to</label>
-          <select className={inputClass} value={assigned} onChange={(e) => setAssigned(e.target.value)}>
+          <Select className={inputClass} value={assigned} onChange={(e) => setAssigned(e.target.value)}>
             {supportTeam.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          </Select>
         </div>
         <div>
           <label className={labelClass}>Architect (optional)</label>
@@ -95,9 +98,9 @@ export function ProjectModal({ open, onClose, defaultStage, onSave }: Props) {
         </div>
         <div className="sm:col-span-2">
           <label className={labelClass}>Initial stage</label>
-          <select className={inputClass} value={stage} onChange={(e) => setStage(e.target.value as ProjectStage)}>
-            {PIPELINE_STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          <Select className={inputClass} value={stage} onChange={(e) => setStage(e.target.value as ProjectStage)}>
+            {stages.map((s) => <option key={s.id} value={s.name}>{s.name}</option>)}
+          </Select>
         </div>
       </div>
     </Modal>

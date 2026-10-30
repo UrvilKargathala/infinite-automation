@@ -42,8 +42,13 @@ export const useTicketStore = create<TicketStore>((set, get) => ({
     set((s) => ({ tickets: s.tickets.map((t) => (t.id === id ? updated : t)) }));
   },
   remove: async (id) => {
+    const prev = get().tickets;
     set((s) => ({ tickets: s.tickets.filter((t) => t.id !== id) }));
-    await fetch(`/api/tickets/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/tickets/${id}`, { method: "DELETE" }).catch(() => null);
+    if (!res?.ok) {
+      set({ tickets: prev });
+      throw new Error("Failed to delete ticket");
+    }
   },
   setAll: (tickets) => set({ tickets, loaded: true }),
   updateStatus: async (id, status) => {
@@ -54,6 +59,7 @@ export const useTicketStore = create<TicketStore>((set, get) => ({
       if (!res.ok) throw new Error("Failed to update status");
     } catch {
       if (prevStatus) set((s) => ({ tickets: s.tickets.map((t) => (t.id === id ? { ...t, status: prevStatus } : t)) }));
+      toast.error("Couldn't move the ticket — it's back where it was.");
     }
   },
 }));

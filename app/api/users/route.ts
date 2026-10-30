@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { can } from "@/lib/utils/permissions";
 import { logAction } from "@/lib/api/audit";
+import { DEFAULT_CURRENCY, isCurrencyCode } from "@/lib/utils/currency";
 import type { User } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ function toUser(row: Record<string, unknown>): User {
     status: row.status as User["status"],
     ticketAlerts: row.ticket_alerts as boolean,
     quoteAlerts: row.quote_alerts as boolean,
+    currency: isCurrencyCode(row.currency) ? row.currency : DEFAULT_CURRENCY,
   };
 }
 
@@ -27,10 +29,10 @@ export async function GET() {
 export async function POST(req: Request) {
   const me = await getCurrentAppUser();
   if (!me) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
-  if (!can(me.role, "createStaff")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!can(me.role, "createPurchase")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = (await req.json()) as Omit<User, "id">;
-  if (body.role !== "Staff" && me.role !== "Super Admin") {
+  if (body.role !== "Purchase" && me.role !== "Super Admin") {
     return NextResponse.json({ error: "Only Super Admin can create Admin or Super Admin users" }, { status: 403 });
   }
 

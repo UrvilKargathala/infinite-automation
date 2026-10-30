@@ -83,13 +83,15 @@ CREATE TABLE IF NOT EXISTS quote_items (
   discount NUMERIC NOT NULL DEFAULT 0,
   position INTEGER NOT NULL DEFAULT 0
 );
+-- Kit lines (product_id NULL): kit_id / kit_sku / kit_components are added by db/migrate-quote-kit-lines.mjs,
+-- which needs the kits table from db/migrate-kits.mjs first.
 
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   clerk_user_id TEXT UNIQUE,
   full_name TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
-  role TEXT NOT NULL CHECK (role IN ('Super Admin', 'Admin', 'Staff')),
+  role TEXT NOT NULL CHECK (role IN ('Super Admin', 'Admin', 'Purchase')),
   status TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Active', 'Inactive')),
   ticket_alerts BOOLEAN NOT NULL DEFAULT true,
   quote_alerts BOOLEAN NOT NULL DEFAULT false
@@ -135,14 +137,27 @@ CREATE TABLE IF NOT EXISTS projects (
   architect TEXT NOT NULL DEFAULT '',
   quote_id INTEGER REFERENCES quotes(id) ON DELETE SET NULL,
   notes TEXT NOT NULL DEFAULT '',
-  stage TEXT NOT NULL DEFAULT 'Inquiry' CHECK (stage IN (
-    'Inquiry', 'Design', 'Quotation', 'Measurement', 'Marking', 'Production',
-    'Material Requirement', 'Ready to Dispatch', 'Installation', 'Completed', 'Cancelled'
-  )),
+  -- A pipeline_stages.name, or 'Cancelled' (a status outside the pipeline). Validated in the API, not by a CHECK,
+  -- because users can add custom stages.
+  stage TEXT NOT NULL DEFAULT 'Inquiry',
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   last_stage_change TIMESTAMPTZ NOT NULL DEFAULT now(),
   confirmed_at TIMESTAMPTZ
 );
+
+-- CRM pipeline columns: six fixed defaults (is_default) plus user-added custom stages, ordered by position.
+CREATE TABLE IF NOT EXISTS pipeline_stages (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL UNIQUE,
+  position INTEGER NOT NULL,
+  is_default BOOLEAN NOT NULL DEFAULT false,
+  color TEXT NOT NULL DEFAULT '#64748B',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+INSERT INTO pipeline_stages (name, position, is_default, color) VALUES
+  ('Inquiry', 1, true, '#3B82F6'), ('Quote', 2, true, '#8B5CF6'), ('Confirm Order', 3, true, '#F59E0B'),
+  ('Site Instruction', 4, true, '#06B6D4'), ('Material Requirement', 5, true, '#F97316'), ('Install', 6, true, '#22C55E')
+ON CONFLICT (name) DO NOTHING;
 
 -- Timestamped log of every stage transition, for the Projects detail drawer's history list
 CREATE TABLE IF NOT EXISTS project_stage_events (

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
+import { isValidProjectStage } from "@/lib/pipelineDb";
 import { logAction } from "@/lib/api/audit";
 import { toProject } from "@/lib/inventoryDb";
 import type { Project } from "@/types";
@@ -20,6 +21,7 @@ export async function POST(req: Request) {
   const me = await getCurrentAppUser();
   const body = (await req.json()) as Omit<Project, "id" | "quoteId" | "notes" | "createdAt" | "lastStageChange" | "confirmedAt">;
   if (!body.customerId) return NextResponse.json({ error: "Customer is required" }, { status: 400 });
+  if (!(await isValidProjectStage(body.stage))) return NextResponse.json({ error: `Unknown stage "${body.stage}"` }, { status: 400 });
   const rows = await sql`
     INSERT INTO projects (customer_id, customer_name, site_address, assigned, architect, stage)
     VALUES (${body.customerId}, ${body.customerName}, ${body.siteAddress}, ${body.assigned}, ${body.architect}, ${body.stage})

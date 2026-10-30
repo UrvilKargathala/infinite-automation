@@ -10,8 +10,8 @@ interface Bucket { sentValue: number; draftValue: number; sent: number; draft: n
 
 const GRID_COLS = ["", "grid-cols-1", "sm:grid-cols-2", "sm:grid-cols-2 xl:grid-cols-3"];
 
-/** Open (Draft/Sent) quote value per currency — never summed across currencies. */
-export function CurrencyPipeline({ quotes }: { quotes: Quote[] }) {
+/** Open (Draft/Sent) quote value per currency — never summed across currencies. The user's own currency leads. */
+export function CurrencyPipeline({ quotes, primary }: { quotes: Quote[]; primary: CurrencyCode }) {
   const byCurrency = new Map<CurrencyCode, Bucket>();
   quotes
     .filter((q) => q.status === "Draft" || q.status === "Sent")
@@ -22,10 +22,10 @@ export function CurrencyPipeline({ quotes }: { quotes: Quote[] }) {
       if (q.status === "Sent") { b.sentValue += total; b.sent += 1; } else { b.draftValue += total; b.draft += 1; }
       byCurrency.set(code, b);
     });
-  const rows = [...byCurrency.entries()].sort((a, b) => b[1].sent + b[1].draft - (a[1].sent + a[1].draft));
+  const rows = [...byCurrency.entries()].sort((a, b) => (a[0] === primary ? -1 : b[0] === primary ? 1 : b[1].sent + b[1].draft - (a[1].sent + a[1].draft)));
 
   return (
-    <div className="lg:col-span-2 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6 flex flex-col">
+    <div className="lg:col-span-2 glass lift rounded-3xl p-4 sm:p-6 flex flex-col">
       <div className="flex items-start justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <h2 className="text-lg text-text-primary">Open pipeline</h2>
@@ -48,7 +48,7 @@ export function CurrencyPipeline({ quotes }: { quotes: Quote[] }) {
               <Link
                 key={code}
                 href="/quote"
-                className="rounded-xl border border-border/70 bg-white p-4 hover:shadow-cardHover transition-shadow flex flex-col"
+                className="rounded-2xl glass-tile p-4 transition-transform hover:-translate-y-0.5 flex flex-col"
               >
                 <div className="flex items-center gap-2">
                   <span className="min-w-[28px] h-7 px-1.5 rounded-full bg-brand-gradient-tint text-brand-blue text-sm flex items-center justify-center">

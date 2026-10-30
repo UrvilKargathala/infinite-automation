@@ -1,69 +1,83 @@
 import { Sparkles } from "lucide-react";
 import { inMonth, daysUntil } from "@/lib/utils/dashboardMetrics";
-import type { Ticket, Quote, Product } from "@/types";
+import { priceIn, type CurrencyCode } from "@/lib/utils/currency";
+import { CANCELLED, stagePhase } from "@/lib/utils/pipeline";
+import type { Complaint, PipelineStage, Product, Project, Quote } from "@/types";
 
-export function AiSummary({ tickets, quotes, products }: { tickets: Ticket[]; quotes: Quote[]; products: Product[] }) {
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** "a USD price" but "an INR price" — the article follows how the code's first letter is said. */
+const article = (code: string) => ("AEFHILMNORSX".includes(code[0]) ? "an" : "a");
+
+/** Plain-language snapshot of CRM, complaints, quotes and catalogue gaps. */
+export function AiSummary({ projects, stages, complaints, quotes, products, currency, actions }: {
+  projects: Project[];
+  stages: PipelineStage[];
+  complaints: Complaint[];
+  quotes: Quote[];
+  products: Product[];
+  currency: CurrencyCode;
+  /** Quick-create buttons shown in the card's header (New complaint / New quote). */
+  actions?: React.ReactNode;
+}) {
   const now = new Date();
-  const curMonth = now.getMonth();
-  const curYear = now.getFullYear();
-  const prevDate = new Date(curYear, curMonth - 1, 1);
-  const prevMonth = prevDate.getMonth();
-  const prevYear = prevDate.getFullYear();
-
-  const quotesThisMonth = quotes.filter((q) => inMonth(q.date, curMonth, curYear));
-  const quotesLastMonth = quotes.filter((q) => inMonth(q.date, prevMonth, prevYear));
-  const acceptedThisMonth = quotesThisMonth.filter((q) => q.status === "Accepted").length;
-
-  const resolvedThisMonth = tickets.filter((t) => (t.status === "Resolved" || t.status === "Closed") && inMonth(t.lastContact, curMonth, curYear));
-
-  const openTickets = tickets.filter((t) => t.status !== "Resolved" && t.status !== "Closed");
-  const urgentOpen = openTickets.filter((t) => t.priority === "Urgent").length;
-
-  const categoryTotals = new Map<string, number>();
-  openTickets.forEach((t) => categoryTotals.set(t.category, (categoryTotals.get(t.category) ?? 0) + 1));
-  const topCategory = [...categoryTotals.entries()].sort((a, b) => b[1] - a[1])[0];
-
-  const expiring = quotes
-    .filter((q) => q.status === "Draft" || q.status === "Sent")
-    .map((q) => ({ q, days: daysUntil(q.validUntil) }))
-    .filter((x) => x.days <= 7)
-    .sort((a, b) => a.days - b.days);
-
-  const missingPrice = products.filter((p) => p.price == null).length;
-
+  const m = now.getMonth();
+  const y = now.getFullYear();
+  const prev = new Date(y, m - 1, 1);
   const sentences: string[] = [];
 
-  sentences.push(
-    `${openTickets.length} open ticket${openTickets.length === 1 ? "" : "s"}${urgentOpen > 0 ? `, ${urgentOpen} urgent` : ""}${topCategory ? `, most common category is ${topCategory[0]}` : ""}.`
-  );
+  // CRM
+  const live = projects.filter((p) => p.stage !== CANCELLED);
+  const newThisMonth = live.filter((p) => inMonth(p.createdAt, m, y)).length;
+  const atLast = live.filter((p) => stagePhase(stages, p.stage) === "done").length;
+  const lastName = [...stages].sort((a, b) => a.position - b.position).at(-1)?.name ?? "Install";
+  sentences.push(`${plural(live.length, "active CRM record")} — ${newThisMonth} new this month, ${atLast} at ${lastName}.`);
 
-  if (resolvedThisMonth.length > 0) {
-    sentences.push(`${resolvedThisMonth.length} ticket${resolvedThisMonth.length === 1 ? "" : "s"} resolved this month.`);
+  // Complaints
+  const pending = complaints.filter((c) => c.status === "Pending").sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  if (pending.length === 0) sentences.push("No pending complaints.");
+  else {
+    const oldest = pending[0];
+    const age = Math.max(0, Math.floor((now.getTime() - new Date(oldest.createdAt).getTime()) / 86400000));
+    sentences.push(`${plural(pending.length, "pending complaint")}; oldest is ${oldest.customerName} (${oldest.number}, ${age === 0 ? "today" : `${age}d`}${oldest.engineerName ? `, ${oldest.engineerName}` : ""}).`);
   }
 
-  if (quotesThisMonth.length > 0 || quotesLastMonth.length > 0) {
-    const diff = quotesThisMonth.length - quotesLastMonth.length;
-    const trend = diff > 0 ? `up from ${quotesLastMonth.length} last month` : diff < 0 ? `down from ${quotesLastMonth.length} last month` : `same as last month`;
-    sentences.push(`${quotesThisMonth.length} quote${quotesThisMonth.length === 1 ? "" : "s"} created this month (${trend}), ${acceptedThisMonth} accepted.`);
+  // Quotes
+  const qThis = quotes.filter((q) => inMonth(q.date, m, y));
+  const qPrev = quotes.filter((q) => inMonth(q.date, prev.getMonth(), prev.getFullYear()));
+  if (qThis.length || qPrev.length) {
+    const diff = qThis.length - qPrev.length;
+    const trend = diff > 0 ? `up from ${qPrev.length}` : diff < 0 ? `down from ${qPrev.length}` : "same as last month";
+    sentences.push(`${plural(qThis.length, "quote")} created this month (${trend}), ${qThis.filter((q) => q.status === "Accepted").length} accepted.`);
   }
 
-  if (expiring.length > 0) {
-    const nearest = expiring[0];
-    const dayLabel = nearest.days < 0 ? `${Math.abs(nearest.days)}d overdue` : nearest.days === 0 ? "today" : `in ${nearest.days}d`;
-    sentences.push(`${expiring.length} quote${expiring.length === 1 ? "" : "s"} expiring soon — ${nearest.q.client} (${nearest.q.number}) ${dayLabel}.`);
+  // Expired vs expiring — different actions, so counted separately
+  const open = quotes.filter((q) => q.status === "Draft" || q.status === "Sent").map((q) => ({ q, d: daysUntil(q.validUntil) }));
+  const expired = open.filter((x) => x.d < 0).sort((a, b) => a.d - b.d);
+  const soon = open.filter((x) => x.d >= 0 && x.d <= 7).sort((a, b) => a.d - b.d);
+  if (expired.length) {
+    const o = expired[0];
+    sentences.push(`${plural(expired.length, "quote")} expired without an answer — oldest ${o.q.client} (${o.q.number}), ${Math.abs(o.d)}d ago.`);
+  }
+  if (soon.length) {
+    const n = soon[0];
+    sentences.push(`${soon.length} expiring this week — next is ${n.q.client} (${n.q.number}) ${n.d === 0 ? "today" : `in ${n.d}d`}.`);
   }
 
-  if (missingPrice > 0) {
-    sentences.push(`${missingPrice} product${missingPrice === 1 ? "" : "s"} in Master File still missing a price.`);
-  }
+  // Catalogue
+  const missing = products.filter((p) => priceIn(p, currency) == null).length;
+  if (missing > 0) sentences.push(`${plural(missing, "product")} in Master File still missing ${article(currency)} ${currency} price.`);
 
   return (
-    <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6 mb-6">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-8 h-8 rounded-full bg-brand-gradient grid place-items-center shrink-0">
-          <Sparkles size={15} className="text-white" />
+    <div className="glass lift rounded-3xl p-4 sm:p-6 mb-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-brand-gradient grid place-items-center shrink-0">
+            <Sparkles size={15} className="text-white" />
+          </div>
+          <h2 className="text-lg text-text-primary">Weekly summary</h2>
         </div>
-        <h2 className="text-lg text-text-primary">Weekly summary</h2>
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
       <p className="text-sm text-text-secondary leading-relaxed">{sentences.join(" ")}</p>
     </div>

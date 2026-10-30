@@ -1,35 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import Image from "next/image";
-import { Search, Bell, Menu, X, ScrollText } from "lucide-react";
+import { Search, Bell, Menu, X } from "lucide-react";
 import { IconButton } from "@/components/ui/IconButton";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
 import { SearchPanel } from "@/components/layout/SearchPanel";
+import { NavLinks, useNavItems } from "@/components/layout/NavLinks";
+import { useSidebarStore } from "@/lib/store/useSidebarStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useAuditUnreadCount } from "@/lib/hooks/useAuditUnreadCount";
-import { can } from "@/lib/utils/permissions";
 import { initials } from "@/lib/utils/initials";
 
-const allNavItems = [
-  { label: "Dashboard", href: "/dashboard" },
-  { label: "CRM", href: "/projects", activeMatch: ["/tickets", "/projects"] },
-  { label: "Customers", href: "/customers" },
-  { label: "Quote", href: "/quote" },
-  { label: "Master File", href: "/master" },
-  { label: "Procurement", href: "/procurement" },
-  { label: "Users", href: "/users" },
-  { label: "Audit Log", href: "/audit"},
-];
+const todayLabel = () =>
+  new Date().toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 
 export function TopNav() {
-  const pathname = usePathname();
-  const role = useAuthStore((s) => s.user?.role ?? "Staff");
   const myName = useAuthStore((s) => s.user?.fullName ?? "");
+  const navItems = useNavItems();
+  const collapsed = useSidebarStore((s) => s.collapsed);
   const [mobileNav, setMobileNav] = useState(false);
   const [openPanel, setOpenPanel] = useState<"search" | "notifications" | "user" | null>(null);
   const menuOpen = openPanel === "user";
@@ -41,52 +32,33 @@ export function TopNav() {
   const { unreadCount } = useNotifications();
   const { count: auditUnread } = useAuditUnreadCount();
 
-  const navItems = allNavItems.filter((item) => {
-    if (item.href === "/users") return can(role, "viewUsers");
-    if (item.href === "/audit") return can(role, "viewAuditLog");
-    return true;
-  });
-
   return (
-    <nav className="sticky top-0 z-40 bg-white shadow-card w-full print:hidden">
-      <div className="max-w-[1860px] mx-auto px-4 sm:px-6 lg:px-8 h-[60px] sm:h-[72px] flex items-center justify-between">
-        {/* LEFT — Logo + hamburger */}
-        <div className="flex items-center gap-2 sm:gap-3">
+    // Mobile: sticky glass bar. Desktop: the action strip floats top-right, level with the page title.
+    <nav
+      className={`sticky top-0 z-30 w-full px-4 pt-3 sm:px-6 print:hidden lg:absolute lg:inset-x-0 lg:top-0 lg:px-0 lg:pt-0 lg:pointer-events-none transition-[padding] duration-200 ${
+        collapsed ? "lg:pl-[88px]" : "lg:pl-[260px]"
+      }`}
+    >
+      <div className="h-[60px] px-3 sm:px-4 flex items-center justify-between rounded-2xl glass lg:h-auto lg:max-w-[1860px] lg:mx-auto lg:px-6 lg:pt-4 lg:rounded-none lg:bg-none lg:border-0 lg:shadow-none lg:backdrop-blur-none">
+        {/* LEFT — hamburger + logo (mobile only; desktop has the sidebar) */}
+        <div className="flex items-center gap-2 sm:gap-3 lg:hidden">
           <button
-            className="lg:hidden p-1.5 rounded-lg text-text-secondary hover:bg-[#F9FAFB]"
+            className="p-1.5 rounded-lg text-text-secondary hover:bg-white/70"
             onClick={() => setMobileNav(!mobileNav)}
             aria-label="Toggle menu"
           >
             {mobileNav ? <X size={20} /> : <Menu size={20} />}
           </button>
-          <Image src="/logo.png" alt="Infinite Automation" width={36} height={36} className="rounded-xl w-8 h-8 sm:w-9 sm:h-9" />
-          <span className="text-sm sm:text-base font-normal text-text-primary whitespace-nowrap hidden sm:block">
-            Infinite Automation
-          </span>
-        </div>
-
-        {/* CENTER — Nav items (desktop) */}
-        <div className="hidden lg:flex items-center gap-1">
-          {navItems.map(({ label, href, activeMatch, }) => {
-            const active = (activeMatch ?? [href]).some((p) => pathname.startsWith(p));
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`px-4 py-2 rounded-full text-sm font-normal transition-colors flex items-center gap-1.5 ${
-                  active
-                    ? "bg-brand-gradient text-white"
-                    : "text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary"
-                }`}
-              >
-                {label}
-              </Link>
-            );
-          })}
+          <Image src="/logo.png" alt="Infinite Automation" width={36} height={36} className="rounded-xl w-8 h-8" />
+          <span className="text-sm text-text-primary whitespace-nowrap hidden sm:block">Infinite Automation</span>
         </div>
 
         {/* RIGHT — Actions */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 lg:ml-auto lg:pointer-events-auto">
+          <span className="hidden md:inline-flex items-center gap-2 h-9 px-3.5 rounded-full glass text-sm text-text-primary">
+            <span className="w-2 h-2 rounded-full bg-success" />
+            {todayLabel()}
+          </span>
           <div className="relative">
             <IconButton icon={Search} ariaLabel="Search" onClick={() => togglePanel("search")} />
             {searchOpen && <SearchPanel onClose={() => setOpenPanel(null)} />}
@@ -98,7 +70,7 @@ export function TopNav() {
           <div className="relative">
             <button
               onClick={() => togglePanel("user")}
-              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-brand-blue flex items-center justify-center text-white text-xs font-normal"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-normal shadow-[0_6px_14px_-4px_rgba(58,144,195,0.55)]"
             >
               {myName ? initials(myName) : ""}
             </button>
@@ -107,26 +79,10 @@ export function TopNav() {
         </div>
       </div>
 
-      {/* Mobile nav dropdown */}
+      {/* Mobile nav — same dark glass panel as the desktop sidebar */}
       {mobileNav && (
-        <div className="lg:hidden border-t border-border bg-white px-4 py-3 space-y-1">
-          {navItems.map(({ label, href, activeMatch,  }) => {
-            const active = (activeMatch ?? [href]).some((p) => pathname.startsWith(p));
-            return (
-              <Link
-                key={href}
-                href={href}
-                onClick={() => setMobileNav(false)}
-                className={`px-4 py-2.5 rounded-xl text-sm font-normal transition-colors flex items-center gap-2 ${
-                  active
-                    ? "bg-brand-gradient text-white"
-                    : "text-text-secondary hover:bg-[#F9FAFB] hover:text-text-primary"
-                }`}
-              >
-                {label}
-              </Link>
-            );
-          })}
+        <div className="lg:hidden mt-2 rounded-[24px] bg-sidebar-gradient backdrop-blur-2xl backdrop-saturate-150 border border-white/10 shadow-sidebar text-white px-3 pt-4 pb-1 max-h-[75vh] overflow-y-auto">
+          <NavLinks items={navItems} onNavigate={() => setMobileNav(false)} />
         </div>
       )}
     </nav>

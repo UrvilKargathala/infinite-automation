@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
+import { notifyChatMessage } from "@/lib/api/chatNotify";
 import type { Attachment, TicketMessage } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -67,6 +68,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     RETURNING id, created_at::text AS created_at
   `;
   const messageId = rows[0].id as number;
+
+  // Let the assignee, earlier participants and anyone @mentioned know (notification links straight into this chat).
+  const [record] = await sql.query(`SELECT COALESCE(NULLIF(subject, ''), name) AS label, assigned FROM tickets WHERE id = $1`, [ticketId]);
+  if (record) {
+    await notifyChatMessage({
+      kind: "ticket", recordId: ticketId, recordLabel: record.label as string, assignedName: (record.assigned as string) ?? "",
+      sender: me, text, attachments: attachments.length,
+    });
+  }
 
   let replyToText: string | null = null;
   let replyToFullName: string | null = null;

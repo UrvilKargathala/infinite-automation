@@ -90,6 +90,11 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   if (!can(me.role, "editProducts")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const id = Number(params.id);
+  // A product inside a kit can't go — say which kits, so the user knows where to remove it.
+  const inKits = await sql`SELECT k.name FROM kit_items ki JOIN kits k ON k.id = ki.kit_id WHERE ki.product_id = ${id} ORDER BY k.name`;
+  if (inKits.length) {
+    return NextResponse.json({ error: `This product is part of ${inKits.length === 1 ? "the kit" : "kits"} ${inKits.map((k) => `"${k.name}"`).join(", ")}. Remove it from ${inKits.length === 1 ? "that kit" : "those kits"} first, or set it to Inactive.` }, { status: 409 });
+  }
   const existing = await sql`SELECT * FROM products WHERE id = ${id}`;
   const existingPrices = await sql`SELECT * FROM product_prices WHERE product_id = ${id}`;
   try {

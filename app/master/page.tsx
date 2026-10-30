@@ -14,8 +14,11 @@ import { useStock } from "@/lib/hooks/useStock";
 import { Num } from "@/components/ui/Num";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import type { Product } from "@/types";
-import { CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
+import { CURRENCY_CODES, priceIn, type CurrencyCode } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/useCurrency";
 import * as XLSX from "xlsx";
+import { Select } from "@/components/ui/Select";
+import { MasterTabs } from "@/components/master/MasterTabs";
 
 function normalizeBrand(raw: string): string {
   let v = raw.trim();
@@ -35,7 +38,7 @@ function normalizeCategory(raw: string): string {
 
 export default function MasterPage() {
   const { products, brands, categoriesByBrand, remove, bulkAdd, fetchAll, loaded } = useProductStore();
-  const role = useAuthStore((s) => s.user?.role ?? "Staff");
+  const role = useAuthStore((s) => s.user?.role ?? "Purchase");
   const canManage = can(role, "editProducts");
   const canImport = can(role, "excelImport");
   const { byProduct: stock } = useStock();
@@ -49,7 +52,8 @@ export default function MasterPage() {
   const [search, setSearch] = useState("");
   const [brandFilter, setBrandFilter] = useState("");
   const [catFilter, setCatFilter] = useState("");
-  const [currencyFilter, setCurrencyFilter] = useState<CurrencyCode | "">("");
+  const currency = useCurrency();
+  const [priceFilter, setPriceFilter] = useState<"" | "set" | "missing">("");
   const [modalOpen, setModalOpen] = useState(false);
   const [editProduct, setEditProduct] = useState<Product | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -60,7 +64,7 @@ export default function MasterPage() {
     let list = [...products].sort((a, b) => b.id - a.id); // newest first, so a just-added product shows on page 1
     if (brandFilter) list = list.filter((p) => p.brand === brandFilter);
     if (catFilter) list = list.filter((p) => p.category === catFilter);
-    if (currencyFilter) list = list.filter((p) => p.prices?.[currencyFilter] != null || (currencyFilter === "INR" && p.price != null));
+    if (priceFilter) list = list.filter((p) => (priceIn(p, currency) != null) === (priceFilter === "set"));
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       list = list.filter(
@@ -72,11 +76,12 @@ export default function MasterPage() {
       );
     }
     return list;
-  }, [products, brandFilter, catFilter, currencyFilter, search]);
+  }, [products, brandFilter, catFilter, priceFilter, currency, search]);
 
   const totalActive = products.filter((p) => p.status === "Active").length;
   const totalBrands = new Set(products.map((p) => p.brand)).size;
-  const missingPrice = products.filter((p) => Object.keys(p.prices ?? {}).length === 0 && p.price == null).length;
+  // Missing = no price in the user's Settings currency (a product may still be priced in others).
+  const missingPrice = products.filter((p) => priceIn(p, currency) == null).length;
 
   function handleEdit(p: Product) {
     setEditProduct(p);
@@ -198,7 +203,8 @@ export default function MasterPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-text-primary">Master File</h1>
+      <MasterTabs />
+      <h1 className="text-3xl font-normal text-text-primary">Master File</h1>
       <p className="text-sm text-text-secondary mt-1">Product catalog and master data</p>
 
       {/* Stat cards */}
@@ -217,20 +223,20 @@ export default function MasterPage() {
       </div>
 
       {/* Table card */}
-      <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 overflow-hidden mt-6">
+      <div className="glass rounded-3xl overflow-hidden mt-6">
         {/* Toolbar */}
         <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
           <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
-              className="w-full sm:w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              className="w-full sm:w-64 glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <select
-            className="bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
+          <Select
+            className="glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
             value={brandFilter}
             onChange={(e) => { setBrandFilter(e.target.value); setCatFilter(""); }}
           >
@@ -238,9 +244,9 @@ export default function MasterPage() {
             {allBrands.map((b) => (
               <option key={b} value={b}>{b}</option>
             ))}
-          </select>
-          <select
-            className="bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors disabled:opacity-50"
+          </Select>
+          <Select
+            className="glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors disabled:opacity-50"
             value={catFilter}
             onChange={(e) => setCatFilter(e.target.value)}
             disabled={!brandFilter}
@@ -249,17 +255,16 @@ export default function MasterPage() {
             {filteredCategories.map((c) => (
               <option key={c} value={c}>{c}</option>
             ))}
-          </select>
-          <select
-            className="bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
-            value={currencyFilter}
-            onChange={(e) => setCurrencyFilter(e.target.value as CurrencyCode | "")}
+          </Select>
+          <Select
+            className="glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
+            value={priceFilter}
+            onChange={(e) => setPriceFilter(e.target.value as "" | "set" | "missing")}
           >
             <option value="">All prices</option>
-            {CURRENCY_CODES.map((c) => (
-              <option key={c} value={c}>{c} only</option>
-            ))}
-          </select>
+            <option value="set">Priced in {currency}</option>
+            <option value="missing">Missing {currency} price</option>
+          </Select>
 
 
           <div className="ml-auto flex items-center gap-2">
@@ -284,7 +289,7 @@ export default function MasterPage() {
 
         <ProductTable
           products={filtered}
-          currency={currencyFilter || undefined}
+          currency={currency}
           total={products.length}
           onEdit={handleEdit}
           onDelete={handleDelete}

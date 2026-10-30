@@ -10,12 +10,14 @@ import { usePurchaseOrders } from "@/lib/hooks/usePurchaseOrders";
 import { PIPELINE_FACTOR, type StockStatus } from "@/lib/utils/inventory";
 import { CreatePOModal, type DraftLine } from "./CreatePOModal";
 import type { Product, VendorPO } from "@/types";
+import { SkeletonTableRows } from "@/components/ui/Skeleton";
+import { Select } from "@/components/ui/Select";
 
 interface Row { product: Product; s: StockStatus; drafts: string[] }
 
 const th = "px-4 py-3 text-xs uppercase tracking-wider text-text-muted font-normal text-left whitespace-nowrap";
 const td = "px-4 py-3 text-sm";
-const control = "bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none";
+const control = "glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none";
 
 /** Every product where available < min buffer, in one table, with the suggested order and its breakdown. */
 export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => void }) {
@@ -71,16 +73,16 @@ export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => v
         Tick products of one brand to draft a PO.
       </p>
 
-      <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 overflow-hidden">
+      <div className="glass rounded-3xl overflow-hidden">
         <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
           <div className="relative w-full sm:w-64">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input className={`${control} w-full pl-9`} placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <select className={control} value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)}>
+          <Select className={control} value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)}>
             <option value="">All brands</option>
             {brands.map((b) => <option key={b} value={b}>{b}</option>)}
-          </select>
+          </Select>
           <span className="text-sm text-text-muted"><Num>{allRows.length}</Num> low</span>
           <div className="ml-auto">
             <Button icon={FilePlus2} disabled={picked === 0} onClick={openDraft}>
@@ -92,7 +94,7 @@ export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => v
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1100px]">
             <thead>
-              <tr className="bg-surface-alt">
+              <tr className="bg-white/35">
                 <th className={`${th} w-10`} />
                 <th className={th}>Product</th>
                 <th className={th}>Brand</th>
@@ -108,7 +110,7 @@ export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => v
             </thead>
             <tbody>
               {isLoading ? (
-                <tr><td colSpan={11} className="text-center text-text-muted py-12">Loading stock…</td></tr>
+                <SkeletonTableRows cols={11} />
               ) : rows.length === 0 ? (
                 <tr><td colSpan={11} className="text-center py-12">
                   <div className="text-text-primary">Nothing to reorder</div>
@@ -119,7 +121,7 @@ export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => v
                 const isSel = product.id in selected;
                 const otherBrand = selBrand !== null && selBrand !== product.brand;
                 return (
-                  <tr key={product.id} className={`border-t border-border ${isSel ? "bg-brand-gradient-tint" : "hover:bg-[#F9FAFB]/60"}`}>
+                  <tr key={product.id} className={`border-t border-border ${isSel ? "bg-brand-gradient-tint" : "hover:bg-white/50"}`}>
                     <td className={td}>
                       <input type="checkbox" checked={isSel} disabled={otherBrand} onChange={() => toggle(row)}
                         title={otherBrand ? "One PO per brand — clear the other selection first" : undefined}
@@ -149,7 +151,7 @@ export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => v
                         <input type="number" min={1} step={1} value={selected[product.id]}
                           onChange={(e) => setSelected({ ...selected, [product.id]: e.target.value })}
                           aria-label={`Order quantity for ${product.name}`}
-                          className="w-20 bg-white border border-border rounded-lg py-1.5 px-2 text-sm font-numeric focus:border-brand-blue focus:outline-none" />
+                          className="w-20 glass-control border border-border rounded-lg py-1.5 px-2 text-sm font-numeric focus:border-brand-blue focus:outline-none" />
                       ) : <span className="text-text-muted">—</span>}
                     </td>
                   </tr>

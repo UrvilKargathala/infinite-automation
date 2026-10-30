@@ -16,7 +16,7 @@ import type { Role, User } from "@/types";
 
 export default function UsersPage() {
   const { users, add, update, remove, loaded } = useUserStore();
-  const currentRole = useAuthStore((s) => s.user?.role ?? "Staff");
+  const currentRole = useAuthStore((s) => s.user?.role ?? "Purchase");
 
   const [search, setSearch] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
@@ -38,8 +38,8 @@ export default function UsersPage() {
   if (!can(currentRole, "viewUsers")) {
     return (
       <div>
-        <h1 className="text-3xl font-semibold text-text-primary">User Management</h1>
-        <div className="mt-8 bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-12 text-center text-text-secondary">
+        <h1 className="text-3xl font-normal text-text-primary">User Management</h1>
+        <div className="mt-8 glass rounded-3xl p-12 text-center text-text-secondary">
           You don&apos;t have permission to view this page.
         </div>
       </div>
@@ -47,11 +47,11 @@ export default function UsersPage() {
   }
 
   const assignableRoles: Role[] =
-    currentRole === "Super Admin" ? ["Super Admin", "Admin", "Staff"] : ["Staff"];
+    currentRole === "Super Admin" ? ["Super Admin", "Admin", "Purchase"] : ["Purchase"];
 
   function canEditUser(u: User) {
     if (currentRole === "Super Admin") return true;
-    if (currentRole === "Admin") return u.role === "Staff";
+    if (currentRole === "Admin") return u.role === "Purchase";
     return false;
   }
 
@@ -99,7 +99,7 @@ export default function UsersPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-text-primary">User Management</h1>
+      <h1 className="text-3xl font-normal text-text-primary">User Management</h1>
       <p className="text-sm text-text-secondary mt-1">Manage users and role-based access</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-8">
@@ -116,12 +116,12 @@ export default function UsersPage() {
         ))}
       </div>
 
-      <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 overflow-hidden mt-6">
+      <div className="glass rounded-3xl overflow-hidden mt-6">
         <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
           <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
-              className="w-full sm:w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              className="w-full sm:w-64 glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search users..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}

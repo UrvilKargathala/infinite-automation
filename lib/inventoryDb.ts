@@ -9,6 +9,18 @@ export type Query = (text: string, params: unknown[]) => Promise<Record<string, 
 export const viaSql: Query = (text, params) => sql.query(text, params) as Promise<Record<string, unknown>[]>;
 export const viaTx = (db: PoolClient): Query => async (text, params) => (await db.query(text, params)).rows;
 
+/**
+ * Every quote line as (section_id, product_id, qty) with kit lines expanded into their components
+ * (component qty × line qty). Use it in place of quote_items wherever stock is reserved or demand counted.
+ */
+export const QUOTE_PRODUCT_LINES = `(
+  SELECT qi.section_id, qi.product_id, qi.qty FROM quote_items qi WHERE qi.product_id IS NOT NULL
+  UNION ALL
+  SELECT qi.section_id, (c->>'productId')::int, qi.qty * (c->>'qty')::int
+    FROM quote_items qi CROSS JOIN jsonb_array_elements(qi.kit_components) c
+   WHERE qi.kit_components IS NOT NULL AND EXISTS (SELECT 1 FROM products p WHERE p.id = (c->>'productId')::int)
+)`;
+
 export function toProject(row: Record<string, unknown>): Project {
   return {
     id: row.id as number,
@@ -94,12 +106,12 @@ export async function loadStockRows(q: Query, productIds?: number[]): Promise<St
        FROM products p
        LEFT JOIN (SELECT product_id, SUM(qty - shipped_qty)::int AS allocated
                     FROM inventory_allocations WHERE status = 'Reserved' GROUP BY product_id) a ON a.product_id = p.id
-       LEFT JOIN (SELECT qi.product_id, SUM(qi.qty)::int AS quoted
-                    FROM quote_items qi
-                    JOIN quote_sections qs ON qs.id = qi.section_id
+       LEFT JOIN (SELECT ql.product_id, SUM(ql.qty)::int AS quoted
+                    FROM ${QUOTE_PRODUCT_LINES} ql
+                    JOIN quote_sections qs ON qs.id = ql.section_id
                     JOIN quotes qt ON qt.id = qs.quote_id
-                   WHERE qt.status IN ('Draft', 'Sent') AND qi.product_id IS NOT NULL
-                   GROUP BY qi.product_id) qd ON qd.product_id = p.id
+                   WHERE qt.status IN ('Draft', 'Sent')
+                   GROUP BY ql.product_id) qd ON qd.product_id = p.id
        LEFT JOIN (SELECT pi.product_id, SUM(GREATEST(pi.qty_ordered - pi.qty_received, 0))::int AS incoming
                     FROM vendor_po_items pi JOIN vendor_pos po ON po.id = pi.po_id
                    WHERE po.status IN ('Issued', 'Partially Received')

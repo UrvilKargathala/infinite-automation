@@ -2,21 +2,14 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction, diffFields } from "@/lib/api/audit";
-import type { Customer } from "@/types";
+import { toCustomer } from "@/lib/customersDb";
+import { customerFullName } from "@/lib/utils/customer";
+import type { Customer, CustomerInput } from "@/types";
 
-function toCustomer(row: Record<string, unknown>): Customer {
-  return {
-    id: row.id as number,
-    name: row.name as string,
-    segment: row.segment as Customer["segment"],
-    contactName: row.contact_name as string,
-    email: row.email as string,
-    phone: row.phone as string,
-    address: row.address as string,
-    notes: row.notes as string,
-    createdAt: row.created_at as string,
-  };
-}
+const pickAudited = (c: Customer) => ({
+  name: c.name, prefix: c.prefix, segment: c.segment, email: c.email, phone: c.phone, architect: c.architect, gstNo: c.gstNo,
+  address: c.address, city: c.city, state: c.state, postcode: c.postcode, birthday: c.birthday, notes: c.notes,
+});
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const id = Number(params.id);
@@ -40,16 +33,26 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const me = await getCurrentAppUser();
   const id = Number(params.id);
-  const body = (await req.json()) as Partial<Omit<Customer, "id" | "createdAt">>;
+  const body = (await req.json()) as Partial<CustomerInput>;
 
   const existing = await sql`SELECT * FROM customers WHERE id = ${id}`;
   if (existing.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
   const current = toCustomer(existing[0]);
   const merged = { ...current, ...body };
+  // The display name follows first name + surname; a bare `name` patch (older callers) sets the first name.
+  if (body.firstName === undefined && body.surname === undefined && body.name !== undefined) {
+    merged.firstName = body.name;
+    merged.surname = "";
+  }
+  merged.name = customerFullName(merged.firstName, merged.surname);
+  if (!merged.name) return NextResponse.json({ error: "Name is required" }, { status: 400 });
 
   const rows = await sql`
-    UPDATE customers SET name = ${merged.name}, segment = ${merged.segment}, contact_name = ${merged.contactName},
-      email = ${merged.email}, phone = ${merged.phone}, address = ${merged.address}, notes = ${merged.notes}
+    UPDATE customers SET name = ${merged.name}, prefix = ${merged.prefix}, first_name = ${merged.firstName.trim()},
+      surname = ${merged.surname.trim()}, segment = ${merged.segment}, contact_name = ${merged.contactName},
+      email = ${merged.email}, phone = ${merged.phone}, architect = ${merged.architect}, gst_no = ${merged.gstNo},
+      address = ${merged.address}, city = ${merged.city}, state = ${merged.state}, postcode = ${merged.postcode},
+      birthday = ${merged.birthday}, notes = ${merged.notes}
     WHERE id = ${id}
     RETURNING *
   `;
@@ -57,8 +60,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   if (me) {
     const changes = diffFields(
-      { name: current.name, segment: current.segment, email: current.email, phone: current.phone, contactName: current.contactName, address: current.address, notes: current.notes },
-      { name: updated.name, segment: updated.segment, email: updated.email, phone: updated.phone, contactName: updated.contactName, address: updated.address, notes: updated.notes }
+      pickAudited(current),
+      pickAudited(updated)
     );
     if (changes) {
       await logAction({

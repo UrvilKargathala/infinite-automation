@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { sql } from "@/lib/db";
 import { verifySession, SESSION_COOKIE } from "@/lib/session";
+import { DEFAULT_CURRENCY, isCurrencyCode } from "@/lib/utils/currency";
 import type { User } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ function toUser(row: Record<string, unknown>): User {
     status: row.status as User["status"],
     ticketAlerts: row.ticket_alerts as boolean,
     quoteAlerts: row.quote_alerts as boolean,
+    currency: isCurrencyCode(row.currency) ? row.currency : DEFAULT_CURRENCY,
   };
 }
 

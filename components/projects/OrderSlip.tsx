@@ -20,7 +20,7 @@ async function fetchSlip(id: number): Promise<SlipData> {
   return body;
 }
 
-const card = "bg-white rounded-2xl shadow-card p-4 sm:p-6 print:shadow-none print:p-0 print:mb-6";
+const card = "glass rounded-3xl p-4 sm:p-6 print:bg-none print:border-0 print:shadow-none print:p-0 print:mb-6";
 const th = "py-2 pr-4 font-normal text-left";
 
 function ProductCell({ line }: { line: SlipLine }) {
@@ -83,7 +83,7 @@ export function OrderSlip({ projectId }: { projectId: number }) {
   return (
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between gap-3 flex-wrap print:hidden">
-        <Link href="/projects" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary">
+        <Link href="/crm" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary">
           <ArrowLeft size={16} /> Projects
         </Link>
         <Button variant="secondary" icon={Printer} onClick={() => window.print()}>Print</Button>
@@ -141,7 +141,7 @@ export function OrderSlip({ projectId }: { projectId: number }) {
                           value={shipQty[l.allocationId] ?? 0}
                           onChange={(e) => setShipQty({ ...shipQty, [l.allocationId]: Number(e.target.value) })}
                           aria-label={`Ship now: ${l.name}`}
-                          className="w-20 bg-white border border-border rounded-lg py-1.5 px-2 text-sm font-numeric focus:border-brand-blue focus:outline-none"
+                          className="w-20 glass-control border border-border rounded-lg py-1.5 px-2 text-sm font-numeric focus:border-brand-blue focus:outline-none"
                         />
                       </td>
                       <td className="py-3 pr-4 hidden print:table-cell">☐</td>

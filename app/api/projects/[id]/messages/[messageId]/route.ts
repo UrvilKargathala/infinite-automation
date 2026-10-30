@@ -7,7 +7,15 @@ export async function PATCH(req: Request, { params }: { params: { id: string; me
   if (!me) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
   const messageId = Number(params.messageId);
-  const { text } = (await req.json()) as { text?: string };
+  const { text, starred } = (await req.json()) as { text?: string; starred?: boolean };
+
+  // Starring is open to everyone on the record (it isn't an edit of someone else's words).
+  if (typeof starred === "boolean" && text === undefined) {
+    const rows = await sql`UPDATE project_messages SET starred = ${starred} WHERE id = ${messageId} AND deleted = false RETURNING id`;
+    if (rows.length === 0) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ ok: true, starred });
+  }
+
   const trimmed = (text ?? "").trim();
 
   const existing = await sql`SELECT user_id, deleted, attachments FROM project_messages WHERE id = ${messageId}`;

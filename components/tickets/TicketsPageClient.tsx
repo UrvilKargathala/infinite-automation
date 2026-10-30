@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useState, useMemo, useEffect } from "react";
 import { ArrowDown, Minus, ArrowUp, AlertTriangle, Search, Plus, Download, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
@@ -8,7 +9,6 @@ import { Num } from "@/components/ui/Num";
 import { IconTile } from "@/components/ui/IconTile";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
-import { CrmTabs } from "@/components/layout/CrmTabs";
 import { AssigneeStack } from "@/components/tickets/AssigneeStack";
 import { KanbanBoard } from "@/components/tickets/KanbanBoard";
 import { TicketModal } from "@/components/tickets/TicketModal";
@@ -16,6 +16,7 @@ import { TicketPanel } from "@/components/tickets/TicketPanel";
 import { TicketsSkeleton } from "@/components/tickets/TicketsSkeleton";
 import type { Ticket, TicketStatus, TicketPriority } from "@/types";
 import * as XLSX from "xlsx";
+import { Select } from "@/components/ui/Select";
 
 const priorityMeta: { priority: TicketPriority; icon: typeof ArrowDown; bg: string; accent: string }[] = [
   { priority: "Low", icon: ArrowDown, bg: "bg-[#64748B18]", accent: "#64748B" },
@@ -40,13 +41,20 @@ export function TicketsPageClient() {
   const [panelTicket, setPanelTicket] = useState<Ticket | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
 
+  // ?new=1 opens the New Ticket form; ?open=<id> (from a chat notification) opens that ticket's panel.
+  const searchParams = useSearchParams();
   useEffect(() => {
-    if (new URLSearchParams(window.location.search).get("new") === "1") {
+    if (!loaded) return;
+    const openId = Number(searchParams.get("open"));
+    if (searchParams.get("new") === "1") {
       setDefaultStatus("Open");
       setModalOpen(true);
-      window.history.replaceState(null, "", "/tickets");
-    }
-  }, []);
+    } else if (openId) {
+      const ticket = tickets.find((t) => t.id === openId);
+      if (ticket) { setPanelTicket(ticket); setPanelOpen(true); }
+    } else return;
+    window.history.replaceState(null, "", "/tickets");
+  }, [searchParams, loaded]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const assignees = useMemo(() => {
     const map = new Map<string, number>();
@@ -110,16 +118,16 @@ export function TicketsPageClient() {
   }
 
   function handleDelete(id: number) {
-    remove(id);
-    toast.success("Ticket deleted");
+    remove(id)
+      .then(() => toast.success("Ticket deleted"))
+      .catch(() => toast.error("Couldn't delete the ticket. Try again."));
   }
 
   if (loading) return <TicketsSkeleton />;
 
   return (
     <div>
-      <CrmTabs />
-      <h1 className="text-3xl font-semibold text-text-primary">CRM Tickets</h1>
+      <h1 className="text-3xl font-normal text-text-primary">CRM Tickets</h1>
       <p className="text-sm text-text-secondary mt-1">Support ticket pipeline — drag cards between statuses</p>
 
       {/* Priority summary cards */}
@@ -139,7 +147,7 @@ export function TicketsPageClient() {
       </div>
 
       {/* Kanban board wrapper card */}
-      <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-3 sm:p-6">
+      <div className="glass rounded-3xl p-3 sm:p-6">
         {/* Board header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -160,7 +168,7 @@ export function TicketsPageClient() {
               <IconButton icon={SlidersHorizontal} ariaLabel="Filter by assignee" onClick={() => setFilterOpen((o) => !o)} />
               {assigneeFilter && <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-brand-blue pointer-events-none" />}
               {filterOpen && (
-                <div className="absolute mt-2 right-0 bg-white shadow-dropdown rounded-2xl p-3 z-50">
+                <div className="absolute mt-2 right-0 glass-pop rounded-2xl p-3 z-50">
                   <AssigneeStack
                     assignees={assignees}
                     selected={assigneeFilter}
@@ -186,14 +194,14 @@ export function TicketsPageClient() {
           <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
-              className="w-full sm:w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              className="w-full sm:w-64 glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search tickets..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <select
-            className="bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
+          <Select
+            className="glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
@@ -201,7 +209,7 @@ export function TicketsPageClient() {
             {statuses.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
-          </select>
+          </Select>
           <div className="ml-auto">
             <Button icon={Plus} onClick={() => openAdd("Open")}>New ticket</Button>
           </div>

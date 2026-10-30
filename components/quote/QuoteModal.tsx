@@ -20,19 +20,27 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useCustomerStore } from "@/lib/store/useCustomerStore";
 import { CustomerPicker } from "@/components/customers/CustomerPicker";
-import { CURRENCIES, CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
+import { CURRENCIES, priceIn, type CurrencyCode } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/useCurrency";
+import { addDays, toISODate, today } from "@/components/ui/calendar";
 import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import { calcLineTotal, calcSectionSubtotal, calcQuoteTotal } from "@/lib/utils/quote";
 import { printQuote } from "@/lib/utils/quotePdf";
+import { kitContents, kitQuoteLine } from "@/lib/utils/kits";
+import { useKits } from "@/lib/hooks/useKits";
+import { KitPickerList } from "./KitPickerList";
 import type { Quote, Section, QuoteItem, QuoteStatus, Product } from "@/types";
+import { DatePicker } from "@/components/ui/DatePicker";
+
+/** Picker value for the "Kits" choice in the category dropdown. */
+const KITS = "__kits__";
 
 function uid(): string {
   return Math.random().toString(36).slice(2, 10);
@@ -45,10 +53,10 @@ function emptySection(): Section {
 const numberInputClass =
   "bg-white border border-border rounded py-1 px-2 text-sm focus:border-brand-blue focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
-function emptyQuoteDraft(): Omit<Quote, "id" | "number"> {
-  const today = new Date().toISOString().slice(0, 10);
-  const valid = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
-  return { clientId: null, customerId: null, client: "", date: today, validUntil: valid, status: "Draft", currency: "INR" as CurrencyCode, sections: [emptySection()] };
+/** New quotes take the creator's Settings currency; local calendar dates so early-morning quotes aren't dated yesterday. */
+function emptyQuoteDraft(currency: CurrencyCode): Omit<Quote, "id" | "number"> {
+  const now = today();
+  return { clientId: null, customerId: null, client: "", date: toISODate(now), validUntil: toISODate(addDays(now, 30)), status: "Draft", currency, sections: [emptySection()] };
 }
 
 export function QuoteModal({
@@ -73,7 +81,8 @@ export function QuoteModal({
     fetchCustomers();
   }, [fetchCustomers]);
 
-  const [draft, setDraft] = useState<Omit<Quote, "id" | "number">>(emptyQuoteDraft());
+  const myCurrency = useCurrency();
+  const [draft, setDraft] = useState<Omit<Quote, "id" | "number">>(() => emptyQuoteDraft(myCurrency));
 
   useEffect(() => {
     if (!open) return;
@@ -81,9 +90,9 @@ export function QuoteModal({
       const { id: _id, number: _n, ...rest } = quote;
       setDraft(JSON.parse(JSON.stringify(rest)));
     } else {
-      setDraft(emptyQuoteDraft());
+      setDraft(emptyQuoteDraft(myCurrency));
     }
-  }, [open, quote]);
+  }, [open, quote, myCurrency]);
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -167,8 +176,9 @@ export function QuoteModal({
   function handleSave() {
     if (!draft.client.trim()) return;
     if (quote) {
-      update(quote.id, draft);
-      toast.success("Quote updated");
+      update(quote.id, draft)
+        .then(() => toast.success("Quote updated"))
+        .catch((err: Error) => toast.error(err.message || "Couldn't update the quote"));
     } else {
       add(draft);
       toast.success("Quote created");
@@ -217,7 +227,7 @@ export function QuoteModal({
       }
     >
       {/* Header fields */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {isEditing ? (
           <CustomerPicker
             label="Client"
@@ -230,12 +240,12 @@ export function QuoteModal({
             <div className="text-sm text-text-primary py-2.5">{draft.client}</div>
           </div>
         )}
-        <Input label="Date" type="date" value={draft.date} onChange={(e) => patchDraft({ date: e.target.value })} disabled={!isEditing} />
-        <Input label="Valid Until" type="date" value={draft.validUntil} onChange={(e) => patchDraft({ validUntil: e.target.value })} disabled={!isEditing} />
+        <DatePicker label="Date" value={draft.date} onChange={(e) => patchDraft({ date: e.target.value })} disabled={!isEditing} />
+        <DatePicker label="Valid Until" value={draft.validUntil} onChange={(e) => patchDraft({ validUntil: e.target.value })} disabled={!isEditing} />
         <div>
           <label className="block text-sm text-text-primary mb-1">Status</label>
           {isEditing ? (
-            <select
+            <Select
               className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
               value={draft.status}
               onChange={(e) => patchDraft({ status: e.target.value as QuoteStatus })}
@@ -244,25 +254,9 @@ export function QuoteModal({
               <option value="Sent">Sent</option>
               <option value="Accepted">Accepted</option>
               <option value="Rejected">Rejected</option>
-            </select>
+            </Select>
           ) : (
             <div className="py-2.5"><Badge color={statusColor(draft.status)}>{draft.status}</Badge></div>
-          )}
-        </div>
-        <div>
-          <label className="block text-sm text-text-primary mb-1">Currency</label>
-          {isEditing ? (
-            <select
-              className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
-              value={draft.currency}
-              onChange={(e) => patchDraft({ currency: e.target.value as CurrencyCode })}
-            >
-              {CURRENCY_CODES.map((c) => (
-                <option key={c} value={c}>{c} ({CURRENCIES[c].symbol})</option>
-              ))}
-            </select>
-          ) : (
-            <div className="text-sm text-text-primary py-2.5">{draft.currency} ({CURRENCIES[draft.currency].symbol})</div>
           )}
         </div>
       </div>
@@ -305,6 +299,14 @@ export function QuoteModal({
       {/* Totals */}
       <div className="mt-6 flex justify-end">
         <div className="w-72 space-y-2">
+          <div className="flex justify-between text-xs text-text-muted">
+            <span>Currency</span>
+            {/* The currency is set in Settings for new quotes; a saved quote keeps the one it was created in. */}
+            <span>
+              {CURRENCIES[draft.currency].name} ({CURRENCIES[draft.currency].symbol})
+              {!quote && " · from Settings"}
+            </span>
+          </div>
           <div className="flex justify-between text-sm text-text-secondary">
             <span>Subtotal</span><Price value={totals.subtotal} currency={draft.currency} className="text-text-primary" />
           </div>
@@ -370,6 +372,10 @@ function SortableSection({
   const [pickerBrand, setPickerBrand] = useState("");
   const [selectedQty, setSelectedQty] = useState(() => new Map<number, number>());
   const [showProductPopup, setShowProductPopup] = useState(false);
+  const [selectedKits, setSelectedKits] = useState(() => new Map<number, number>());
+  const { kits } = useKits();
+  const products = useProductStore((s) => s.products);
+  const isKits = pickerCat === KITS;
 
   const sn = sectionIndex + 1;
   const subtotal = calcSectionSubtotal(section);
@@ -389,6 +395,13 @@ function SortableSection({
   }
 
   function handleAdd() {
+    if (isKits) {
+      const byId = new Map(products.map((p) => [p.id, p]));
+      kits.filter((k) => selectedKits.has(k.id)).forEach((k) => onAddItem(kitQuoteLine(k, selectedKits.get(k.id) ?? 1, byId, currency, uid())));
+      setPickerCat("");
+      setSelectedKits(new Map());
+      return;
+    }
     const selected = prods.filter((p) => selectedQty.has(p.id));
     selected.forEach((prod) => {
       onAddItem({
@@ -399,7 +412,7 @@ function SortableSection({
         brand: prod.brand,
         description: prod.description,
         qty: selectedQty.get(prod.id) ?? 1,
-        price: prod.prices?.[currency] ?? prod.price ?? 0,
+        price: priceIn(prod, currency) ?? 0,
         discount: 0,
       });
     });
@@ -458,17 +471,18 @@ function SortableSection({
         <>
           <div className="flex flex-col sm:flex-row gap-2 sm:items-end mb-4">
             <div className="flex-1">
-              <select
+              <Select
                 className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
                 value={pickerCat}
-                onChange={(e) => { setPickerCat(e.target.value); setPickerBrand(""); setSelectedQty(new Map()); setShowProductPopup(false); }}
+                onChange={(e) => { setPickerCat(e.target.value); setPickerBrand(""); setSelectedQty(new Map()); setSelectedKits(new Map()); setShowProductPopup(false); }}
               >
                 <option value="">Choose category</option>
+                <option value={KITS}>Kits (product groups)</option>
                 {allCategories.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              </Select>
             </div>
-            <div className="flex-1">
-              <select
+            {!isKits && <div className="flex-1">
+              <Select
                 className="w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors disabled:opacity-50"
                 value={pickerBrand}
                 onChange={(e) => { setPickerBrand(e.target.value); setSelectedQty(new Map()); setShowProductPopup(e.target.value !== ""); }}
@@ -476,12 +490,13 @@ function SortableSection({
               >
                 <option value="">Choose brand</option>
                 {availableBrands.map((b) => <option key={b} value={b}>{b}</option>)}
-              </select>
-            </div>
-            <Button icon={Plus} disabled={selectedQty.size === 0} onClick={handleAdd} className="shrink-0 w-full sm:w-auto justify-center">
-              Add ({selectedQty.size})
+              </Select>
+            </div>}
+            <Button icon={Plus} disabled={(isKits ? selectedKits.size : selectedQty.size) === 0} onClick={handleAdd} className="shrink-0 w-full sm:w-auto justify-center">
+              Add ({isKits ? selectedKits.size : selectedQty.size})
             </Button>
           </div>
+          {isKits && <KitPickerList currency={currency} selected={selectedKits} onChange={setSelectedKits} />}
           {showProductPopup && prods.length > 0 && (
             <div className="mb-4 border border-border rounded-xl p-3 bg-surface-alt max-h-56 overflow-y-auto">
               <div className="flex items-center justify-between mb-2">
@@ -522,7 +537,7 @@ function SortableSection({
                         className={`${numberInputClass} w-14 text-center shrink-0`}
                       />
                     )}
-                    <Price value={p.prices?.[currency] ?? p.price} currency={currency} className="text-xs shrink-0" />
+                    <Price value={priceIn(p, currency)} currency={currency} className="text-xs shrink-0" />
                   </label>
                 ))}
               </div>
@@ -555,9 +570,18 @@ function SortableSection({
                 <tr key={item.id} className="border-t border-border">
                   <td className="px-3 py-2 text-sm text-text-muted"><Num>{sn}.{ii + 1}</Num></td>
                   <td className="px-3 py-2 text-sm text-text-primary">
-                    {item.category.includes("Controller") ? item.category : item.name}
+                    {item.components ? (
+                      <span className="inline-flex items-center gap-1.5">{item.name}<Badge color="#3A90C3">Kit</Badge></span>
+                    ) : item.category.includes("Controller") ? item.category : item.name}
                   </td>
-                  <td className="px-3 py-2 text-xs text-text-muted max-w-[220px]">{item.description || "—"}</td>
+                  <td className="px-3 py-2 text-xs text-text-muted max-w-[220px]">
+                    {item.components ? (
+                      <>
+                        {item.description && <div>{item.description}</div>}
+                        <div className="text-text-secondary" title={kitContents(item.components)}>Includes {kitContents(item.components)}</div>
+                      </>
+                    ) : item.description || "—"}
+                  </td>
                   <td className="px-3 py-2 text-xs text-text-secondary whitespace-nowrap">{item.brand}</td>
                   <td className="px-3 py-2 text-right">
                     {isEditing ? (

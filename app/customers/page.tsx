@@ -12,7 +12,9 @@ import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import { CustomerTable } from "@/components/customers/CustomerTable";
 import { CustomerModal } from "@/components/customers/CustomerModal";
 import { CustomerDetailPanel } from "@/components/customers/CustomerDetailPanel";
-import type { Customer, CustomerSegment } from "@/types";
+import type { Customer, CustomerInput, CustomerSegment } from "@/types";
+import { customerFullName, formatSrNo } from "@/lib/utils/customer";
+import { Select } from "@/components/ui/Select";
 
 const segments: CustomerSegment[] = [
   "Residential", "Hospitality", "Government / Council", "Retail", "Healthcare / Aged Care", "Industrial",
@@ -49,7 +51,9 @@ export default function CustomersPage() {
 
   function handleExport() {
     const rows = filtered.map((c) => ({
-      Name: c.name, Segment: c.segment, Contact: c.contactName, Email: c.email, Phone: c.phone, Address: c.address, Notes: c.notes,
+      "SR No": formatSrNo(c.id), Code: c.customerCode, Prefix: c.prefix, Name: c.firstName, Surname: c.surname,
+      Mobile: c.phone, Email: c.email, Architect: c.architect, "GST No": c.gstNo, Address: c.address,
+      City: c.city, State: c.state, Postcode: c.postcode, Birthday: c.birthday, Segment: c.segment, Notes: c.notes,
     }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), "Customers");
@@ -72,11 +76,18 @@ export default function CustomersPage() {
     let added = 0;
     try {
       for (const r of rows) {
-        const name = col(r, "Name");
+        // "Name" + optional "Surname" (older exports put the full name in Name, which still works).
+        const firstName = col(r, "Name");
+        const surname = col(r, "Surname");
+        const name = customerFullName(firstName, surname);
         if (!name || seen.has(name.toLowerCase())) continue;
         seen.add(name.toLowerCase());
         const seg = segments.find((x) => x.toLowerCase() === col(r, "Segment").toLowerCase());
-        await add({ name, segment: seg ?? "Residential", contactName: col(r, "Contact"), email: col(r, "Email"), phone: col(r, "Phone"), address: col(r, "Address"), notes: col(r, "Notes") });
+        await add({
+          name, firstName, surname, prefix: col(r, "Prefix"), segment: seg ?? "Residential", contactName: col(r, "Contact"),
+          email: col(r, "Email"), phone: col(r, "Mobile") || col(r, "Phone"), architect: col(r, "Architect"), gstNo: col(r, "GST No").toUpperCase(),
+          address: col(r, "Address"), city: col(r, "City"), state: col(r, "State"), postcode: col(r, "Postcode"), notes: col(r, "Notes"),
+        });
         added++;
       }
     } catch {
@@ -99,7 +110,7 @@ export default function CustomersPage() {
     }
   }
 
-  function handleSave(data: Omit<Customer, "id" | "createdAt">) {
+  function handleSave(data: CustomerInput) {
     if (editCustomer) {
       update(editCustomer.id, data).then(() => toast.success("Customer updated")).catch(() => {});
     } else {
@@ -111,7 +122,7 @@ export default function CustomersPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-text-primary">Customers</h1>
+      <h1 className="text-3xl font-normal text-text-primary">Customers</h1>
       <p className="text-sm text-text-secondary mt-1">Every customer, with their tickets, projects, and quotes in one place</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-6 sm:mt-8">
@@ -131,25 +142,25 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 overflow-hidden mt-6">
+      <div className="glass rounded-3xl overflow-hidden mt-6">
         <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
           <div className="relative w-full sm:w-auto">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
-              className="w-full sm:w-64 bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              className="w-full sm:w-64 glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search customers..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <select
-            className="bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
+          <Select
+            className="glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
             value={segmentFilter}
             onChange={(e) => setSegmentFilter(e.target.value)}
           >
             <option value="">All segments</option>
             {segments.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          </Select>
           <div className="ml-auto flex items-center gap-2">
             <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />
             <Button variant="secondary" icon={Upload} onClick={() => fileRef.current?.click()}>Import Excel</Button>

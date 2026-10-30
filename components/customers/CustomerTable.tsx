@@ -37,24 +37,26 @@ export function CustomerTable({ customers, onView, onEdit, onDelete }: Props) {
       <div className="overflow-x-auto">
         <table className="w-full min-w-[800px]">
           <thead>
-            <tr className="bg-surface-alt">
+            <tr className="bg-white/35">
+              <th className={thClass}>Code</th>
               <th className={thClass}>Name</th>
               <th className={thClass}>Segment</th>
-              <th className={thClass}>Contact</th>
+              <th className={thClass}>Mobile</th>
               <th className={thClass}>Email</th>
-              <th className={thClass}>Phone</th>
+              <th className={thClass}>City</th>
               <th className={`${thClass} text-right`}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {paged.length === 0 ? (
               <tr>
-                <td colSpan={6} className="text-center text-text-muted py-12">No customers found</td>
+                <td colSpan={7} className="text-center text-text-muted py-12">No customers found</td>
               </tr>
             ) : (
               paged.map((c) => (
-                <tr key={c.id} className="border-t border-border hover:bg-[#F9FAFB]/60 transition-colors cursor-pointer" onClick={() => onView(c)}>
-                  <td className={`${tdClass} text-text-primary`}>{c.name}</td>
+                <tr key={c.id} className="border-t border-border hover:bg-white/50 transition-colors cursor-pointer" onClick={() => onView(c)}>
+                  <td className={`${tdClass} font-numeric tabular-nums text-xs text-brand-blue`}>{c.customerCode || "—"}</td>
+                  <td className={`${tdClass} text-text-primary`}>{[c.prefix, c.name].filter(Boolean).join(" ")}</td>
                   <td className={tdClass}>
                     <span
                       className="inline-flex items-center px-2.5 py-1 rounded-full text-xs"
@@ -63,9 +65,9 @@ export function CustomerTable({ customers, onView, onEdit, onDelete }: Props) {
                       {c.segment}
                     </span>
                   </td>
-                  <td className={`${tdClass} text-text-secondary`}>{c.contactName || "—"}</td>
-                  <td className={`${tdClass} text-text-secondary`}>{c.email || "—"}</td>
                   <td className={`${tdClass} text-text-secondary`}>{c.phone || "—"}</td>
+                  <td className={`${tdClass} text-text-secondary`}>{c.email || "—"}</td>
+                  <td className={`${tdClass} text-text-secondary`}>{c.city || "—"}</td>
                   <td className={`${tdClass} text-right`} onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => onView(c)} className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-text-primary hover:bg-[#F9FAFB] transition-colors" aria-label="View">

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { withTransaction, HttpError } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction } from "@/lib/api/audit";
-import { toProject } from "@/lib/inventoryDb";
+import { QUOTE_PRODUCT_LINES, toProject } from "@/lib/inventoryDb";
 
 /**
  * confirmInquiryAndAllocate: marks the project confirmed, sets its quote to Accepted and reserves
@@ -23,13 +23,13 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       if (!p.quote_id) throw new HttpError(400, "Link a quote to this project before confirming it");
 
       const [quote] = (await db.query(`SELECT number FROM quotes WHERE id = $1`, [p.quote_id])).rows;
-      // Same product in several sections becomes one reservation line.
+      // Same product in several sections (or inside several kits) becomes one reservation line.
       const items = (await db.query(
-        `SELECT qi.product_id, SUM(qi.qty)::int AS qty
-           FROM quote_items qi JOIN quote_sections qs ON qs.id = qi.section_id
-          WHERE qs.quote_id = $1 AND qi.product_id IS NOT NULL
-          GROUP BY qi.product_id
-         HAVING SUM(qi.qty) > 0`,
+        `SELECT ql.product_id, SUM(ql.qty)::int AS qty
+           FROM ${QUOTE_PRODUCT_LINES} ql JOIN quote_sections qs ON qs.id = ql.section_id
+          WHERE qs.quote_id = $1
+          GROUP BY ql.product_id
+         HAVING SUM(ql.qty) > 0`,
         [p.quote_id],
       )).rows as { product_id: number; qty: number }[];
       if (items.length === 0) throw new HttpError(400, `Quote ${quote?.number ?? ""} has no catalogue products to reserve`);

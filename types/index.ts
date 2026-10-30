@@ -1,4 +1,4 @@
-export type Role = "Super Admin" | "Admin" | "Staff";
+export type Role = "Super Admin" | "Admin" | "Purchase";
 
 export type TicketStatus = "Open" | "In Progress" | "On Hold" | "Resolved" | "Closed";
 
@@ -13,6 +13,26 @@ export type ProductStatus = "Active" | "Inactive";
 export type UserStatus = "Active" | "Inactive";
 
 import type { CurrencyCode } from "@/lib/utils/currency";
+
+/** Master File kit: a named group of products with quantities. No stock of its own; priced from its components. */
+export interface Kit {
+  id: number;
+  sku: string;
+  name: string;
+  description: string;
+  status: ProductStatus;
+  /** Kit price = sum of component prices (in the viewer's currency) minus this %. */
+  discountPct: number;
+  items: KitItem[];
+  createdAt: string;
+}
+
+export interface KitItem {
+  productId: number;
+  qty: number;
+}
+
+export type KitInput = Omit<Kit, "id" | "createdAt">;
 
 export interface Product {
   id: number;
@@ -48,19 +68,50 @@ export type CustomerSegment =
 
 export interface Customer {
   id: number;
+  /** Full display name (first name + surname) — what quotes, CRM and search show. Kept in sync by the API. */
   name: string;
+  prefix: string;
+  firstName: string;
+  surname: string;
+  /** Auto-generated on create (first two letters of name + surname), then fixed. */
+  customerCode: string;
   segment: CustomerSegment;
   contactName: string;
   email: string;
   phone: string;
+  architect: string;
+  gstNo: string;
   address: string;
+  city: string;
+  state: string;
+  postcode: string;
+  /** "YYYY-MM-DD", or "--MM-DD" when the year is unknown; "" when not set. */
+  birthday: string;
   notes: string;
   createdAt: string;
 }
 
+/** Fields a caller may send when creating/updating a customer. The code is assigned by the API; the
+ *  detail fields are optional so quick-add flows (customer picker, Excel import) can send just a name. */
+export type CustomerInput = Omit<Customer, "id" | "createdAt" | "customerCode" | "prefix" | "firstName" | "surname" | "architect" | "gstNo" | "city" | "state" | "postcode" | "birthday"> &
+  Partial<Pick<Customer, "prefix" | "firstName" | "surname" | "architect" | "gstNo" | "city" | "state" | "postcode" | "birthday">>;
+
+/** A kit's component as it stood when the kit was added to the quote (a snapshot — later kit edits don't change it). */
+export interface QuoteKitComponent {
+  productId: number;
+  name: string;
+  sku: string;
+  qty: number;
+}
+
 export interface QuoteItem {
   id: string;
-  productId: number;
+  /** Null on a kit line — its products are in `components`. */
+  productId: number | null;
+  /** Set on a kit line: one quote line priced as the kit, stock reserved through its components. */
+  kitId?: number | null;
+  kitSku?: string;
+  components?: QuoteKitComponent[];
   name: string;
   category: string;
   brand: string;
@@ -97,6 +148,8 @@ export interface User {
   status: UserStatus;
   ticketAlerts: boolean;
   quoteAlerts: boolean;
+  /** Working currency from Settings — new quotes/POs, product prices and dashboard money use it. */
+  currency: CurrencyCode;
 }
 
 export interface AppNotification {
@@ -104,6 +157,36 @@ export interface AppNotification {
   text: string;
   color: string;
   read: boolean;
+  createdAt: string;
+  /** Where clicking the notification goes (e.g. "/complaints?open=12"); "" for none. */
+  href: string;
+}
+
+export type ComplaintStatus = "Pending" | "Completed";
+
+/** CRM complaint: raised by Super Admin/Admin, assigned to one engineer, Pending → Completed. */
+export interface Complaint {
+  id: number;
+  number: string;
+  customerName: string;
+  phone: string;
+  remarks: string;
+  engineerId: number | null;
+  engineerName: string | null;
+  status: ComplaintStatus;
+  /** What the engineer did — required when marking Completed. */
+  resolution: string;
+  createdById: number | null;
+  createdByName: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export interface ComplaintEvent {
+  id: number;
+  kind: "created" | "assigned" | "edited" | "completed" | "reopened";
+  note: string;
+  userName: string;
   createdAt: string;
 }
 
@@ -137,10 +220,17 @@ export interface TicketMessage {
   edited: boolean;
 }
 
-export type ProjectStage =
-  | "Inquiry" | "Design" | "Quotation" | "Measurement" | "Marking"
-  | "Production" | "Material Requirement" | "Ready to Dispatch"
-  | "Installation" | "Completed" | "Cancelled";
+/** A CRM pipeline column. The six defaults are fixed; users can add, rename and delete custom stages. */
+export interface PipelineStage {
+  id: number;
+  name: string;
+  position: number;
+  isDefault: boolean;
+  color: string;
+}
+
+/** A PipelineStage name, or "Cancelled" (a status outside the pipeline). Names are data, so this is a string. */
+export type ProjectStage = string;
 
 export interface Project {
   id: number;
@@ -179,6 +269,8 @@ export interface ProjectMessage {
   isForwarded: boolean;
   deleted: boolean;
   edited: boolean;
+  /** Starred in the CRM chat (shared); the chat's star button filters to these. */
+  starred: boolean;
 }
 
 export type AuditModule = "Master" | "CRM" | "Quote" | "Projects" | "User Management" | "Auth" | "Inventory";

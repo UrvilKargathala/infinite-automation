@@ -8,8 +8,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-fredoka)", "system-ui", "sans-serif"],
-        numeric: ["var(--font-montserrat)", "ui-monospace", "system-ui", "sans-serif"],
+        sans: ["var(--font-questrial)", "system-ui", "sans-serif"],
+        numeric: ["var(--font-questrial)", "system-ui", "sans-serif"],
       },
       fontWeight: {
         light: "300",
@@ -47,6 +47,8 @@ module.exports = {
           "linear-gradient(135deg, #3A90C3 0%, #44BE4A 100%)",
         "brand-gradient-tint":
           "linear-gradient(90deg, #3A90C310 0%, #44BE4A10 100%)",
+        "sidebar-gradient":
+          "radial-gradient(120% 80% at 50% 110%, rgba(68, 190, 74, 0.28) 0px, transparent 60%), radial-gradient(90% 60% at 0px 0px, rgba(58, 144, 195, 0.3) 0px, transparent 60%), linear-gradient(180deg, rgba(14, 34, 40, 0.8) 0%, rgba(11, 26, 31, 0.88) 100%)",
       },
       boxShadow: {
         card: "0 2px 8px -2px rgba(15, 23, 42, 0.06), 0 4px 16px -4px rgba(15, 23, 42, 0.04)",
@@ -56,9 +58,11 @@ module.exports = {
         dropdown: "0 8px 24px -8px rgba(15, 23, 42, 0.12)",
         iconBtn: "0 1px 3px 0 rgba(15, 23, 42, 0.05)",
         drag: "0 12px 32px -8px rgba(58, 144, 195, 0.25)",
+        sidebar: "0 30px 60px -20px rgba(14, 37, 51, 0.55), 0 8px 20px -8px rgba(14, 37, 51, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
       },
       borderRadius: {
         "2xl": "16px",
+        "3xl": "20px",
       },
     },
   },

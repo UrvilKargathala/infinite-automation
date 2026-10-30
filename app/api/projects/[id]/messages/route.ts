@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
+import { notifyChatMessage } from "@/lib/api/chatNotify";
 import type { Attachment, ProjectMessage } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -20,6 +21,7 @@ function toMessage(r: Record<string, unknown>): ProjectMessage {
     isForwarded: r.is_forwarded as boolean,
     deleted: r.deleted as boolean,
     edited: r.edited as boolean,
+    starred: !!r.starred,
   };
 }
 
@@ -28,7 +30,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 
   const messageRows = await sql`
     SELECT m.id, m.project_id, m.text, m.attachments, m.created_at::text AS created_at,
-           m.reply_to_id, m.is_forwarded, m.deleted, m.edited,
+           m.reply_to_id, m.is_forwarded, m.deleted, m.edited, m.starred,
            u.id AS user_id, u.full_name,
            rt.text AS reply_to_text, ru.full_name AS reply_to_full_name
     FROM project_messages m
@@ -68,6 +70,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   `;
   const messageId = rows[0].id as number;
 
+  // Let the assignee, earlier participants and anyone @mentioned know (notification links straight into this chat).
+  const [record] = await sql.query(`SELECT customer_name AS label, assigned FROM projects WHERE id = $1`, [projectId]);
+  if (record) {
+    await notifyChatMessage({
+      kind: "project", recordId: projectId, recordLabel: record.label as string, assignedName: (record.assigned as string) ?? "",
+      sender: me, text, attachments: attachments.length,
+    });
+  }
+
   let replyToText: string | null = null;
   let replyToFullName: string | null = null;
   if (replyToId) {
@@ -94,6 +105,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     isForwarded,
     deleted: false,
     edited: false,
+    starred: false,
   };
 
   return NextResponse.json(message, { status: 201 });

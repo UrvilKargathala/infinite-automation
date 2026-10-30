@@ -31,7 +31,7 @@ export function UserTable({ users, onEdit, onDelete, canEdit, canDelete }: Props
       <div className="overflow-x-auto">
         <table className="w-full min-w-[700px]">
           <thead>
-            <tr className="bg-surface-alt">
+            <tr className="bg-white/35">
               <th className={thClass}>Name</th>
               <th className={thClass}>Email</th>
               <th className={thClass}>Role</th>
@@ -51,7 +51,7 @@ export function UserTable({ users, onEdit, onDelete, canEdit, canDelete }: Props
                 const editable = canEdit(u);
                 const deletable = canDelete(u);
                 return (
-                  <tr key={u.id} className="border-t border-border hover:bg-[#F9FAFB]/60">
+                  <tr key={u.id} className="border-t border-border hover:bg-white/50">
                     <td className={tdClass}>
                       <div className="flex items-center gap-3">
                         <Avatar name={u.fullName} size="sm" />

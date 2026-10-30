@@ -6,7 +6,7 @@ const variants = {
   primary:
     "bg-brand-gradient text-white hover:opacity-90",
   secondary:
-    "bg-white border border-border text-text-primary hover:bg-[#F9FAFB]",
+    "glass-control border border-border text-text-primary hover:bg-white",
   danger: "bg-danger text-white hover:opacity-90",
   ghost: "bg-transparent text-text-secondary hover:bg-[#F9FAFB]",
 } as const;

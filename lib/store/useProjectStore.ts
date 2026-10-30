@@ -45,8 +45,13 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     set((s) => ({ projects: s.projects.map((p) => (p.id === id ? updated : p)) }));
   },
   remove: async (id) => {
+    const prev = get().projects;
     set((s) => ({ projects: s.projects.filter((p) => p.id !== id) }));
-    await fetch(`/api/projects/${id}`, { method: "DELETE" });
+    const res = await fetch(`/api/projects/${id}`, { method: "DELETE" }).catch(() => null);
+    if (!res?.ok) {
+      set({ projects: prev });
+      throw new Error("Failed to delete project");
+    }
   },
   setAll: (projects) => set({ projects, loaded: true }),
   updateStage: async (id, stage) => {
@@ -59,6 +64,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       set((s) => ({ projects: s.projects.map((p) => (p.id === id ? updated : p)) }));
     } catch {
       if (prevStage) set((s) => ({ projects: s.projects.map((p) => (p.id === id ? { ...p, stage: prevStage } : p)) }));
+      toast.error("Couldn't move the project — it's back where it was.");
     }
   },
   confirm: async (id) => {

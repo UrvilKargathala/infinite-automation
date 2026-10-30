@@ -8,7 +8,7 @@ export function ProjectsSkeleton() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="rounded-2xl shadow-card p-5 bg-white">
+          <div key={i} className="glass rounded-3xl p-5">
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-7 w-10 mt-3" />
             <Skeleton className="h-3 w-16 mt-2" />
@@ -16,7 +16,7 @@ export function ProjectsSkeleton() {
         ))}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-card p-3 sm:p-6">
+      <div className="glass rounded-3xl p-3 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <Skeleton className="h-6 w-40" />
           <Skeleton className="h-10 w-10 rounded-full" />

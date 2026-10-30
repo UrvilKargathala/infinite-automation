@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { can } from "@/lib/utils/permissions";
 import { logAction, diffFields } from "@/lib/api/audit";
+import { DEFAULT_CURRENCY, isCurrencyCode } from "@/lib/utils/currency";
 import type { User } from "@/types";
 
 function toUser(row: Record<string, unknown>): User {
@@ -14,6 +15,7 @@ function toUser(row: Record<string, unknown>): User {
     status: row.status as User["status"],
     ticketAlerts: row.ticket_alerts as boolean,
     quoteAlerts: row.quote_alerts as boolean,
+    currency: isCurrencyCode(row.currency) ? row.currency : DEFAULT_CURRENCY,
   };
 }
 
@@ -28,16 +30,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const current = toUser(existing[0]);
   const isSelf = id === me.id;
 
+  if (body.currency !== undefined && !isCurrencyCode(body.currency)) {
+    return NextResponse.json({ error: "Unsupported currency" }, { status: 400 });
+  }
+
   if (isSelf) {
     // Everyone may edit their own name/email, but never self-promote role/status
     body.role = current.role;
     body.status = current.status;
   } else {
+    // Currency is a personal preference — only its owner changes it
+    body.currency = current.currency;
     if (!can(me.role, "editUser")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    // Admin may only edit/deactivate Staff users, and can't grant Admin/Super Admin
+    // Admin may only edit/deactivate Purchase users, and can't grant Admin/Super Admin
     if (me.role === "Admin") {
-      if (current.role !== "Staff") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-      if (body.role && body.role !== "Staff") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (current.role !== "Purchase") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      if (body.role && body.role !== "Purchase") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
   }
 
@@ -45,11 +53,19 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const rows = await sql`
     UPDATE users SET full_name = ${merged.fullName}, email = ${merged.email},
       role = ${merged.role}, status = ${merged.status},
-      ticket_alerts = ${merged.ticketAlerts}, quote_alerts = ${merged.quoteAlerts}
+      ticket_alerts = ${merged.ticketAlerts}, quote_alerts = ${merged.quoteAlerts},
+      currency = ${merged.currency}
     WHERE id = ${id}
     RETURNING *
   `;
   const updated = toUser(rows[0]);
+
+  // "Assigned to" on CRM records and tickets stores the person's name (and chat notifications match on it),
+  // so a rename carries over to everything they're assigned.
+  if (updated.fullName !== current.fullName) {
+    await sql`UPDATE projects SET assigned = ${updated.fullName} WHERE assigned = ${current.fullName}`;
+    await sql`UPDATE tickets SET assigned = ${updated.fullName} WHERE assigned = ${current.fullName}`;
+  }
 
   if (updated.role !== current.role) {
     await logAction({

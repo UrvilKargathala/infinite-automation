@@ -1,5 +1,6 @@
 import { Price } from "@/components/ui/Price";
 import type { CustomerSegment } from "@/types";
+import type { CurrencyCode } from "@/lib/utils/currency";
 
 const segmentColors: Record<CustomerSegment, string> = {
   Residential: "#3A90C3",
@@ -10,11 +11,11 @@ const segmentColors: Record<CustomerSegment, string> = {
   Industrial: "#44BE4A",
 };
 
-export function RevenueBySegment({ data }: { data: { segment: CustomerSegment; revenue: number }[] }) {
+export function RevenueBySegment({ data, currency }: { data: { segment: CustomerSegment; revenue: number }[]; currency: CurrencyCode }) {
   const total = data.reduce((s, d) => s + d.revenue, 0);
 
   return (
-    <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
+    <div className="glass lift rounded-3xl p-4 sm:p-6">
       <h2 className="text-lg text-text-primary mb-4">Revenue by segment</h2>
       {data.length === 0 ? (
         <div className="text-center text-text-muted text-sm py-8">No accepted quotes linked to a customer yet</div>
@@ -32,7 +33,7 @@ export function RevenueBySegment({ data }: { data: { segment: CustomerSegment; r
                   />
                 </div>
                 <span className="text-xs text-text-muted w-24 text-right shrink-0">
-                  <Price value={revenue} currency="INR" className="text-xs" />
+                  <Price value={revenue} currency={currency} className="text-xs" />
                 </span>
               </div>
             );

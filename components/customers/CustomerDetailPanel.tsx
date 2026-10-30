@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { X, Mail, Phone, MapPin, Ticket as TicketIcon, Layers, FileText } from "lucide-react";
 import type { Customer, CustomerSegment } from "@/types";
+import { SkeletonList } from "@/components/ui/Skeleton";
 
 const segmentColors: Record<CustomerSegment, string> = {
   Residential: "#3A90C3",
@@ -58,7 +59,7 @@ export function CustomerDetailPanel({ customerId, onClose }: { customerId: numbe
         </div>
 
         {loading || !data ? (
-          <div className="flex-1 flex items-center justify-center text-text-muted text-sm">Loading...</div>
+          <SkeletonList rows={6} className="flex-1 px-5 py-5" />
         ) : (
           <div className="flex-1 overflow-y-auto px-5 py-5 space-y-6">
             <div>
@@ -137,7 +138,7 @@ export function CustomerDetailPanel({ customerId, onClose }: { customerId: numbe
                 ) : (
                   data.quotes.map((q) => (
                     <div key={q.id} className={rowClass}>
-                      <span className="text-sm text-brand-blue font-mono truncate">{q.number}</span>
+                      <span className="text-sm text-brand-blue font-numeric tabular-nums truncate">{q.number}</span>
                       <span className="text-xs text-text-muted shrink-0">{q.status}</span>
                     </div>
                   ))

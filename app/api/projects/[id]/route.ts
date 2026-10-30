@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
+import { isValidProjectStage } from "@/lib/pipelineDb";
 import { logAction, diffFields } from "@/lib/api/audit";
 import { toProject } from "@/lib/inventoryDb";
 import type { Project } from "@/types";
@@ -18,6 +19,9 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const current = toProject(existing[0]);
   if (current.confirmedAt && body.quoteId !== undefined && body.quoteId !== current.quoteId) {
     return NextResponse.json({ error: "This project is confirmed — its stock is reserved against the linked quote, so the quote can't be changed." }, { status: 409 });
+  }
+  if (body.stage !== undefined && !(await isValidProjectStage(body.stage))) {
+    return NextResponse.json({ error: `Unknown stage "${body.stage}"` }, { status: 400 });
   }
   const merged = { ...current, ...body };
   const stageChanged = body.stage !== undefined && body.stage !== current.stage;

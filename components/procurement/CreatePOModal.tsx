@@ -7,7 +7,8 @@ import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { Price } from "@/components/ui/Price";
 import { PO_QUERY_KEY } from "@/lib/hooks/usePurchaseOrders";
-import { CURRENCY_CODES, type CurrencyCode } from "@/lib/utils/currency";
+import { CURRENCIES } from "@/lib/utils/currency";
+import { useCurrency } from "@/lib/hooks/useCurrency";
 import type { Product, VendorPO } from "@/types";
 
 export interface DraftLine { product: Product; qty: number }
@@ -23,7 +24,8 @@ export function CreatePOModal({ brand, lines, onClose, onCreated }: {
 }) {
   const queryClient = useQueryClient();
   const [vendorName, setVendorName] = useState(brand);
-  const [currency, setCurrency] = useState<CurrencyCode>("INR");
+  // POs are raised in the creator's Settings currency.
+  const currency = useCurrency();
   const [notes, setNotes] = useState("");
   const [qty, setQty] = useState<Record<number, string>>(() => Object.fromEntries(lines.map((l) => [l.product.id, String(l.qty)])));
   const [cost, setCost] = useState<Record<number, string>>({});
@@ -71,17 +73,12 @@ export function CreatePOModal({ brand, lines, onClose, onCreated }: {
         </>
       }
     >
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <div className="sm:col-span-2">
-          <label className="block text-sm text-text-primary mb-1">Vendor</label>
-          <input className={input} value={vendorName} onChange={(e) => setVendorName(e.target.value)} />
-        </div>
-        <div>
-          <label className="block text-sm text-text-primary mb-1">Currency</label>
-          <select className={input} value={currency} onChange={(e) => setCurrency(e.target.value as CurrencyCode)}>
-            {CURRENCY_CODES.map((c) => <option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
+      <div>
+        <label className="block text-sm text-text-primary mb-1">Vendor</label>
+        <input className={input} value={vendorName} onChange={(e) => setVendorName(e.target.value)} />
+        <p className="text-xs text-text-muted mt-1.5">
+          Unit costs in {CURRENCIES[currency].name} ({CURRENCIES[currency].symbol}) · from Settings
+        </p>
       </div>
 
       <div className="overflow-x-auto mt-5">

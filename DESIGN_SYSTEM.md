@@ -10,70 +10,32 @@ The overall feel to aim for: **premium, airy, modern SaaS**. Think Linear or a p
 
 ## Typography
 
-**Primary font family:** Fredoka — loaded via `next/font/google`. Used for all text (headings, body, labels, buttons, nav, everything).
+**Font family:** Questrial — loaded via `next/font/google` (`app/layout.tsx`, CSS variable `--font-questrial`). Used for everything: headings, body, labels, buttons, nav, numbers, chart axes, toasts, and the quote / PO PDFs.
 
-**Numeric font family:** Montserrat — loaded via `next/font/google`, weight **500 (Medium) only**. Used exclusively for numbers where numeric precision reads better in a crisp neutral face: KPI values, currency amounts, quote totals, table numeric cells, chart axes and tooltips, badge counts, stat card numbers. Never use Montserrat for prose or labels.
+Questrial ships **one weight only — 400 (Regular)**. Do not load or request other weights:
+- `font-light` / `font-normal` / `font-medium` all render at 400.
+- Avoid `font-semibold` / `font-bold` on new UI — the browser fakes bold by smearing the 400 glyphs. Create hierarchy with size and colour (`text-text-primary` vs `text-text-secondary` / `text-text-muted`) instead.
 
-Fredoka weights used: **300 (Light)** and **400 (Regular)**.
-Montserrat weight used: **500 (Medium)** only.
+Fallback stack: `Questrial, system-ui, sans-serif`.
 
-No other weights of either font (no 500/600/700 of Fredoka, no 300/400/600 of Montserrat).
+Questrial is a clean geometric sans with open, round letterforms — keep the default line-height and letter-spacing unless a spec below says otherwise.
 
-Fallback stacks:
-- Fredoka: `Fredoka, system-ui, -apple-system, sans-serif`
-- Montserrat: `Montserrat, ui-monospace, system-ui, sans-serif`
-
-Fredoka has slightly rounded, friendly geometry. Because of its softness, avoid packing it too tight — use the default line-height and letter-spacing everywhere unless a spec below says otherwise. Montserrat Medium sits well next to Fredoka because its neutrality lets the numbers do the work without competing.
-
-### When to use Montserrat (rules — not preferences)
-Use Montserrat Medium for:
-- Dashboard KPI values (the big `text-3xl` numbers)
-- Any monetary amount rendered by `formatINR` (in tables, cards, modals, quote totals, PDF totals)
-- Stat card numeric values (Total products, Active count, etc.)
-- Quote subtotal, GST, grand total lines
-- Table cells that are purely numeric: Sr No, Qty, Discount %, Line total, HSN Code, Value, Count columns
-- Chart axis tick labels and tooltip numeric values
-- Badge count numbers (e.g., column count pill on Kanban, "+3" avatar overflow, notification indicator when it shows a number)
-- Section number pill in quote sections (the "1", "2", "3" pills)
-- Auto-generated Sr. No (1.1, 1.2, 2.1) inside quote sections
-
-Do NOT use Montserrat for:
-- Product names, category names, brand names (Fredoka)
-- Labels above numbers like "Revenue Pipeline", "Total value" (Fredoka)
-- Any prose, sentence, or descriptive text (Fredoka)
-- Buttons, nav items, badges' text portion (Fredoka)
-- Dates rendered as text like "2 hours ago", "Mar", "Aug" chart axis month labels — these are text, use Fredoka. (Pure date columns like "2026-08-13" can go either way; default to Fredoka unless it reads clumsily beside Montserrat numbers nearby, in which case use Montserrat for date consistency in that column.)
-
-### How to apply Montserrat in code
-Expose Montserrat as a Tailwind font family alias `font-numeric`:
-
-```ts
-// tailwind.config.ts
-fontFamily: {
-  sans: ['var(--font-fredoka)', 'system-ui', 'sans-serif'],
-  numeric: ['var(--font-montserrat)', 'ui-monospace', 'system-ui', 'sans-serif'],
-}
-```
-
-Then wherever a number belongs, add the class `font-numeric font-medium` (Tailwind `font-medium` maps to weight 500).
-
-Prefer a small `<Num>` component at `/components/ui/Num.tsx` that renders `<span className="font-numeric font-medium tabular-nums">{children}</span>` so number columns line up nicely (tabular-nums keeps digit widths equal — important for tables and totals). Update `formatINR` callers to wrap their output in `<Num>`, or better — have `formatINR` return a React element rather than a string (rename to `<INR value={n} />` component if a refactor is easy). Either approach is acceptable; pick one and be consistent.
+### Numbers
+`font-numeric` (Tailwind alias) and the `<Num>` / `<INR>` components still exist and still add `tabular-nums`, but they now point at Questrial too, so numbers and text share one face. Keep wrapping KPI values, currency, table numeric cells and badge counts in `<Num>` / `<INR>` — it keeps column alignment intact and lets a dedicated numeric face be reintroduced later in one place (`tailwind.config.js` → `fontFamily.numeric`).
 
 ### Typographic scale (Tailwind)
-| Use | Class | Font & weight |
+| Use | Size | Notes |
 |---|---|---|
-| Page title (big, bold-looking) | `text-3xl` | Fredoka 300 (light) — reads as friendly premium heading |
-| KPI value / large number | `text-3xl` | **Montserrat 500 (font-numeric font-medium)** |
-| Section title (inside cards) | `text-lg` | Fredoka 400 (regular) |
-| Card title | `text-base` | Fredoka 400 (regular) |
-| Body | `text-sm` | Fredoka 400 (regular) |
-| Small / meta / footnote | `text-xs` | Fredoka 400 (regular) |
-| Table header | `text-xs uppercase tracking-wider` | Fredoka 400 (regular) |
-| Table numeric cell | `text-sm` | **Montserrat 500 tabular-nums** |
-| Nav item | `text-sm` | Fredoka 400 (regular) |
-| Chart axis label | 12px | **Montserrat 500** |
-
-Letter spacing default. Line height default.
+| Page title | `text-3xl` | Questrial 400 |
+| KPI value / large number | `text-3xl`–`text-4xl` | `<Num>` (tabular) |
+| Section title (inside cards) | `text-lg` | |
+| Card title | `text-base` | |
+| Body | `text-sm` | |
+| Small / meta / footnote | `text-xs` | `text-text-muted` |
+| Table header | `text-xs uppercase tracking-wider` | |
+| Table numeric cell | `text-sm` | `<Num>` (tabular) |
+| Nav item | `text-sm` | |
+| Chart axis label | 12px | `AXIS_TEXT` / `AXIS_NUM` in `components/dashboard/chartBits.tsx` |
 
 ---
 
@@ -126,7 +88,7 @@ background: linear-gradient(135deg, #3A90C3 0%, #44BE4A 100%);
 |---|---|
 | Super Admin | `#8B5CF6` (purple) |
 | Admin | `#3A90C3` (brand blue) |
-| Staff | `#64748B` (slate) |
+| Purchase | `#64748B` (slate) |
 
 ### Chart palette
 Use this exact order for chart series:
@@ -176,22 +138,35 @@ Never use `shadow-lg` / `shadow-xl` presets from Tailwind — they are too harsh
 Content cards use a frosted-glass treatment instead of flat opaque white. This applies to: the generic `Card` component, KPI/stat cards (dashboard, Tickets, Master File, Quote, Users), table/board wrapper cards, and dashboard widget cards (charts, Quote expiry alerts, Team workload).
 
 ```
-bg-white/70 backdrop-blur-xl shadow-card border border-white/60
+glass rounded-3xl            (dashboard widgets add `lift` for a 3px hover rise)
 ```
+
+`.glass` and `.lift` are defined in `app/globals.css` under `@layer components`: a white 60%→32% diagonal gradient, `blur(24px) saturate(170%)`, a 1px white/65 border, an inset white top highlight, and a soft teal-tinted drop shadow. `rounded-3xl` is 20px. Keep it this translucent — at 85%+ white the cards read as plain white and the glass effect disappears.
 
 Tinted stat cards (which already use a translucent hex background like `bg-[#3A90C318]`) keep their tint color and layer `backdrop-blur-xl border border-white/40` on top — the blur is what reads as "glass," the tint stays the accent color.
 
-**Do NOT apply glass to:** the top nav bar, dropdowns (UserMenu, NotificationPanel, SearchPanel), or modals — these stay solid `bg-white` per the Borders/Shadows rules below, so floating overlays remain crisp and legible above scrolling content.
+**Glass variants (all in `app/globals.css`, `@layer components`):**
+- `.glass` — page cards, stat tiles, table/board wrappers, tab pills, skeleton cards, login card.
+- `.glass-pop` — floating overlays that are *not* modals: UserMenu, NotificationPanel, SearchPanel, filter popovers, PriceCell popover, chart tooltips, toasts. More opaque (94%→80%) so text stays crisp over busy content.
+- `.glass-tile` — cards nested inside a glass surface: kanban ticket/project cards, pipeline tiles. Kanban lanes are `bg-white/40 border-white/70`.
+- `.glass-control` — inputs, selects, secondary buttons, icon buttons (`bg-white/70` + 8px blur). On a white modal they render identically to solid white.
 
-For the blur to actually read as glass there must be something soft behind the cards to blur — `LayoutShell` renders three large, low-opacity (`/10`), heavily blurred (`blur-3xl`) brand-color circles fixed behind the page content (`-z-10`), one each in blue, green, and purple. Do not remove these; without them the glass cards look identical to flat white.
+**Do NOT apply glass to:** modals (`components/ui/Modal.tsx` and every `*Modal`) or the slide-over detail panels (TicketPanel, ProjectPanel, CustomerDetailPanel) — these stay solid `bg-white`.
+
+**Toasts:** sonner `<Toaster richColors>` in `app/layout.tsx`; its `--normal-*`, `--success-*`, `--error-*`, `--warning-*`, `--info-*` variables are set to translucent tints and each toast gets `.glass-pop` for the blur. Every mutation shows a success or error toast; optimistic updates (kanban moves, deletes) revert and toast on failure.
+
+**Skeletons:** never show plain "Loading…" text. Use `Skeleton`, `SkeletonTableRows` (table bodies) or `SkeletonList` (lists/panels) from `components/ui/Skeleton.tsx`, or a page skeleton (`TablePageSkeleton`, `DashboardSkeleton`, `TicketsSkeleton`, `ProjectsSkeleton`, `AuditPageSkeleton`). Skeleton bars are `bg-text-primary/[0.07]` so they read on glass.
+
+For the blur to actually read as glass there must be real colour behind the cards. `.app-aurora` (in `globals.css`, rendered once by `LayoutShell` and by the login page) is a fixed full-screen field: a pale blue-green base gradient plus five large radial glows — brand blue top-right and bottom-right, brand green bottom-left, teal centre, soft periwinkle top-left — drifting slowly (28s, disabled under `prefers-reduced-motion`). Do not remove or mute it; without it the glass cards look identical to flat white. Inside glass cards avoid solid fills: table header rows are `bg-white/35`, row hover `bg-white/50`.
 
 ---
 
 ## Layout
 
-- **Page background:** `#FFFFFF` (pure white), with three fixed, low-opacity blurred brand-color circles behind content (see Glassmorphism above) so glass cards have depth to blur against.
-- **Top nav:** `72px` tall, white background, no bottom border, `shadow-card` (subtle bottom shadow to lift off page).
-- **Content padding:** `p-8` (32px). On larger screens, cap main content width at `max-w-[1600px] mx-auto`.
+- **Page background:** the `.app-aurora` colour field (see Glassmorphism above).
+- **Sidebar:** fixed dark glass panel on the left at `lg` and up; content is offset with `lg:pl-[272px]`. See Component specs.
+- **Header:** floats top-right on desktop, level with the page title (no extra row); a glass bar with hamburger on mobile.
+- **Content padding (side gaps are always equal):** `px-4` (16px) on phones, `sm:px-6` (24px) on tablets, and on desktop the content starts at the sidebar's right edge (`lg:pl-[260px]` expanded / `lg:pl-[88px]` collapsed) then pads `lg:px-6` — 24px from the sidebar and 24px from the window edge. The header uses the exact same offsets so its right edge lines up with the cards. Pages must not add their own horizontal padding on their outer wrapper. Content is capped at `max-w-[1860px] mx-auto`.
 - **Grid gap:** `gap-4` (16px) between cards, `gap-3` (12px) for tight rows, `gap-6` (24px) between major sections.
 
 ### Border radius
@@ -215,21 +190,14 @@ For the blur to actually read as glass there must be something soft behind the c
 
 ## Component specs
 
-### Top navigation bar (replaces sidebar)
-- 72px tall, sticky top, white background, `shadow-card`. Full width. Inner padding `px-8`.
-- Three horizontal zones inside a `max-w-[1600px] mx-auto flex items-center justify-between`:
-  - **LEFT** — Logo group:
-    - Logo mark: 36x36 `rounded-xl` square with diagonal brand gradient, white "IA" centered (Barlow 400, ~18px).
-    - Wordmark to the right: "Infinite Automation" in one line, `text-base` weight 400 `text-primary`. No tagline underneath in the nav (saves vertical space).
-  - **CENTER** — Nav items in a horizontal row (`flex items-center gap-1`):
-    - Five items: Dashboard, Tickets, Quote, Master File, Users. Icon-less in the nav (labels only) — icons already on the pages.
-    - Each item: `px-4 py-2 rounded-full text-sm` weight 400. Cursor pointer.
-    - **Inactive:** `text-secondary` (#64748B), hover background `#F9FAFB`, hover text `text-primary`.
-    - **Active:** background `bg-brand-gradient` (horizontal blue-green gradient), text white, no shadow. The pill visually pops as the brand accent.
-  - **RIGHT** — Action strip (`flex items-center gap-2`):
-    - Search circular icon button (Search icon)
-    - Notifications circular icon button (Bell icon) with a small solid brand-blue dot indicator top-right
-    - User avatar button (36x36 rounded-full) — solid brand blue background, white initials from user's full name (e.g., "UR"), `text-xs` weight 400. Clicking opens the UserMenu dropdown.
+### Sidebar + header (`components/layout/Sidebar.tsx`, `TopNav.tsx`)
+- **Sidebar (lg+):** `fixed left-3 top-3 bottom-3 w-[248px] rounded-[28px] bg-sidebar-gradient backdrop-blur-2xl border-white/10 shadow-sidebar text-white` — dark teal smoked glass (80–88% opaque) with a brand-blue glow top-left and brand-green glow at the bottom; the aurora tints through it.
+  - Top: logo in a 40px white `rounded-xl` tile, "Infinite" / "Automation workspace" (`text-white/55`).
+  - Nav grouped under `text-[11px] uppercase tracking-[0.12em] text-white/40` labels: **Workspace** (Dashboard, CRM, Customers, Quote), **Catalogue** (Master File, Procurement), **Admin** (Users, Audit Log — gated by `can()`).
+  - Item: `h-10 px-3 rounded-xl text-sm`, 28px icon tile + label + optional count pill (`font-numeric`). Inactive `text-white/75 hover:bg-white/10`; active `bg-white text-[#0E2533]` with a soft drop shadow and a `bg-brand-gradient` icon tile.
+  - Footer: "New quote" card (`bg-white/10 border-white/15 rounded-2xl`) linking to `/quote?new=1`, then the signed-in user card linking to `/profile`.
+  - **Collapse:** a toggle next to the logo shrinks the sidebar to a 76px icon rail (group labels become thin dividers, counts become a green dot, labels move to tooltips). State lives in `useSidebarStore` (persisted to localStorage); content offset switches between `lg:pl-[260px]` and `lg:pl-[88px]` (the sidebar's right edge).
+- **Header:** on desktop it takes no row of its own — the action strip (date pill in `glass`, Search, Bell, gradient avatar → UserMenu) floats top-right, level with the page title, so page content starts right at the top (`lg:pt-5`). Page title rows therefore must not put buttons on the right; put page actions below the subtitle or in the card toolbar. On mobile it is a `glass rounded-2xl` bar with hamburger + logo; the hamburger opens the same nav (`NavLinks`) in a `bg-sidebar-gradient` panel.
 
 ### UserMenu (dropdown from top-right avatar)
 - Positioned absolute below the avatar, `mt-2 right-0`, width 260px, `rounded-2xl bg-white shadow-dropdown p-2 z-50`.
@@ -264,6 +232,15 @@ For the blur to actually read as glass there must be something soft behind the c
 - Placeholder: `text-muted`.
 - Leading icon: absolute lucide icon at 16px in `text-muted`, input gets `pl-9`.
 - Search input in top nav uses `rounded-full` and slightly larger padding.
+- **Never use a native `<select>`** — the browser draws its own OS menu that ignores the design system. Use `<Select>` from `components/ui/Select.tsx` everywhere (pages, modals, panels). It takes the same `<option value>` children and `onChange={(e) => …e.target.value}` handler as a native select, plus optional `label`, `disabled`, `title`, `className` (styles the trigger; defaults to the standard control).
+  - Trigger: the control styles above + a `ChevronDown` that rotates when open; width stays fixed at the longest option, like a native select.
+  - List: `glass-pop rounded-xl p-1`, portalled to `<body>` at `z-[100]` so modals and panels never clip it; opens upward when there's no room below. Selected option is `text-brand-blue` with a check; hovered/keyboard row is `bg-brand-blue/10`.
+  - Options whose value starts with `__` or label starts with `+` (e.g. "+ Add new brand") render as blue actions below a divider.
+  - Keyboard: ↑/↓, Home/End, Enter/Space, type-ahead, Escape closes the list without closing the surrounding modal.
+- **Never use a native `<input type="date">`** — use `<DatePicker>` from `components/ui/DatePicker.tsx`. Same contract: `value` is a `YYYY-MM-DD` string (or `""`), `onChange={(e) => …e.target.value}`; optional `label`, `disabled`, `placeholder`, `className`, `aria-label`.
+  - Trigger: standard control showing the date as "30 Oct 2026" (or a muted placeholder) with a `CalendarDays` icon.
+  - Calendar: 288px `glass-pop rounded-2xl` popover (same portal/flip behaviour as `<Select>`, via `useAnchoredPopover`), month header with ‹ › arrows, Monday-first week, selected day `bg-brand-gradient text-white`, today ringed in brand blue, other-month days muted. Footer: **Clear** and **Today**.
+  - Keyboard: arrows move by day/week, PageUp/PageDown by month (Shift = year), Home/End to week start/end, Enter/Space picks, Escape closes without closing the modal.
 
 ### Cards
 - Glass treatment (`bg-white/70 backdrop-blur-xl border border-white/60`), `rounded-2xl`, `shadow-card`, `p-6` default. Compact stat cards may use `p-5`. See Glassmorphism section above.
@@ -305,9 +282,6 @@ For the blur to actually read as glass there must be something soft behind the c
 - Horizontal row of overlapping Avatars, each with `ring-2 ring-white` for the overlap effect and negative left margin (`-ml-2` from the second onward).
 - Under each avatar: a small `rounded-full` count badge (18px min-width, `text-[10px]` weight 400, white text, colored background using the semantic palette based on load — green for light, amber medium, red heavy, or just brand-blue if using a single accent).
 - If more than N (e.g., 6) avatars, collapse extras into a final "+X" avatar tile with `bg-surface.alt text-secondary`.
-
-### Sidebar (deprecated)
-There is no left sidebar in this design. All navigation lives in the top nav. Do not create a Sidebar component.
 
 ### Kanban board (Phase 3 — Tickets)
 - Board wrapper: white card (`bg-white rounded-2xl shadow-card p-6`). Inside:
@@ -352,7 +326,7 @@ Standard Badge component with the role color from the table above. Rounded-full 
 
 ### Charts (recharts)
 - Grid `strokeDasharray="3 3"` `#E5E7EB`.
-- Axis text `#94A3B8` size 12, Barlow.
+- Axis text `#94A3B8` size 12, Questrial.
 - Tooltip: white bg, `rounded-xl`, `shadow-dropdown`, no border, `text-primary text-xs`, `p-3`.
 - Legend text `text-secondary text-xs`.
 - Lines: `strokeWidth={2.5}`, dots `r={4}`.
@@ -360,7 +334,7 @@ Standard Badge component with the role color from the table above. Rounded-full 
 - Pie/donut: `innerRadius={50} outerRadius={85} paddingAngle={3}`.
 
 ### PDF (print view)
-- Fonts: `'Fredoka', Arial, sans-serif` for prose; `'Montserrat', ui-monospace, sans-serif` for all numeric content (Subtotal, GST, Grand total, Qty, Rate, Discount, Line total, Sr. No). Include a Google Fonts link tag loading Fredoka weights 300 and 400, and Montserrat weight 500. Wrap numeric cells and totals in a `<span class="num">` and style `.num { font-family: 'Montserrat', ui-monospace, sans-serif; font-weight: 500; font-variant-numeric: tabular-nums; }`.
+- Fonts: `'Questrial', Arial, sans-serif` for everything, loaded with a Google Fonts link (`family=Questrial`). Wrap numeric cells and totals in a `<span class="num">` styled `.num { font-family: 'Questrial', system-ui, sans-serif; font-weight: 400; font-variant-numeric: tabular-nums; }` so columns line up.
 - Header bottom border: **solid `#3A90C3` 3px** (no gradient — print engines unreliable).
 - Section header rows in items table: solid `#3A90C3`, white text.
 - Grand total: solid `#44BE4A`, weight 400, larger size.
@@ -429,29 +403,23 @@ theme: {
 
 Font loading (`app/layout.tsx`):
 ```ts
-import { Fredoka, Montserrat } from 'next/font/google';
+import { Questrial } from 'next/font/google';
 
-const fredoka = Fredoka({
+const questrial = Questrial({
   subsets: ['latin'],
-  weight: ['300', '400'],
-  variable: '--font-fredoka',
+  weight: ['400'],
+  variable: '--font-questrial',
 });
 
-const montserrat = Montserrat({
-  subsets: ['latin'],
-  weight: ['500'],
-  variable: '--font-montserrat',
-});
-
-// on <html>: className={`${fredoka.variable} ${montserrat.variable}`}
+// on <html>: className={questrial.variable}
 ```
 
 `globals.css`:
 ```css
 body {
-  font-family: var(--font-fredoka), system-ui, sans-serif;
+  font-family: var(--font-questrial), system-ui, sans-serif;
   font-weight: 400;
-  background: #FFFFFF;
+  background: linear-gradient(180deg, #F7FAFB 0%, #EEF5F7 100%) fixed;
   color: #0F172A;
 }
 ```
@@ -460,15 +428,13 @@ body {
 
 ## What NOT to do
 
-- Do NOT add a left sidebar. All navigation is top nav.
 - Do NOT use borders on cards. Shadows only.
 - Do NOT use Tailwind's `shadow-lg`, `shadow-xl`, `shadow-2xl` presets. Use the custom `shadow.card`, `shadow.cardHover`, `shadow.modal`, `shadow.dropdown` tokens.
 - Do NOT use dark backgrounds anywhere.
 - Do NOT use orange, red, or any color outside this file's tokens (except semantic colors for their intended purpose).
 - Do NOT use font weights other than 300 and 400.
-- Do NOT use any font other than Fredoka (prose) and Montserrat (numbers).
-- Do NOT use Montserrat for labels, prose, or any non-numeric text.
-- Do NOT use Fredoka for KPI values, totals, or table numeric cells — those are Montserrat 500.
+- Do NOT use any font other than Questrial, and do not load weights other than 400.
+- Do NOT use `font-semibold` / `font-bold` for hierarchy — Questrial has no bold, so the browser fakes it. Use size and colour.
 - Do NOT apply gradients to full page or full card backgrounds. Gradients are reserved for: logo mark, primary buttons, active nav pill, section number pills, print-header accent.
 - Do NOT use emojis in UI copy.
 - Do NOT use rounded-full on rectangular content containers (only on avatars, badges-when-specified, and pill buttons/inputs).

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { toast } from "sonner";
 import type { Role } from "@/types";
+import { DEFAULT_CURRENCY, type CurrencyCode } from "@/lib/utils/currency";
 
 interface CurrentUser {
   id: number;
@@ -9,6 +10,7 @@ interface CurrentUser {
   role: Role;
   ticketAlerts: boolean;
   quoteAlerts: boolean;
+  currency: CurrencyCode;
 }
 
 interface AuthStore {
@@ -17,11 +19,11 @@ interface AuthStore {
   loading: boolean;
   error: string | null;
   fetchMe: () => Promise<void>;
-  updateProfile: (patch: Partial<Pick<CurrentUser, "fullName" | "ticketAlerts" | "quoteAlerts">>) => Promise<void>;
+  updateProfile: (patch: Partial<Pick<CurrentUser, "fullName" | "ticketAlerts" | "quoteAlerts" | "currency">>) => Promise<void>;
   reset: () => void;
 }
 
-const emptyUser: CurrentUser = { id: 0, fullName: "", email: "", role: "Staff", ticketAlerts: true, quoteAlerts: false };
+const emptyUser: CurrentUser = { id: 0, fullName: "", email: "", role: "Purchase", ticketAlerts: true, quoteAlerts: false, currency: DEFAULT_CURRENCY };
 
 export const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,

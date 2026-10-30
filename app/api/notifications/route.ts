@@ -12,6 +12,7 @@ function toNotification(row: Record<string, unknown>): AppNotification {
     color: row.color as string,
     read: row.read as boolean,
     createdAt: row.created_at as string,
+    href: (row.href as string) ?? "",
   };
 }
 
@@ -20,7 +21,7 @@ export async function GET() {
   if (!me) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
 
   const rows = await sql`
-    SELECT id, text, color, read, created_at::text AS created_at
+    SELECT id, text, color, read, href, created_at::text AS created_at
     FROM notifications
     WHERE user_id = ${me.id}
     ORDER BY created_at DESC

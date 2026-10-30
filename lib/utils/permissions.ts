@@ -5,7 +5,7 @@ export type Action =
   | "editProducts"
   | "excelImport"
   | "viewUsers"
-  | "createStaff"
+  | "createPurchase"
   | "createAdmin"
   | "createSuperAdmin"
   | "editUser"
@@ -13,7 +13,8 @@ export type Action =
   | "deleteUser"
   | "viewAuditLog"
   | "exportAuditLog"
-  | "editStock";
+  | "editStock"
+  | "manageComplaints";
 
 export function can(role: Role, action: Action): boolean {
   switch (action) {
@@ -22,7 +23,7 @@ export function can(role: Role, action: Action): boolean {
     case "excelImport":
     case "viewUsers":
       return role === "Super Admin" || role === "Admin";
-    case "createStaff":
+    case "createPurchase":
       return role === "Super Admin" || role === "Admin";
     case "createAdmin":
     case "createSuperAdmin":
@@ -31,7 +32,7 @@ export function can(role: Role, action: Action): boolean {
     case "editUser":
       return role === "Super Admin" || role === "Admin";
     case "editOwnRoleUser":
-      // Admin may only edit/deactivate Staff users, not other Admins/Super Admins
+      // Admin may only edit/deactivate Purchase users, not other Admins/Super Admins
       return role === "Super Admin";
     case "viewAuditLog":
       return role === "Super Admin" || role === "Admin";
@@ -40,6 +41,9 @@ export function can(role: Role, action: Action): boolean {
     case "editStock":
       // Stock counts, min buffer, POs and deliveries are open to every role (unlike product details)
       return true;
+    case "manageComplaints":
+      // Raise, edit, reassign, reopen and delete complaints. Engineers (any role) can still complete their own.
+      return role === "Super Admin" || role === "Admin";
     default:
       return false;
   }

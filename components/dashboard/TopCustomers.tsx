@@ -2,6 +2,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import type { Customer } from "@/types";
+import type { CurrencyCode } from "@/lib/utils/currency";
 
 interface Entry {
   customer: Customer;
@@ -9,11 +10,11 @@ interface Entry {
   ticketCount: number;
 }
 
-export function TopCustomers({ entries, totalCustomers, inactiveCount }: { entries: Entry[]; totalCustomers: number; inactiveCount: number }) {
+export function TopCustomers({ entries, totalCustomers, inactiveCount, currency }: { entries: Entry[]; totalCustomers: number; inactiveCount: number; currency: CurrencyCode }) {
   const maxRevenue = entries[0]?.revenue ?? 1;
 
   return (
-    <div className="bg-white/70 backdrop-blur-xl rounded-2xl shadow-card border border-white/60 p-4 sm:p-6">
+    <div className="glass lift rounded-3xl p-4 sm:p-6">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg text-text-primary">Top customers</h2>
         <span className="text-xs text-text-muted">
@@ -31,7 +32,7 @@ export function TopCustomers({ entries, totalCustomers, inactiveCount }: { entri
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-sm text-text-primary truncate">{customer.name}</span>
-                  <Price value={revenue} currency="INR" className="text-xs shrink-0" />
+                  <Price value={revenue} currency={currency} className="text-xs shrink-0" />
                 </div>
                 <div className="h-1.5 rounded-full bg-surface-alt mt-1.5 overflow-hidden">
                   <div

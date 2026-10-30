@@ -1,7 +1,9 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
+import { MessageCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import { useProjectUnread } from "@/lib/hooks/useProjectUnread";
 import { Price } from "@/components/ui/Price";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { calcQuoteTotal } from "@/lib/utils/quote";
@@ -13,6 +15,7 @@ export function ProjectCard({ project, onClick }: { project: Project; onClick: (
     disabled: project.stage === "Cancelled",
   });
   const quote = useQuoteStore((s) => s.quotes.find((q) => q.id === project.quoteId));
+  const unread = useProjectUnread()[project.id] ?? 0;
 
   const style = transform
     ? {
@@ -36,7 +39,7 @@ export function ProjectCard({ project, onClick }: { project: Project; onClick: (
           onClick();
         }
       }}
-      className={`bg-white rounded-2xl p-4 select-none ${project.stage === "Cancelled" ? "cursor-pointer opacity-70" : "cursor-grab active:cursor-grabbing"} ${isDragging ? "shadow-drag" : "shadow-card hover:shadow-cardHover"}`}
+      className={`glass-tile rounded-2xl p-4 select-none transition-transform hover:-translate-y-0.5 ${project.stage === "Cancelled" ? "cursor-pointer opacity-70" : "cursor-grab active:cursor-grabbing"} ${isDragging ? "!shadow-drag" : ""}`}
     >
       {/* Row 1: customer name */}
       <div className="text-sm text-text-primary line-clamp-2">{project.customerName}</div>
@@ -61,7 +64,15 @@ export function ProjectCard({ project, onClick }: { project: Project; onClick: (
       {/* Row 4: assignee */}
       <div className="mt-3 pt-3 border-t border-border flex items-center">
         <Avatar name={project.assigned} size="xs" />
-        <span className="ml-2 text-xs text-text-secondary">{project.assigned}</span>
+        <span className="ml-2 text-xs text-text-secondary truncate">{project.assigned}</span>
+        {unread > 0 && (
+          <span
+            className="ml-auto inline-flex items-center gap-1 rounded-full bg-brand-gradient text-white text-[11px] px-2 py-0.5 shadow-iconBtn shrink-0"
+            title={`${unread} unread message${unread === 1 ? "" : "s"}`}
+          >
+            <MessageCircle size={11} /> <span className="font-numeric tabular-nums">{unread}</span>
+          </span>
+        )}
       </div>
     </div>
   );

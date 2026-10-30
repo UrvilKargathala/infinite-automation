@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import type { Ticket, TicketMessage, TicketStatus, TicketCategory, TicketPriority, Attachment } from "@/types";
+import { Select } from "@/components/ui/Select";
+import { DatePicker } from "@/components/ui/DatePicker";
 
 const categories: TicketCategory[] = ["Installation", "Repair", "Maintenance", "General"];
 const priorities: TicketPriority[] = ["Low", "Medium", "High", "Urgent"];
@@ -338,13 +340,13 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
             </div>
           </div>
 
-          <select
+          <Select
             className="mt-3 bg-white border border-border rounded-full py-1.5 px-3 text-xs text-text-primary focus:border-brand-blue focus:outline-none transition-colors"
             value={ticket.status}
             onChange={(e) => handleStatusChange(e.target.value as TicketStatus)}
           >
             {statuses.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
+          </Select>
 
           {searchOpen && !editing && (
             <div className="relative mt-3">
@@ -385,25 +387,25 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
             </div>
             <div>
               <label className={labelClass}>Category</label>
-              <select className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as TicketCategory })}>
+              <Select className={inputClass} value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as TicketCategory })}>
                 {categories.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+              </Select>
             </div>
             <div>
               <label className={labelClass}>Priority</label>
-              <select className={inputClass} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as TicketPriority })}>
+              <Select className={inputClass} value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value as TicketPriority })}>
                 {priorities.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
+              </Select>
             </div>
             <div>
               <label className={labelClass}>Assigned to</label>
-              <select className={inputClass} value={form.assigned} onChange={(e) => setForm({ ...form, assigned: e.target.value })}>
+              <Select className={inputClass} value={form.assigned} onChange={(e) => setForm({ ...form, assigned: e.target.value })}>
                 {supportTeam.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
+              </Select>
             </div>
             <div>
               <label className={labelClass}>Last contact</label>
-              <input className={inputClass} type="date" value={form.lastContact} onChange={(e) => setForm({ ...form, lastContact: e.target.value })} />
+              <DatePicker className={inputClass} value={form.lastContact} onChange={(e) => setForm({ ...form, lastContact: e.target.value })} />
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="secondary" onClick={() => setEditing(false)}>Cancel</Button>
@@ -491,7 +493,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                                         onClick={() => { setMenuOpenId(null); if (window.confirm("Delete this message?")) deleteMutation.mutate(m.id); }}
                                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-[#F9FAFB] transition-colors"
                                       >
-                                        <Trash2 size={14} /> Delete for me
+                                        <Trash2 size={14} /> Delete
                                       </button>
                                     )}
                                   </div>

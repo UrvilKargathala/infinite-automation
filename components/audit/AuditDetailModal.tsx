@@ -84,7 +84,7 @@ export function AuditDetailModal({ log, onClose }: { log: AuditLog | null; onClo
                 <div key={key} className="flex items-start gap-2">
                   <span className="text-text-muted shrink-0 w-32">{fieldLabel(key)}</span>
                   {typeof value === "object" && value !== null ? (
-                    <pre className="font-mono bg-surface-alt rounded-lg p-2 text-[11px] overflow-x-auto flex-1 whitespace-pre-wrap">
+                    <pre className="font-numeric tabular-nums bg-surface-alt rounded-lg p-2 text-[11px] overflow-x-auto flex-1 whitespace-pre-wrap">
                       {JSON.stringify(value, null, 2)}
                     </pre>
                   ) : (

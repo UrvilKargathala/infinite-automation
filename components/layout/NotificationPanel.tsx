@@ -37,7 +37,7 @@ export function NotificationPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       ref={ref}
-      className="absolute mt-2 right-0 w-[320px] max-h-[420px] flex flex-col rounded-2xl bg-white shadow-dropdown p-2 z-50"
+      className="absolute mt-2 right-0 w-[320px] max-h-[420px] flex flex-col rounded-2xl glass-pop p-2 z-50"
     >
       <div className="flex items-center justify-between px-3 py-2">
         <span className="text-sm text-text-primary">Notifications</span>
@@ -78,7 +78,7 @@ export function NotificationPanel({ onClose }: { onClose: () => void }) {
           notifications.map((n) => (
             <button
               key={n.id}
-              onClick={() => markRead(n.id)}
+              onClick={() => { markRead(n.id); if (n.href) { onClose(); router.push(n.href); } }}
               className={`w-full flex gap-3 text-left px-3 py-2.5 rounded-xl hover:bg-[#F9FAFB] transition-colors ${
                 n.read ? "" : "bg-[#3A90C308]"
               }`}

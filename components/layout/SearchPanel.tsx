@@ -68,13 +68,13 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
   return (
     <div
       ref={ref}
-      className="absolute mt-2 right-0 w-[360px] max-h-[460px] flex flex-col rounded-2xl bg-white shadow-dropdown p-3 z-50"
+      className="absolute mt-2 right-0 w-[360px] max-h-[460px] flex flex-col rounded-2xl glass-pop p-3 z-50"
     >
       <div className="relative">
         <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
         <input
           ref={inputRef}
-          className="w-full bg-white border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+          className="w-full glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
           placeholder="Search tickets, projects, quotes, products, users..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
@@ -103,7 +103,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
               <div>
                 <div className="flex items-center gap-1.5 px-1 text-xs uppercase tracking-wider text-text-muted mb-1"><Briefcase size={12} /> Projects</div>
                 {projectResults.map((p) => (
-                  <button key={p.id} onClick={() => go("/projects")} className="w-full text-left px-2 py-2 rounded-lg hover:bg-[#F9FAFB] transition-colors">
+                  <button key={p.id} onClick={() => go("/crm")} className="w-full text-left px-2 py-2 rounded-lg hover:bg-[#F9FAFB] transition-colors">
                     <div className="text-sm text-text-primary">{p.customerName}</div>
                     <div className="text-xs text-text-muted">{p.siteAddress}</div>
                   </button>
@@ -116,7 +116,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
                 {quoteResults.map((qt) => (
                   <button key={qt.id} onClick={() => go("/quote")} className="w-full text-left px-2 py-2 rounded-lg hover:bg-[#F9FAFB] transition-colors">
                     <div className="text-sm text-text-primary">{qt.client}</div>
-                    <div className="text-xs text-text-muted font-mono">{qt.number}</div>
+                    <div className="text-xs text-text-muted font-numeric tabular-nums">{qt.number}</div>
                   </button>
                 ))}
               </div>
@@ -127,7 +127,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
                 {productResults.map((p) => (
                   <button key={p.id} onClick={() => go("/master")} className="w-full text-left px-2 py-2 rounded-lg hover:bg-[#F9FAFB] transition-colors">
                     <div className="text-sm text-text-primary">{p.name}</div>
-                    <div className="text-xs text-text-muted font-mono">{p.sku || "—"}</div>
+                    <div className="text-xs text-text-muted font-numeric tabular-nums">{p.sku || "—"}</div>
                   </button>
                 ))}
               </div>
