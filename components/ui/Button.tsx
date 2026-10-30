@@ -4,10 +4,10 @@ import { type LucideIcon } from "lucide-react";
 
 const variants = {
   primary:
-    "bg-brand-gradient text-white hover:opacity-90",
+    "bg-brand-gradient text-white shadow-btn hover:-translate-y-px hover:brightness-105 active:translate-y-0",
   secondary:
     "glass-control border border-border text-text-primary hover:bg-white",
-  danger: "bg-danger text-white hover:opacity-90",
+  danger: "bg-danger text-white shadow-btn hover:brightness-105",
   ghost: "bg-transparent text-text-secondary hover:bg-[#F9FAFB]",
 } as const;
 
@@ -41,7 +41,7 @@ export function Button({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-2 rounded-lg font-normal transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizeClasses[size]} ${className}`}
+      className={`inline-flex items-center gap-2 rounded-lg font-normal transition-all disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed ${variants[variant]} ${sizeClasses[size]} ${className}`}
     >
       {Icon && <Icon size={16} />}
       {children}

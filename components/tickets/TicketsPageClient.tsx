@@ -6,7 +6,6 @@ import { ArrowDown, Minus, ArrowUp, AlertTriangle, Search, Plus, Download, Slide
 import { toast } from "sonner";
 import { useTicketStore } from "@/lib/store/useTicketStore";
 import { Num } from "@/components/ui/Num";
-import { IconTile } from "@/components/ui/IconTile";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
 import { AssigneeStack } from "@/components/tickets/AssigneeStack";
@@ -17,12 +16,13 @@ import { TicketsSkeleton } from "@/components/tickets/TicketsSkeleton";
 import type { Ticket, TicketStatus, TicketPriority } from "@/types";
 import * as XLSX from "xlsx";
 import { Select } from "@/components/ui/Select";
+import { StatCard } from "@/components/ui/StatCard";
 
-const priorityMeta: { priority: TicketPriority; icon: typeof ArrowDown; bg: string; accent: string }[] = [
-  { priority: "Low", icon: ArrowDown, bg: "bg-[#64748B18]", accent: "#64748B" },
-  { priority: "Medium", icon: Minus, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
-  { priority: "High", icon: ArrowUp, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
-  { priority: "Urgent", icon: AlertTriangle, bg: "bg-[#EF444418]", accent: "#EF4444" },
+const priorityMeta: { priority: TicketPriority; icon: typeof ArrowDown }[] = [
+  { priority: "Low", icon: ArrowDown },
+  { priority: "Medium", icon: Minus },
+  { priority: "High", icon: ArrowUp },
+  { priority: "Urgent", icon: AlertTriangle },
 ];
 
 const statuses: TicketStatus[] = ["Open", "In Progress", "On Hold", "Resolved", "Closed"];
@@ -132,18 +132,9 @@ export function TicketsPageClient() {
 
       {/* Priority summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8 mb-6">
-        {priorityMeta.map(({ priority, icon, bg, accent }) => {
-          const priorityTickets = tickets.filter((t) => t.priority === priority);
-          return (
-            <div key={priority} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between ${bg}`} style={{ borderLeft: `3px solid ${accent}` }}>
-              <div>
-                <div className="text-xs uppercase tracking-wider text-text-muted">{priority}</div>
-                <div className="text-2xl font-light text-text-primary mt-1"><Num>{priorityTickets.length}</Num></div>
-              </div>
-              <IconTile icon={icon} />
-            </div>
-          );
-        })}
+        {priorityMeta.map(({ priority, icon }) => (
+          <StatCard key={priority} label={priority} value={tickets.filter((t) => t.priority === priority).length} icon={icon} />
+        ))}
       </div>
 
       {/* Kanban board wrapper card */}

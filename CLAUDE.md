@@ -30,7 +30,7 @@ The company sells hardware (smart switches, controllers, cameras, sensors, Unifi
 - **Backend (Phase 6):** Supabase (auth, Postgres, RLS)
 - **Data fetching (Phase 6):** @tanstack/react-query
 - **Toasts:** sonner
-- **Fonts:** Questrial (all text and numbers — single weight, 400 Regular), loaded via next/font/google. See DESIGN_SYSTEM.md.
+- **Fonts:** Urbanist (all text and numbers — single weight, 400 Regular), loaded via next/font/google. See DESIGN_SYSTEM.md.
 
 Do NOT introduce: Material UI, Chakra, Ant Design, Redux, styled-components, emotion, DaisyUI, shadcn (unless asked), or any other UI/component library.
 

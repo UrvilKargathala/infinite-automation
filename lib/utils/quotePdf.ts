@@ -39,8 +39,8 @@ export function printQuote(quote: Quote, products: Product[], customers: Custome
     : `<div style="font-size:16px;font-weight:400">${q.client}</div>`;
 
   const html = `<!DOCTYPE html><html><head><title>Quote ${q.number}</title>
-<link href="https://fonts.googleapis.com/css2?family=Questrial&display=swap" rel="stylesheet">
-<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Questrial',Arial,sans-serif;font-weight:400;color:#0F172A;padding:40px}.num{font-family:'Questrial',system-ui,sans-serif;font-weight:400;font-variant-numeric:tabular-nums}
+<link href="https://fonts.googleapis.com/css2?family=Urbanist&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Urbanist',Arial,sans-serif;font-weight:400;color:#0F172A;padding:40px}.num{font-family:'Urbanist',system-ui,sans-serif;font-weight:400;font-variant-numeric:tabular-nums}
 .header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:16px;border-bottom:3px solid #3A90C3;margin-bottom:24px}
 .info-blocks{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
 .info-card{background:#F9FAFB;padding:15px;border-radius:6px}

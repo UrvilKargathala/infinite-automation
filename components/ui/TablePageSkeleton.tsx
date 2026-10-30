@@ -9,8 +9,11 @@ export function TablePageSkeleton({ statCards = 4, rows = 6 }: { statCards?: num
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {Array.from({ length: statCards }).map((_, i) => (
           <div key={i} className="glass rounded-3xl p-5">
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-7 w-14 mt-3" />
+            <div className="flex items-start justify-between">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-8 w-8 rounded-full" />
+            </div>
+            <Skeleton className="h-10 w-16 mt-3" />
           </div>
         ))}
       </div>

@@ -9,13 +9,11 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useCustomerStore } from "@/lib/store/useCustomerStore";
 import { can } from "@/lib/utils/permissions";
-import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { QuoteModal } from "@/components/quote/QuoteModal";
 import { Pagination } from "@/components/ui/Pagination";
 import { Price } from "@/components/ui/Price";
-import { Num } from "@/components/ui/Num";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 import { printQuote } from "@/lib/utils/quotePdf";
 import { exportQuotes, parseQuotes } from "@/lib/utils/quoteExcel";
@@ -23,6 +21,7 @@ import { useCurrency } from "@/lib/hooks/useCurrency";
 import { useKits } from "@/lib/hooks/useKits";
 import type { Quote, QuoteStatus } from "@/types";
 import { Select } from "@/components/ui/Select";
+import { StatCard } from "@/components/ui/StatCard";
 
 const statusConfig: Record<QuoteStatus, { color: string; icon: typeof FileText }> = {
   Draft: { color: "#64748B", icon: FileText },
@@ -81,10 +80,10 @@ export default function QuotePage() {
   useEffect(() => setPage(1), [search, statusFilter]);
 
   const stats = [
-    { label: "Total quotes", value: quotes.length, icon: FileText, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
-    { label: "Draft", value: quotes.filter((q) => q.status === "Draft").length, icon: FileText, bg: "bg-[#64748B18]", accent: "#64748B" },
-    { label: "Accepted", value: quotes.filter((q) => q.status === "Accepted").length, icon: CheckCircle, valueClass: "text-success", bg: "bg-[#10B98118]", accent: "#10B981" },
-    { label: "Rejected", value: quotes.filter((q) => q.status === "Rejected").length, icon: XCircle, valueClass: "text-danger", bg: "bg-[#EF444418]", accent: "#EF4444" },
+    { label: "Total quotes", value: quotes.length, icon: FileText },
+    { label: "Draft", value: quotes.filter((q) => q.status === "Draft").length, icon: FileText },
+    { label: "Accepted", value: quotes.filter((q) => q.status === "Accepted").length, icon: CheckCircle, valueClass: "text-success" },
+    { label: "Rejected", value: quotes.filter((q) => q.status === "Rejected").length, icon: XCircle, valueClass: "text-danger" },
   ];
 
   function openEdit(q: Quote) {
@@ -139,13 +138,7 @@ export default function QuotePage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {stats.map((s) => (
-          <div key={s.label} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
-            <div>
-              <div className="text-xs text-text-muted">{s.label}</div>
-              <div className={`text-2xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}><Num>{s.value}</Num></div>
-            </div>
-            <IconTile icon={s.icon} />
-          </div>
+          <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} valueClass={s.valueClass} />
         ))}
       </div>
 

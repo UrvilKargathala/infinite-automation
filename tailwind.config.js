@@ -8,8 +8,8 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["var(--font-questrial)", "system-ui", "sans-serif"],
-        numeric: ["var(--font-questrial)", "system-ui", "sans-serif"],
+        sans: ["var(--font-urbanist)", "system-ui", "sans-serif"],
+        numeric: ["var(--font-urbanist)", "system-ui", "sans-serif"],
       },
       fontWeight: {
         light: "300",
@@ -54,9 +54,11 @@ module.exports = {
         card: "0 2px 8px -2px rgba(15, 23, 42, 0.06), 0 4px 16px -4px rgba(15, 23, 42, 0.04)",
         cardHover:
           "0 4px 16px -4px rgba(15, 23, 42, 0.10), 0 8px 32px -8px rgba(15, 23, 42, 0.06)",
-        modal: "0 24px 48px -12px rgba(15, 23, 42, 0.18)",
+        modal: "0 2px 6px rgba(15, 23, 42, 0.08), 0 32px 64px -16px rgba(15, 23, 42, 0.38), 0 0 0 1px rgba(15, 23, 42, 0.04)",
         dropdown: "0 8px 24px -8px rgba(15, 23, 42, 0.12)",
         iconBtn: "0 1px 3px 0 rgba(15, 23, 42, 0.05)",
+        icon: "0 6px 14px -4px rgba(58, 144, 195, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35)",
+        btn: "0 8px 18px -8px rgba(58, 144, 195, 0.7), 0 2px 4px rgba(15, 23, 42, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.3)",
         drag: "0 12px 32px -8px rgba(58, 144, 195, 0.25)",
         sidebar: "0 30px 60px -20px rgba(14, 37, 51, 0.55), 0 8px 20px -8px rgba(14, 37, 51, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12)",
       },

@@ -5,9 +5,7 @@ import * as XLSX from "xlsx";
 import { Search, Users2, Building2, Plus, Upload, Download } from "lucide-react";
 import { toast } from "sonner";
 import { useCustomerStore } from "@/lib/store/useCustomerStore";
-import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
-import { Num } from "@/components/ui/Num";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import { CustomerTable } from "@/components/customers/CustomerTable";
 import { CustomerModal } from "@/components/customers/CustomerModal";
@@ -15,6 +13,7 @@ import { CustomerDetailPanel } from "@/components/customers/CustomerDetailPanel"
 import type { Customer, CustomerInput, CustomerSegment } from "@/types";
 import { customerFullName, formatSrNo } from "@/lib/utils/customer";
 import { Select } from "@/components/ui/Select";
+import { StatCard } from "@/components/ui/StatCard";
 
 const segments: CustomerSegment[] = [
   "Residential", "Hospitality", "Government / Council", "Retail", "Healthcare / Aged Care", "Industrial",
@@ -126,20 +125,8 @@ export default function CustomersPage() {
       <p className="text-sm text-text-secondary mt-1">Every customer, with their tickets, projects, and quotes in one place</p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mt-6 sm:mt-8">
-        <div className="rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between bg-[#3A90C318]" style={{ borderLeft: "3px solid #3A90C3" }}>
-          <div>
-            <div className="text-xs text-text-muted">Total customers</div>
-            <div className="text-2xl font-light mt-1 text-text-primary"><Num>{customers.length}</Num></div>
-          </div>
-          <IconTile icon={Users2} />
-        </div>
-        <div className="rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between bg-[#44BE4A18]" style={{ borderLeft: "3px solid #44BE4A" }}>
-          <div>
-            <div className="text-xs text-text-muted">Segments represented</div>
-            <div className="text-2xl font-light mt-1 text-text-primary"><Num>{totalSegments}</Num></div>
-          </div>
-          <IconTile icon={Building2} />
-        </div>
+        <StatCard label="Total customers" value={customers.length} icon={Users2} />
+        <StatCard label="Segments represented" value={totalSegments} icon={Building2} />
       </div>
 
       <div className="glass rounded-3xl overflow-hidden mt-6">

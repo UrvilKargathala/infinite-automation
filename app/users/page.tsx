@@ -6,13 +6,12 @@ import { Search, Users as UsersIcon, CheckCircle, Shield, Plus } from "lucide-re
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { can } from "@/lib/utils/permissions";
-import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
-import { Num } from "@/components/ui/Num";
 import { UserTable } from "@/components/users/UserTable";
 import { UserModal } from "@/components/users/UserModal";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import type { Role, User } from "@/types";
+import { StatCard } from "@/components/ui/StatCard";
 
 export default function UsersPage() {
   const { users, add, update, remove, loaded } = useUserStore();
@@ -92,9 +91,9 @@ export default function UsersPage() {
   }
 
   const stats = [
-    { label: "Total users", value: users.length, icon: UsersIcon, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
-    { label: "Active", value: totalActive, icon: CheckCircle, valueClass: "text-success", bg: "bg-[#10B98118]", accent: "#10B981" },
-    { label: "Admins & Super Admins", value: totalAdmins, icon: Shield, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
+    { label: "Total users", value: users.length, icon: UsersIcon },
+    { label: "Active", value: totalActive, icon: CheckCircle, valueClass: "text-success" },
+    { label: "Admins & Super Admins", value: totalAdmins, icon: Shield },
   ];
 
   return (
@@ -104,15 +103,7 @@ export default function UsersPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {stats.map((s) => (
-          <div key={s.label} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
-            <div>
-              <div className="text-xs text-text-muted">{s.label}</div>
-              <div className={`text-2xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}>
-                <Num>{s.value}</Num>
-              </div>
-            </div>
-            <IconTile icon={s.icon} />
-          </div>
+          <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} valueClass={s.valueClass} />
         ))}
       </div>
 

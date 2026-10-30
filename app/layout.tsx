@@ -1,15 +1,15 @@
 import type { Metadata } from "next";
-import { Questrial } from "next/font/google";
+import { Urbanist } from "next/font/google";
 import { Toaster } from "sonner";
 import "./globals.css";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
 
-// Questrial ships a single weight (Regular 400) — used for all text and numbers.
-const questrial = Questrial({
+// Urbanist is a variable font; we load only 400 on purpose so the whole app keeps one even weight for text and numbers.
+const urbanist = Urbanist({
   subsets: ["latin"],
   weight: ["400"],
-  variable: "--font-questrial",
+  variable: "--font-urbanist",
 });
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={questrial.variable}>
+    <html lang="en" className={urbanist.variable}>
       <body>
         <ReactQueryProvider>
           <LayoutShell>{children}</LayoutShell>

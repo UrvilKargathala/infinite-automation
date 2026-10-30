@@ -1,7 +1,7 @@
 /** Shared SVG defs + axis styling for the dashboard's recharts cards. */
 
 export const AXIS_TEXT = { fill: "#94A3B8", fontSize: 12 };
-export const AXIS_NUM = { ...AXIS_TEXT, fontFamily: "var(--font-questrial), system-ui, sans-serif" };
+export const AXIS_NUM = { ...AXIS_TEXT, fontFamily: "var(--font-urbanist), system-ui, sans-serif" };
 
 /** Diagonal stripes — marks "not yet real" values (pipeline, pending, closed). Call inside a chart's <defs>. */
 export function hatchPattern(id: string, stripe = "#CBD5E1", bg = "#F1F5F9") {

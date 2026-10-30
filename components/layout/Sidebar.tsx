@@ -1,8 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Plus, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Plus, PanelLeftClose } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { NavLinks, useNavItems } from "@/components/layout/NavLinks";
 import { useAuthStore } from "@/lib/store/useAuthStore";
@@ -11,17 +12,29 @@ import { useSidebarStore } from "@/lib/store/useSidebarStore";
 export function Sidebar() {
   const items = useNavItems();
   const user = useAuthStore((s) => s.user);
-  const { collapsed, toggle } = useSidebarStore();
-  const ToggleIcon = collapsed ? PanelLeftOpen : PanelLeftClose;
+  const { collapsed: pinnedCollapsed, toggle } = useSidebarStore();
+  // Hovering (or focusing) the logo of a collapsed sidebar opens it over the page; leaving the sidebar closes it again.
+  // The page layout keys off the pinned state, so peeking never shifts the content.
+  const [peek, setPeek] = useState(false);
+  const collapsed = pinnedCollapsed && !peek;
 
   return (
     <aside
-      className={`hidden lg:flex flex-col fixed left-3 top-3 bottom-3 z-40 rounded-[28px] bg-sidebar-gradient backdrop-blur-2xl backdrop-saturate-150 border border-white/10 shadow-sidebar text-white overflow-hidden transition-[width] duration-200 print:hidden ${
+      onMouseLeave={() => setPeek(false)}
+      className={`hidden lg:flex flex-col fixed left-3 top-3 bottom-3 z-40 rounded-[28px] bg-sidebar-gradient backdrop-blur-2xl backdrop-saturate-150 border border-white/10 shadow-sidebar text-white overflow-hidden transition-[width,box-shadow] duration-200 print:hidden ${
         collapsed ? "w-[76px]" : "w-[248px]"
-      }`}
+      } ${pinnedCollapsed && peek ? "!shadow-[0_40px_80px_-20px_rgba(14,37,51,0.7)]" : ""}`}
     >
       <div className={`flex items-center pt-5 pb-4 ${collapsed ? "flex-col gap-3 px-0" : "gap-1.5 pl-4 pr-2.5"}`}>
-        <Link href="/dashboard" className="flex items-center gap-2.5 min-w-0 flex-1">
+        <Link
+          href="/dashboard"
+          onMouseEnter={() => pinnedCollapsed && setPeek(true)}
+          onFocus={() => pinnedCollapsed && setPeek(true)}
+          // Clicking the logo of a collapsed sidebar pins it open (hover alone only peeks); once open it goes to the dashboard.
+          onClick={(e) => { if (pinnedCollapsed) { e.preventDefault(); setPeek(false); toggle(); } }}
+          title={pinnedCollapsed ? "Click to keep the sidebar open" : undefined}
+          className="flex items-center gap-2.5 min-w-0 flex-1"
+        >
           <span className={`w-9 h-9 rounded-xl bg-white flex items-center justify-center shrink-0 ${collapsed ? "mx-auto" : ""}`}>
             <Image src="/logo.png" alt="Infinite Automation" width={28} height={28} className="w-7 h-7" />
           </span>
@@ -32,14 +45,17 @@ export function Sidebar() {
             </span>
           )}
         </Link>
-        <button
-          onClick={toggle}
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors shrink-0"
-        >
-          <ToggleIcon size={17} strokeWidth={1.75} />
-        </button>
+        {/* Only shown while the sidebar is pinned open — when collapsed, the logo is what opens it. */}
+        {!pinnedCollapsed && (
+          <button
+            onClick={toggle}
+            aria-label="Collapse sidebar"
+            title="Collapse sidebar"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white/60 hover:text-white hover:bg-white/10 transition-colors shrink-0"
+          >
+            <PanelLeftClose size={17} strokeWidth={1.75} />
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto overflow-x-hidden px-3 pt-2">

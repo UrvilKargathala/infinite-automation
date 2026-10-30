@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 body {
-  font-family: var(--font-questrial), system-ui, sans-serif;
+  font-family: var(--font-urbanist), system-ui, sans-serif;
   font-weight: 400;
   background: linear-gradient(180deg, #F7FAFB 0%, #EEF5F7 100%) fixed;
   color: #0f172a;
@@ -12,15 +12,19 @@ body {
 @layer components {
   /* Frosted-glass surface — every page card. Translucent enough that the aurora behind shows through as colour. */
   .glass {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.32));
-    backdrop-filter: blur(24px) saturate(170%);
-    -webkit-backdrop-filter: blur(24px) saturate(170%);
-    border: 1px solid rgba(255, 255, 255, 0.65);
+    /* sheen (top-left light) over the frosted fill: gives the surface a lit edge instead of a flat wash */
+    background:
+      radial-gradient(120% 90% at 0% 0%, rgba(255, 255, 255, 0.55), transparent 55%),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.74), rgba(255, 255, 255, 0.46));
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.8);
     box-shadow:
-      0 1px 2px rgba(7, 28, 38, 0.04),
-      0 12px 32px -12px rgba(10, 70, 96, 0.22),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      inset 0 -1px 0 rgba(255, 255, 255, 0.25);
+      0 1px 1px rgba(7, 28, 38, 0.06),
+      0 4px 10px -2px rgba(10, 70, 96, 0.1),
+      0 22px 44px -18px rgba(10, 70, 96, 0.34),
+      inset 0 1px 0 rgba(255, 255, 255, 0.95),
+      inset 0 -2px 6px rgba(58, 144, 195, 0.1);
   }
 
   /* Floating glass — dropdowns, popovers, chart tooltips, toasts. More opaque than .glass so text stays crisp over busy content. */
@@ -37,21 +41,34 @@ body {
 
   /* Nested glass — cards and tiles that sit inside a .glass surface (kanban cards, pipeline tiles). */
   .glass-tile {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.5));
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.6));
     backdrop-filter: blur(14px) saturate(160%);
     -webkit-backdrop-filter: blur(14px) saturate(160%);
     border: 1px solid rgba(255, 255, 255, 0.8);
     box-shadow:
-      0 1px 2px rgba(7, 28, 38, 0.05),
-      0 8px 20px -12px rgba(10, 70, 96, 0.25),
+      0 1px 2px rgba(7, 28, 38, 0.08),
+      0 6px 14px -4px rgba(10, 70, 96, 0.16),
+      0 16px 28px -14px rgba(10, 70, 96, 0.3),
       inset 0 1px 0 #ffffff;
+  }
+
+  /* Kanban lane — a stage/status column inside a .glass board. Cool-tinted and firmer than .glass so the lane reads
+     against the panel and the white cards read against the lane. */
+  .glass-lane {
+    background: linear-gradient(180deg, rgba(236, 244, 248, 0.92), rgba(228, 239, 244, 0.78));
+    border: 1px solid rgba(255, 255, 255, 0.95);
+    box-shadow:
+      inset 0 2px 8px rgba(10, 70, 96, 0.1),
+      0 1px 0 rgba(255, 255, 255, 0.9),
+      0 12px 24px -18px rgba(10, 70, 96, 0.35);
   }
 
   /* Glass form controls — inputs, selects, secondary buttons on page surfaces. */
   .glass-control {
-    background-color: rgba(255, 255, 255, 0.55);
+    background-color: rgba(255, 255, 255, 0.68);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 1px 2px rgba(7, 28, 38, 0.08), 0 4px 10px -6px rgba(10, 70, 96, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   }
 
   /* Hover lift for dashboard widgets */
@@ -61,8 +78,9 @@ body {
   .lift:hover {
     transform: translateY(-3px);
     box-shadow:
-      0 2px 4px rgba(7, 28, 38, 0.05),
-      0 28px 48px -20px rgba(10, 70, 96, 0.35),
+      0 2px 4px rgba(7, 28, 38, 0.06),
+      0 8px 16px -4px rgba(10, 70, 96, 0.14),
+      0 32px 56px -20px rgba(10, 70, 96, 0.45),
       inset 0 1px 0 rgba(255, 255, 255, 0.95);
   }
 }
@@ -74,16 +92,16 @@ body {
   z-index: -10;
   pointer-events: none;
   overflow: hidden;
-  background: linear-gradient(160deg, #E3EDF4 0%, #E8F3EC 55%, #E5EBF6 100%);
+  background: linear-gradient(160deg, #D5E4EF 0%, #DDEEE4 55%, #D9E2F3 100%);
 }
 .app-aurora::before {
   content: "";
   position: absolute;
   inset: -15%;
   background:
-    radial-gradient(42vw 42vw at 82% 10%, rgba(58, 144, 195, 0.55), transparent 70%),
-    radial-gradient(40vw 40vw at 10% 90%, rgba(68, 190, 74, 0.45), transparent 70%),
-    radial-gradient(32vw 32vw at 50% 55%, rgba(43, 179, 177, 0.3), transparent 70%),
+    radial-gradient(42vw 42vw at 82% 10%, rgba(58, 144, 195, 0.7), transparent 70%),
+    radial-gradient(40vw 40vw at 10% 90%, rgba(68, 190, 74, 0.55), transparent 70%),
+    radial-gradient(32vw 32vw at 50% 55%, rgba(43, 179, 177, 0.4), transparent 70%),
     radial-gradient(28vw 28vw at 22% 18%, rgba(118, 160, 232, 0.32), transparent 70%),
     radial-gradient(26vw 26vw at 92% 82%, rgba(58, 144, 195, 0.28), transparent 70%);
   animation: auroraDrift 28s ease-in-out infinite alternate;

@@ -10,15 +10,13 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 const article = (code: string) => ("AEFHILMNORSX".includes(code[0]) ? "an" : "a");
 
 /** Plain-language snapshot of CRM, complaints, quotes and catalogue gaps. */
-export function AiSummary({ projects, stages, complaints, quotes, products, currency, actions }: {
+export function AiSummary({ projects, stages, complaints, quotes, products, currency }: {
   projects: Project[];
   stages: PipelineStage[];
   complaints: Complaint[];
   quotes: Quote[];
   products: Product[];
   currency: CurrencyCode;
-  /** Quick-create buttons shown in the card's header (New complaint / New quote). */
-  actions?: React.ReactNode;
 }) {
   const now = new Date();
   const m = now.getMonth();
@@ -70,14 +68,11 @@ export function AiSummary({ projects, stages, complaints, quotes, products, curr
 
   return (
     <div className="glass lift rounded-3xl p-4 sm:p-6 mb-6">
-      <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-brand-gradient grid place-items-center shrink-0">
-            <Sparkles size={15} className="text-white" />
-          </div>
-          <h2 className="text-lg text-text-primary">Weekly summary</h2>
+      <div className="flex items-center gap-2 mb-3">
+        <div className="w-8 h-8 rounded-full bg-brand-gradient grid place-items-center shrink-0">
+          <Sparkles size={15} className="text-white" />
         </div>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+        <h2 className="text-lg text-text-primary">Weekly summary</h2>
       </div>
       <p className="text-sm text-text-secondary leading-relaxed">{sentences.join(" ")}</p>
     </div>

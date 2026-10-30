@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
-import { Search, Download, RefreshCw, ChevronRight } from "lucide-react";
+import { Search, Download, RefreshCw, ChevronRight, Activity, CalendarClock, CalendarRange, LayoutGrid } from "lucide-react";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import { useAuthStore } from "@/lib/store/useAuthStore";
@@ -21,6 +21,7 @@ import type { AuditLog, AuditModule, AuditAction } from "@/types";
 import type { AuditStats } from "@/lib/api/audit";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
+import { StatCard } from "@/components/ui/StatCard";
 
 const MODULES: AuditModule[] = ["Master", "CRM", "Quote", "Projects", "User Management", "Auth", "Inventory"];
 const ACTIONS: AuditAction[] = [
@@ -153,26 +154,16 @@ export function AuditPageClient() {
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 mb-6">
-        <div className="glass rounded-3xl p-5">
-          <div className="text-xs uppercase tracking-wider text-text-muted">Total events</div>
-          <div className="text-2xl font-light text-text-primary mt-1"><Num>{stats?.total ?? 0}</Num></div>
-        </div>
-        <div className="glass rounded-3xl p-5">
-          <div className="text-xs uppercase tracking-wider text-text-muted">Today</div>
-          <div className="text-2xl font-light text-brand-blue mt-1"><Num>{stats?.today ?? 0}</Num></div>
-        </div>
-        <div className="glass rounded-3xl p-5">
-          <div className="text-xs uppercase tracking-wider text-text-muted">This week</div>
-          <div className="text-2xl font-light text-text-primary mt-1"><Num>{stats?.thisWeek ?? 0}</Num></div>
-        </div>
-        <div className="glass rounded-3xl p-5">
-          <div className="text-xs uppercase tracking-wider text-text-muted">Modules active</div>
-          <div className="text-2xl font-light text-text-primary mt-1"><Num>{stats?.modulesActiveToday ?? 0}</Num></div>
-        </div>
+        <StatCard label="Total events" value={stats?.total ?? 0} icon={Activity} />
+        <StatCard label="Today" value={stats?.today ?? 0} icon={CalendarClock} valueClass="text-brand-blue" />
+        <StatCard label="This week" value={stats?.thisWeek ?? 0} icon={CalendarRange} />
+        <StatCard label="Modules active" value={stats?.modulesActiveToday ?? 0} icon={LayoutGrid} />
       </div>
 
       {/* Filter bar */}
       <div className="glass rounded-3xl p-4 mb-4 flex items-center gap-3 flex-wrap">
+        {/* Filters grow to fill their row; the buttons are a separate group so a wrap never strands them mid-gap. */}
+        <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
         <DatePicker value={filters.from} onChange={(e) => updateFilter("from", e.target.value)} className={inputClass} aria-label="From date" />
         <DatePicker value={filters.to} onChange={(e) => updateFilter("to", e.target.value)} className={inputClass} aria-label="To date" />
         <Select value={filters.module} onChange={(e) => updateFilter("module", e.target.value as AuditModule | "")} className={inputClass}>
@@ -187,16 +178,17 @@ export function AuditPageClient() {
           <option value="">All users</option>
           {users.map((u) => <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>)}
         </Select>
-        <div className="relative">
+        <div className="relative flex-1 min-w-[220px]">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
           <input
             value={filters.search}
             onChange={(e) => updateFilter("search", e.target.value)}
             placeholder="Search summary, entity, user..."
-            className={`${inputClass} w-64 pl-9`}
+            className={`${inputClass} w-full pl-9`}
           />
         </div>
-        <div className="ml-auto flex items-center gap-2">
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
           {canExport && (
             <Button variant="secondary" icon={Download} onClick={handleExport} disabled={exporting}>
               {exporting ? "Exporting..." : "Export CSV"}

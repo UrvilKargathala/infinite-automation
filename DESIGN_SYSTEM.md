@@ -10,23 +10,23 @@ The overall feel to aim for: **premium, airy, modern SaaS**. Think Linear or a p
 
 ## Typography
 
-**Font family:** Questrial — loaded via `next/font/google` (`app/layout.tsx`, CSS variable `--font-questrial`). Used for everything: headings, body, labels, buttons, nav, numbers, chart axes, toasts, and the quote / PO PDFs.
+**Font family:** Urbanist — loaded via `next/font/google` (`app/layout.tsx`, CSS variable `--font-urbanist`). Used for everything: headings, body, labels, buttons, nav, numbers, chart axes, toasts, and the quote / PO PDFs.
 
-Questrial ships **one weight only — 400 (Regular)**. Do not load or request other weights:
+Urbanist is a variable font, but we load **only weight 400 (Regular)** so the whole UI stays one even weight. Do not load or request other weights:
 - `font-light` / `font-normal` / `font-medium` all render at 400.
 - Avoid `font-semibold` / `font-bold` on new UI — the browser fakes bold by smearing the 400 glyphs. Create hierarchy with size and colour (`text-text-primary` vs `text-text-secondary` / `text-text-muted`) instead.
 
-Fallback stack: `Questrial, system-ui, sans-serif`.
+Fallback stack: `Urbanist, system-ui, sans-serif`.
 
-Questrial is a clean geometric sans with open, round letterforms — keep the default line-height and letter-spacing unless a spec below says otherwise.
+Urbanist is a clean, modern geometric sans with open, round letterforms — keep the default line-height and letter-spacing unless a spec below says otherwise.
 
 ### Numbers
-`font-numeric` (Tailwind alias) and the `<Num>` / `<INR>` components still exist and still add `tabular-nums`, but they now point at Questrial too, so numbers and text share one face. Keep wrapping KPI values, currency, table numeric cells and badge counts in `<Num>` / `<INR>` — it keeps column alignment intact and lets a dedicated numeric face be reintroduced later in one place (`tailwind.config.js` → `fontFamily.numeric`).
+`font-numeric` (Tailwind alias) and the `<Num>` / `<INR>` components still exist and still add `tabular-nums`, but they now point at Urbanist too, so numbers and text share one face. Keep wrapping KPI values, currency, table numeric cells and badge counts in `<Num>` / `<INR>` — it keeps column alignment intact and lets a dedicated numeric face be reintroduced later in one place (`tailwind.config.js` → `fontFamily.numeric`).
 
 ### Typographic scale (Tailwind)
 | Use | Size | Notes |
 |---|---|---|
-| Page title | `text-3xl` | Questrial 400 |
+| Page title | `text-3xl` | Urbanist 400 |
 | KPI value / large number | `text-3xl`–`text-4xl` | `<Num>` (tabular) |
 | Section title (inside cards) | `text-lg` | |
 | Card title | `text-base` | |
@@ -148,7 +148,7 @@ Tinted stat cards (which already use a translucent hex background like `bg-[#3A9
 **Glass variants (all in `app/globals.css`, `@layer components`):**
 - `.glass` — page cards, stat tiles, table/board wrappers, tab pills, skeleton cards, login card.
 - `.glass-pop` — floating overlays that are *not* modals: UserMenu, NotificationPanel, SearchPanel, filter popovers, PriceCell popover, chart tooltips, toasts. More opaque (94%→80%) so text stays crisp over busy content.
-- `.glass-tile` — cards nested inside a glass surface: kanban ticket/project cards, pipeline tiles. Kanban lanes are `bg-white/40 border-white/70`.
+- `.glass-tile` — cards nested inside a glass surface: kanban ticket/project cards, pipeline tiles. Kanban lanes (CRM stage columns, ticket status columns) use `.glass-lane` — a firmer cool-tinted lane so it reads against the board and the white cards read against it.
 - `.glass-control` — inputs, selects, secondary buttons, icon buttons (`bg-white/70` + 8px blur). On a white modal they render identically to solid white.
 
 **Do NOT apply glass to:** modals (`components/ui/Modal.tsx` and every `*Modal`) or the slide-over detail panels (TicketPanel, ProjectPanel, CustomerDetailPanel) — these stay solid `bg-white`.
@@ -245,6 +245,9 @@ For the blur to actually read as glass there must be real colour behind the card
 ### Cards
 - Glass treatment (`bg-white/70 backdrop-blur-xl border border-white/60`), `rounded-2xl`, `shadow-card`, `p-6` default. Compact stat cards may use `p-5`. See Glassmorphism section above.
 - Hover on interactive cards (e.g., TicketCard, KpiCard when clickable): `shadow-cardHover`, no border change.
+- **KPI / stat cards everywhere use `<StatCard>` (`components/ui/StatCard.tsx`)** — Dashboard, CRM, Complaints, Tickets, Quote, Master File, Kits, Customers, Users, Audit. All start as plain glass with no tint or coloured left border; hover (or keyboard focus on linked cards) fades in the diagonal brand gradient (a separate layer, since gradients can't transition) and turns the label, number and footer white; the icon tile turns white too. No card is pre-highlighted. Don't hand-build stat cards. Each card has a gradient icon tile beside its title (`icon` prop);
+- **Depth, not flat:** surfaces are layered — `.glass` has a top-left sheen, a three-step shadow (contact, mid, far) and an inner bottom shade; `.glass-tile`/`.glass-control` are raised with their own shadows; `.glass-lane` is recessed (inset shadow); primary buttons use `shadow-btn` and lift on hover; modals use the heavier `shadow-modal`. The aurora behind is deliberately saturated so the glass has colour to refract. Don't add flat white boxes — use one of these surfaces.
+- **Sidebar:** when collapsed, hovering or focusing the logo opens it over the page (content doesn't shift) and leaving the sidebar closes it; clicking the logo pins it open (there is no expand button while collapsed). When open, a collapse button sits next to the logo and the logo links to the dashboard.
 - Non-interactive cards stay static on hover.
 
 ### Modals
@@ -326,7 +329,7 @@ Standard Badge component with the role color from the table above. Rounded-full 
 
 ### Charts (recharts)
 - Grid `strokeDasharray="3 3"` `#E5E7EB`.
-- Axis text `#94A3B8` size 12, Questrial.
+- Axis text `#94A3B8` size 12, Urbanist.
 - Tooltip: white bg, `rounded-xl`, `shadow-dropdown`, no border, `text-primary text-xs`, `p-3`.
 - Legend text `text-secondary text-xs`.
 - Lines: `strokeWidth={2.5}`, dots `r={4}`.
@@ -334,7 +337,7 @@ Standard Badge component with the role color from the table above. Rounded-full 
 - Pie/donut: `innerRadius={50} outerRadius={85} paddingAngle={3}`.
 
 ### PDF (print view)
-- Fonts: `'Questrial', Arial, sans-serif` for everything, loaded with a Google Fonts link (`family=Questrial`). Wrap numeric cells and totals in a `<span class="num">` styled `.num { font-family: 'Questrial', system-ui, sans-serif; font-weight: 400; font-variant-numeric: tabular-nums; }` so columns line up.
+- Fonts: `'Urbanist', Arial, sans-serif` for everything, loaded with a Google Fonts link (`family=Urbanist`). Wrap numeric cells and totals in a `<span class="num">` styled `.num { font-family: 'Urbanist', system-ui, sans-serif; font-weight: 400; font-variant-numeric: tabular-nums; }` so columns line up.
 - Header bottom border: **solid `#3A90C3` 3px** (no gradient — print engines unreliable).
 - Section header rows in items table: solid `#3A90C3`, white text.
 - Grand total: solid `#44BE4A`, weight 400, larger size.
@@ -403,21 +406,21 @@ theme: {
 
 Font loading (`app/layout.tsx`):
 ```ts
-import { Questrial } from 'next/font/google';
+import { Urbanist } from 'next/font/google';
 
-const questrial = Questrial({
+const urbanist = Urbanist({
   subsets: ['latin'],
   weight: ['400'],
-  variable: '--font-questrial',
+  variable: '--font-urbanist',
 });
 
-// on <html>: className={questrial.variable}
+// on <html>: className={urbanist.variable}
 ```
 
 `globals.css`:
 ```css
 body {
-  font-family: var(--font-questrial), system-ui, sans-serif;
+  font-family: var(--font-urbanist), system-ui, sans-serif;
   font-weight: 400;
   background: linear-gradient(180deg, #F7FAFB 0%, #EEF5F7 100%) fixed;
   color: #0F172A;
@@ -433,8 +436,8 @@ body {
 - Do NOT use dark backgrounds anywhere.
 - Do NOT use orange, red, or any color outside this file's tokens (except semantic colors for their intended purpose).
 - Do NOT use font weights other than 300 and 400.
-- Do NOT use any font other than Questrial, and do not load weights other than 400.
-- Do NOT use `font-semibold` / `font-bold` for hierarchy — Questrial has no bold, so the browser fakes it. Use size and colour.
+- Do NOT use any font other than Urbanist, and do not load weights other than 400.
+- Do NOT use `font-semibold` / `font-bold` for hierarchy — only 400 is loaded, so the browser fakes bold. Use size and colour.
 - Do NOT apply gradients to full page or full card backgrounds. Gradients are reserved for: logo mark, primary buttons, active nav pill, section number pills, print-header accent.
 - Do NOT use emojis in UI copy.
 - Do NOT use rounded-full on rectangular content containers (only on avatars, badges-when-specified, and pill buttons/inputs).

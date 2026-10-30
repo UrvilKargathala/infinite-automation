@@ -6,12 +6,10 @@ import { toast } from "sonner";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { can } from "@/lib/utils/permissions";
-import { IconTile } from "@/components/ui/IconTile";
 import { Button } from "@/components/ui/Button";
 import { ProductTable } from "@/components/master/ProductTable";
 import { ProductModal } from "@/components/master/ProductModal";
 import { useStock } from "@/lib/hooks/useStock";
-import { Num } from "@/components/ui/Num";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import type { Product } from "@/types";
 import { CURRENCY_CODES, priceIn, type CurrencyCode } from "@/lib/utils/currency";
@@ -19,6 +17,7 @@ import { useCurrency } from "@/lib/hooks/useCurrency";
 import * as XLSX from "xlsx";
 import { Select } from "@/components/ui/Select";
 import { MasterTabs } from "@/components/master/MasterTabs";
+import { StatCard } from "@/components/ui/StatCard";
 
 function normalizeBrand(raw: string): string {
   let v = raw.trim();
@@ -193,10 +192,10 @@ export default function MasterPage() {
   }
 
   const stats = [
-    { label: "Total products", value: products.length, icon: Package, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
-    { label: "Active", value: totalActive, icon: CheckCircle, valueClass: "text-success", bg: "bg-[#10B98118]", accent: "#10B981" },
-    { label: "Brands", value: totalBrands, icon: Layers, bg: "bg-[#8B5CF618]", accent: "#8B5CF6" },
-    { label: "Missing price", value: missingPrice, icon: AlertCircle, valueClass: "text-warning", bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
+    { label: "Total products", value: products.length, icon: Package },
+    { label: "Active", value: totalActive, icon: CheckCircle, valueClass: "text-success" },
+    { label: "Brands", value: totalBrands, icon: Layers },
+    { label: "Missing price", value: missingPrice, icon: AlertCircle, valueClass: "text-warning" },
   ];
 
   if (loading) return <TablePageSkeleton statCards={4} />;
@@ -210,15 +209,7 @@ export default function MasterPage() {
       {/* Stat cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {stats.map((s) => (
-          <div key={s.label} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
-            <div>
-              <div className="text-xs text-text-muted">{s.label}</div>
-              <div className={`text-2xl font-light mt-1 ${s.valueClass ?? "text-text-primary"}`}>
-                <Num>{s.value}</Num>
-              </div>
-            </div>
-            <IconTile icon={s.icon} />
-          </div>
+          <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} valueClass={s.valueClass} />
         ))}
       </div>
 
@@ -226,10 +217,12 @@ export default function MasterPage() {
       <div className="glass rounded-3xl overflow-hidden mt-6">
         {/* Toolbar */}
         <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
-          <div className="relative w-full sm:w-auto">
+          {/* Filters grow to fill their row; the buttons are a separate group so a wrap never strands them mid-gap. */}
+          <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
+          <div className="relative flex-1 min-w-[200px] max-w-sm">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input
-              className="w-full sm:w-64 glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
+              className="w-full glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search products..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -265,9 +258,9 @@ export default function MasterPage() {
             <option value="set">Priced in {currency}</option>
             <option value="missing">Missing {currency} price</option>
           </Select>
+          </div>
 
-
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap ml-auto">
             {canImport && (
               <>
                 <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleImport} />

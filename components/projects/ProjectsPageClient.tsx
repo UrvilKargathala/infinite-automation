@@ -138,8 +138,13 @@ export function ProjectsPageClient() {
   return (
     <div>
       <CrmTabs />
-      <h1 className="text-3xl font-normal text-text-primary">CRM</h1>
-      <p className="text-sm text-text-secondary mt-1">Inquiry to install — drag cards between stages</p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-normal text-text-primary">CRM</h1>
+          <p className="text-sm text-text-secondary mt-1">Inquiry to install — drag cards between stages</p>
+        </div>
+        <Button icon={Plus} onClick={() => openAdd(STAGE_INQUIRY)}>New Inquiry</Button>
+      </div>
 
       <CrmSummary projects={projects} stages={stages} />
 
@@ -153,13 +158,6 @@ export function ProjectsPageClient() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => openAdd(STAGE_INQUIRY)}
-              className="w-10 h-10 rounded-full bg-brand-gradient flex items-center justify-center text-white shadow-iconBtn"
-              aria-label="New inquiry"
-            >
-              <Plus size={18} />
-            </button>
             <IconButton icon={Download} ariaLabel="Export" onClick={handleExport} />
             <div className="relative">
               <IconButton icon={SlidersHorizontal} ariaLabel="Filter by assignee" onClick={() => setFilterOpen((o) => !o)} />
@@ -207,9 +205,6 @@ export function ProjectsPageClient() {
             />
             Show cancelled
           </label>
-          <div className="ml-auto">
-            <Button icon={Plus} onClick={() => openAdd(STAGE_INQUIRY)}>New Inquiry</Button>
-          </div>
         </div>
 
         {/* Columns */}

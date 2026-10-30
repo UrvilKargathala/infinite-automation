@@ -1,14 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
-import Link from "next/link";
-import { MessageSquareWarning, Plus } from "lucide-react";
+import { MessageSquareWarning, Briefcase, FileText, PackageCheck } from "lucide-react";
 import { useTicketStore } from "@/lib/store/useTicketStore";
 import { useProjectStore } from "@/lib/store/useProjectStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { useCustomerStore } from "@/lib/store/useCustomerStore";
-import { Button } from "@/components/ui/Button";
 import { Num } from "@/components/ui/Num";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
 import { KpiCards, type Kpi } from "@/components/dashboard/KpiCards";
@@ -28,7 +26,6 @@ import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useComplaints } from "@/lib/hooks/useComplaints";
 import { usePipelineStages } from "@/lib/hooks/usePipelineStages";
-import { can } from "@/lib/utils/permissions";
 
 function greeting(): string {
   const h = new Date().getHours();
@@ -53,7 +50,6 @@ export default function DashboardPage() {
   const { complaints, isLoading: complaintsLoading } = useComplaints();
   const { stages, isLoading: stagesLoading } = usePipelineStages();
   const loading = !ticketsLoaded || !projectsLoaded || !quotesLoaded || !productsLoaded || !customersLoaded || complaintsLoading || stagesLoading;
-  const isAdmin = !!user && can(user.role, "manageComplaints");
 
   const head = useMemo(() => computeHeadline(projects, quotes, complaints, stages), [projects, quotes, complaints, stages]);
   // Money widgets only add up quotes in the user's Settings currency — amounts in different currencies are never summed.
@@ -65,10 +61,10 @@ export default function DashboardPage() {
   const inactiveCustomers = useMemo(() => countInactiveCustomers(customers, tickets, projects, quotes), [customers, tickets, projects, quotes]);
 
   const kpis: Kpi[] = [
-    { label: "Pending Complaints", value: <Num>{head.pendingComplaints}</Num>, trend: head.complaintsRaised, trendLabel: "raised", higherIsGood: false, href: "/complaints" },
-    { label: "Active CRM Records", value: <Num>{head.activeRecords}</Num>, trend: head.recordsCreated, trendLabel: "new", higherIsGood: true, href: "/crm" },
-    { label: "Active Quotes", value: <Num>{head.activeQuotes}</Num>, trend: head.quotesCreated, trendLabel: "created", higherIsGood: true, href: "/quote" },
-    { label: head.lastStage === "Install" ? "Installed This Month" : `${head.lastStage} This Month`, value: <Num>{head.installed.cur}</Num>, trend: head.installed, trendLabel: "", higherIsGood: true, href: "/crm" },
+    { label: "Pending Complaints", icon: MessageSquareWarning, value: <Num>{head.pendingComplaints}</Num>, trend: head.complaintsRaised, trendLabel: "raised", higherIsGood: false, href: "/complaints" },
+    { label: "Active CRM Records", icon: Briefcase, value: <Num>{head.activeRecords}</Num>, trend: head.recordsCreated, trendLabel: "new", higherIsGood: true, href: "/crm" },
+    { label: "Active Quotes", icon: FileText, value: <Num>{head.activeQuotes}</Num>, trend: head.quotesCreated, trendLabel: "created", higherIsGood: true, href: "/quote" },
+    { icon: PackageCheck, label: head.lastStage === "Install" ? "Installed This Month" : `${head.lastStage} This Month`, value: <Num>{head.installed.cur}</Num>, trend: head.installed, trendLabel: "", higherIsGood: true, href: "/crm" },
   ];
 
   if (loading) return <DashboardSkeleton />;
@@ -87,18 +83,6 @@ export default function DashboardPage() {
       <div className="mt-6 sm:mt-8">
         <AiSummary
           projects={projects} stages={stages} complaints={complaints} quotes={quotes} products={products} currency={currency}
-          actions={
-            <>
-              {isAdmin && (
-                <Link href="/complaints?new=1">
-                  <Button variant="secondary" icon={MessageSquareWarning}>New complaint</Button>
-                </Link>
-              )}
-              <Link href="/quote?new=1">
-                <Button icon={Plus}>New quote</Button>
-              </Link>
-            </>
-          }
         />
       </div>
 

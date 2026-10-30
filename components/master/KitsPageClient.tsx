@@ -7,7 +7,6 @@ import { MasterTabs } from "./MasterTabs";
 import { KitModal } from "./KitModal";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { IconTile } from "@/components/ui/IconTile";
 import { Num } from "@/components/ui/Num";
 import { Price } from "@/components/ui/Price";
 import { Select } from "@/components/ui/Select";
@@ -21,6 +20,7 @@ import { can } from "@/lib/utils/permissions";
 import { kitCanBuild, kitPricing, kitWarnings } from "@/lib/utils/kits";
 import { exportKits, parseKits } from "@/lib/utils/kitExcel";
 import type { Kit } from "@/types";
+import { StatCard } from "@/components/ui/StatCard";
 
 export function KitsPageClient() {
   const role = useAuthStore((s) => s.user?.role ?? "Purchase");
@@ -50,9 +50,9 @@ export function KitsPageClient() {
 
   const needAttention = kits.filter((k) => kitWarnings(k, byId, currency).length > 0).length;
   const stats = [
-    { label: "Total kits", value: kits.length, icon: Boxes, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
-    { label: "Active", value: kits.filter((k) => k.status === "Active").length, icon: CheckCircle, bg: "bg-[#10B98118]", accent: "#10B981" },
-    { label: "Need attention", value: needAttention, icon: AlertTriangle, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
+    { label: "Total kits", value: kits.length, icon: Boxes },
+    { label: "Active", value: kits.filter((k) => k.status === "Active").length, icon: CheckCircle },
+    { label: "Need attention", value: needAttention, icon: AlertTriangle },
   ];
 
   async function handleImport(e: React.ChangeEvent<HTMLInputElement>) {
@@ -79,13 +79,7 @@ export function KitsPageClient() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-8">
         {stats.map((s) => (
-          <div key={s.label} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between ${s.bg}`} style={{ borderLeft: `3px solid ${s.accent}` }}>
-            <div>
-              <div className="text-xs text-text-muted">{s.label}</div>
-              <div className="text-2xl font-light mt-1 text-text-primary"><Num>{s.value}</Num></div>
-            </div>
-            <IconTile icon={s.icon} />
-          </div>
+          <StatCard key={s.label} label={s.label} value={s.value} icon={s.icon} />
         ))}
       </div>
 

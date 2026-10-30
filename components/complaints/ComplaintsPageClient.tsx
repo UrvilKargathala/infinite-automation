@@ -7,8 +7,6 @@ import { CrmTabs } from "@/components/layout/CrmTabs";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { IconTile } from "@/components/ui/IconTile";
-import { Num } from "@/components/ui/Num";
 import { Select } from "@/components/ui/Select";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import { ComplaintModal } from "./ComplaintModal";
@@ -17,6 +15,7 @@ import { useComplaints } from "@/lib/hooks/useComplaints";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { can } from "@/lib/utils/permissions";
 import type { Complaint, ComplaintStatus } from "@/types";
+import { StatCard } from "@/components/ui/StatCard";
 
 const FILTERS: { key: ComplaintStatus | "All"; label: string }[] = [
   { key: "Pending", label: "Pending" },
@@ -72,29 +71,28 @@ export function ComplaintsPageClient() {
   if (isLoading || !me) return <TablePageSkeleton statCards={3} />;
 
   const tiles = [
-    { label: "Pending", value: pending, icon: Clock, bg: "bg-[#F59E0B18]", accent: "#F59E0B" },
-    { label: "Completed", value: completed, icon: CheckCircle2, bg: "bg-[#44BE4A18]", accent: "#44BE4A" },
-    { label: isAdmin ? "Total complaints" : "Assigned to you", value: complaints.length, icon: MessageSquareWarning, bg: "bg-[#3A90C318]", accent: "#3A90C3" },
+    { label: "Pending", value: pending, icon: Clock },
+    { label: "Completed", value: completed, icon: CheckCircle2 },
+    { label: isAdmin ? "Total complaints" : "Assigned to you", value: complaints.length, icon: MessageSquareWarning },
   ];
   const control = "glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors";
 
   return (
     <div>
       <CrmTabs />
-      <h1 className="text-3xl font-normal text-text-primary">Complaints</h1>
-      <p className="text-sm text-text-secondary mt-1">
-        {isAdmin ? "Raise a complaint, assign an engineer, and track it to completion" : "Complaints assigned to you — mark them completed when fixed"}
-      </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-3xl font-normal text-text-primary">Complaints</h1>
+          <p className="text-sm text-text-secondary mt-1">
+            {isAdmin ? "Raise a complaint, assign an engineer, and track it to completion" : "Complaints assigned to you — mark them completed when fixed"}
+          </p>
+        </div>
+        {isAdmin && <Button icon={Plus} onClick={() => setModal({ open: true, complaint: null })}>New complaint</Button>}
+      </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-8">
-        {tiles.map(({ label, value, icon, bg, accent }) => (
-          <div key={label} className={`rounded-2xl shadow-card backdrop-blur-xl border border-white/40 p-5 flex items-center justify-between ${bg}`} style={{ borderLeft: `3px solid ${accent}` }}>
-            <div>
-              <div className="text-xs uppercase tracking-wider text-text-muted">{label}</div>
-              <div className="text-2xl font-light text-text-primary mt-1"><Num>{value}</Num></div>
-            </div>
-            <IconTile icon={icon} />
-          </div>
+        {tiles.map(({ label, value, icon }) => (
+          <StatCard key={label} label={label} value={value} icon={icon} />
         ))}
       </div>
 
@@ -112,7 +110,7 @@ export function ComplaintsPageClient() {
               </button>
             ))}
           </div>
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[200px] sm:max-w-sm">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
             <input className={`${control} w-full pl-9`} placeholder="Search name, phone, remarks…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
@@ -121,11 +119,6 @@ export function ComplaintsPageClient() {
               <option value="">All engineers</option>
               {engineers.map(([id, name]) => <option key={String(id)} value={String(id)}>{name}</option>)}
             </Select>
-          )}
-          {isAdmin && (
-            <div className="ml-auto">
-              <Button icon={Plus} onClick={() => setModal({ open: true, complaint: null })}>New complaint</Button>
-            </div>
           )}
         </div>
 
