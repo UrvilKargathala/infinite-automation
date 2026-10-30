@@ -7,15 +7,13 @@ import { IconButton } from "@/components/ui/IconButton";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { NotificationPanel } from "@/components/layout/NotificationPanel";
 import { SearchPanel } from "@/components/layout/SearchPanel";
+import { HeaderClock } from "@/components/layout/HeaderClock";
 import { NavLinks, useNavItems } from "@/components/layout/NavLinks";
 import { useSidebarStore } from "@/lib/store/useSidebarStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useNotifications } from "@/lib/hooks/useNotifications";
 import { useAuditUnreadCount } from "@/lib/hooks/useAuditUnreadCount";
 import { initials } from "@/lib/utils/initials";
-
-const todayLabel = () =>
-  new Date().toLocaleDateString("en-AU", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
 
 export function TopNav() {
   const myName = useAuthStore((s) => s.user?.fullName ?? "");
@@ -55,10 +53,7 @@ export function TopNav() {
 
         {/* RIGHT — Actions */}
         <div className="flex items-center gap-1 sm:gap-2 lg:ml-auto lg:pointer-events-auto">
-          <span className="hidden md:inline-flex items-center gap-2 h-9 px-3.5 rounded-full glass text-sm text-text-primary">
-            <span className="w-2 h-2 rounded-full bg-success" />
-            {todayLabel()}
-          </span>
+          <HeaderClock />
           <div className="relative">
             <IconButton icon={Search} ariaLabel="Search" onClick={() => togglePanel("search")} />
             {searchOpen && <SearchPanel onClose={() => setOpenPanel(null)} />}

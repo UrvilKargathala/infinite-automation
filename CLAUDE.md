@@ -40,6 +40,7 @@ Do NOT introduce: Material UI, Chakra, Ant Design, Redux, styled-components, emo
 
 ### Currency
 - **Each user picks a working currency in Settings** (`users.currency`, default `INR`; codes and tax rates in `/lib/utils/currency.ts`). Read it with `useCurrency()` (`/lib/hooks/useCurrency.ts`) — never hard-code `"INR"` in UI.
+- It also sets the header clock's time zone (`timeZone`/`city` on each currency in `currency.ts`: INR → India, AED → Dubai, AUD → Melbourne, …) — `components/layout/HeaderClock.tsx`.
 - It applies to: new quotes and vendor POs (no currency picker in those forms), the product picker and Master File price column, Excel-imported quotes without a Currency column, and every money figure on the Dashboard.
 - A saved quote / PO keeps the currency it was created in (its own tax rate too), so lists, PDFs and project cards show each record in its own currency.
 - Never add amounts in different currencies together — the Dashboard counts only quotes in the user's currency; the Open pipeline card lists each currency separately.

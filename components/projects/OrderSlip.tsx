@@ -84,7 +84,7 @@ export function OrderSlip({ projectId }: { projectId: number }) {
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between gap-3 flex-wrap print:hidden">
         <Link href="/crm" className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary">
-          <ArrowLeft size={16} /> Projects
+          <ArrowLeft size={16} /> CRM
         </Link>
         <Button variant="secondary" icon={Printer} onClick={() => window.print()}>Print</Button>
       </div>

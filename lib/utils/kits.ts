@@ -42,7 +42,7 @@ export function kitWarnings(kit: Pick<Kit, "items" | "discountPct">, productsByI
   const inactive = kit.items.map((i) => productsById.get(i.productId)).filter((p) => p && p.status === "Inactive") as Product[];
   if (inactive.length) out.push(`${inactive.length} inactive component${inactive.length === 1 ? "" : "s"}`);
   const { missingPrice } = kitPricing(kit, productsById, currency);
-  if (missingPrice.length) out.push(`${missingPrice.length} without a ${currency} price`);
+  if (missingPrice.length) out.push(`${missingPrice.length} with no ${currency} price`);
   return out;
 }
 

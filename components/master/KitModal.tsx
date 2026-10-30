@@ -103,7 +103,7 @@ export function KitModal({ open, onClose, kit }: { open: boolean; onClose: () =>
           <div className="sm:text-right sm:border-l sm:border-border sm:pl-5">
             <div className="text-xs text-text-muted">Kit price ({currency})</div>
             {pricing.kitPrice == null
-              ? <div className="text-sm text-warning mt-1">{pricing.missingPrice.length ? `${pricing.missingPrice.length} product${pricing.missingPrice.length === 1 ? "" : "s"} without a ${currency} price` : "Add products"}</div>
+              ? <div className="text-sm text-warning mt-1">{pricing.missingPrice.length ? `${pricing.missingPrice.length} product${pricing.missingPrice.length === 1 ? "" : "s"} with no ${currency} price` : "Add products"}</div>
               : <Price value={pricing.kitPrice} currency={currency} className="text-2xl text-text-primary" />}
           </div>
         </div>

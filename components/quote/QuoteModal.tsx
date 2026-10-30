@@ -524,8 +524,8 @@ function SortableSection({
                       className="w-4 h-4 rounded border-border text-brand-blue focus:ring-brand-blue accent-[#3A90C3]"
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm text-text-primary">{p.name}</div>
-                      <div className="text-xs text-text-muted truncate" title={p.description}>{p.description || "—"}</div>
+                      <div className="text-sm text-text-primary truncate">{p.name}</div>
+                      {p.sku && <div className="text-xs text-text-muted font-numeric">{p.sku}</div>}
                     </div>
                     {selectedQty.has(p.id) && pickerCat.includes("Controller") && (
                       <input
@@ -537,7 +537,9 @@ function SortableSection({
                         className={`${numberInputClass} w-14 text-center shrink-0`}
                       />
                     )}
-                    <Price value={priceIn(p, currency)} currency={currency} className="text-xs shrink-0" />
+                    {priceIn(p, currency) == null
+                      ? <span className="text-sm text-warning shrink-0">Not set</span>
+                      : <Price value={priceIn(p, currency)} currency={currency} className="text-sm text-text-primary shrink-0" />}
                   </label>
                 ))}
               </div>

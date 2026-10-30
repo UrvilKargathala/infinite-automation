@@ -49,7 +49,7 @@ export function KitPickerList({ currency, selected, onChange }: { currency: Curr
                     onChange={(e) => onChange(new Map(selected).set(k.id, Math.max(1, Number(e.target.value) || 1)))}
                     className={`${qtyInput} w-14 text-center shrink-0`} />
                 )}
-                {kitPrice == null ? <span className="text-xs text-warning shrink-0">Not set</span> : <Price value={kitPrice} currency={currency} className="text-xs shrink-0" />}
+                {kitPrice == null ? <span className="text-sm text-warning shrink-0">Not set</span> : <Price value={kitPrice} currency={currency} className="text-sm text-text-primary shrink-0" />}
               </label>
             );
           })}
