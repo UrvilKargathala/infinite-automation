@@ -115,12 +115,62 @@ body {
   .app-aurora::before { animation: none; }
 }
 
-/* CRM chat backdrop — soft faceted geometric pattern behind the message list. */
-.chat-pattern {
-  background-color: #F3F5F7;
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='%230F172A'%3E%3Cpath fill-opacity='.025' d='M0 0l80 46L0 92z'/%3E%3Cpath fill-opacity='.04' d='M80 46l80-46v92z'/%3E%3Cpath fill-opacity='.018' d='M0 92l80-46 80 46-80 46z'/%3E%3Cpath fill-opacity='.035' d='M0 92l80 46-80 22z'/%3E%3Cpath fill-opacity='.022' d='M160 92l-80 46 80 22z'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 160px 160px;
+/* Chat backdrop — live fluid gradient: four blurred blobs drifting and morphing behind the message list. */
+.chat-fluid {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(135deg, #E9F2FA 0%, #E8F6EF 100%);
+}
+.chat-fluid i {
+  position: absolute;
+  display: block;
+  filter: blur(46px);
+  will-change: transform, border-radius;
+}
+.chat-fluid i:nth-child(1) {
+  width: 78%; height: 52%; left: -22%; top: -12%;
+  background: rgba(58, 144, 195, 0.5);
+  animation: fluid-a 17s ease-in-out infinite alternate;
+}
+.chat-fluid i:nth-child(2) {
+  width: 70%; height: 50%; right: -24%; top: 18%;
+  background: rgba(68, 190, 74, 0.4);
+  animation: fluid-b 21s ease-in-out infinite alternate;
+}
+.chat-fluid i:nth-child(3) {
+  width: 66%; height: 46%; left: -10%; bottom: -14%;
+  background: rgba(45, 212, 191, 0.42);
+  animation: fluid-c 19s ease-in-out infinite alternate;
+}
+.chat-fluid i:nth-child(4) {
+  width: 52%; height: 38%; right: -6%; bottom: 8%;
+  background: rgba(139, 92, 246, 0.22);
+  animation: fluid-d 24s ease-in-out infinite alternate;
+}
+@keyframes fluid-a {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1);       border-radius: 62% 38% 54% 46% / 52% 44% 56% 48%; }
+  50%  { transform: translate3d(22%, 30%, 0) rotate(40deg) scale(1.15); border-radius: 40% 60% 42% 58% / 58% 40% 60% 42%; }
+  100% { transform: translate3d(8%, 70%, 0) rotate(85deg) scale(0.95);  border-radius: 56% 44% 62% 38% / 44% 58% 42% 56%; }
+}
+@keyframes fluid-b {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1);         border-radius: 46% 54% 38% 62% / 58% 42% 58% 42%; }
+  50%  { transform: translate3d(-26%, -22%, 0) rotate(-35deg) scale(1.2); border-radius: 60% 40% 56% 44% / 42% 60% 40% 58%; }
+  100% { transform: translate3d(-12%, 34%, 0) rotate(-70deg) scale(1);    border-radius: 38% 62% 46% 54% / 54% 46% 58% 42%; }
+}
+@keyframes fluid-c {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1);        border-radius: 54% 46% 60% 40% / 46% 56% 44% 54%; }
+  50%  { transform: translate3d(34%, -26%, 0) rotate(50deg) scale(1.18); border-radius: 42% 58% 38% 62% / 60% 42% 58% 40%; }
+  100% { transform: translate3d(70%, -8%, 0) rotate(95deg) scale(0.9);   border-radius: 60% 40% 52% 48% / 40% 58% 42% 60%; }
+}
+@keyframes fluid-d {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg) scale(1);          border-radius: 58% 42% 46% 54% / 44% 58% 42% 56%; }
+  50%  { transform: translate3d(-30%, -40%, 0) rotate(-45deg) scale(1.25); border-radius: 44% 56% 60% 40% / 56% 40% 60% 44%; }
+  100% { transform: translate3d(-58%, -12%, 0) rotate(-90deg) scale(1.05); border-radius: 62% 38% 40% 60% / 50% 54% 46% 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-fluid i { animation: none; }
 }
 
 .page-enter {

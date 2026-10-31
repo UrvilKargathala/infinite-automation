@@ -162,14 +162,18 @@ export interface AppNotification {
   href: string;
 }
 
-export type ComplaintStatus = "Pending" | "Completed";
+export type ComplaintStatus = "Pending" | "Completed" | "Cancelled";
 
-/** CRM complaint: raised by Super Admin/Admin, assigned to one engineer, Pending → Completed. */
+/** CRM complaint: raised by Super Admin/Admin, assigned to one engineer, Pending → Completed (or Cancelled). */
 export interface Complaint {
   id: number;
   number: string;
   customerName: string;
   phone: string;
+  /** Where the engineer has to go — filled from the linked customer, editable. */
+  siteAddress: string;
+  /** Optional link to a Customers record. */
+  customerId: number | null;
   remarks: string;
   engineerId: number | null;
   engineerName: string | null;
@@ -180,11 +184,14 @@ export interface Complaint {
   createdByName: string | null;
   createdAt: string;
   completedAt: string | null;
+  /** Why it was cancelled — required when status is Cancelled. */
+  cancelReason: string;
+  cancelledAt: string | null;
 }
 
 export interface ComplaintEvent {
   id: number;
-  kind: "created" | "assigned" | "edited" | "completed" | "reopened";
+  kind: "created" | "assigned" | "edited" | "completed" | "reopened" | "cancelled";
   note: string;
   userName: string;
   createdAt: string;
@@ -202,6 +209,8 @@ export interface Attachment {
   url: string;
   name: string;
   type: string;
+  /** Bytes — set on uploads made since the direct-to-storage upload; older attachments don't have it. */
+  size?: number;
 }
 
 export interface TicketMessage {

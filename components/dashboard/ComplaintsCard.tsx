@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Num } from "@/components/ui/Num";
 import { inMonth } from "@/lib/utils/dashboardMetrics";
+import { COMPLAINT_OVERDUE_DAYS, COMPLAINT_WARN_DAYS } from "@/lib/utils/complaints";
 import type { Complaint } from "@/types";
 
 const ageDays = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
@@ -10,10 +11,12 @@ const ageDays = (iso: string) => Math.max(0, Math.floor((Date.now() - new Date(i
 /** Pending vs completed, then the oldest pending complaints — the ones to chase first. */
 export function ComplaintsCard({ complaints }: { complaints: Complaint[] }) {
   const pending = complaints.filter((c) => c.status === "Pending").sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-  const completed = complaints.length - pending.length;
+  // Cancelled complaints are withdrawn, so they count towards neither side.
+  const live = complaints.filter((c) => c.status !== "Cancelled");
+  const completed = live.length - pending.length;
   const now = new Date();
   const doneThisMonth = complaints.filter((c) => c.completedAt && inMonth(c.completedAt, now.getMonth(), now.getFullYear())).length;
-  const pendingPct = complaints.length ? Math.round((pending.length / complaints.length) * 100) : 0;
+  const pendingPct = live.length ? Math.round((pending.length / live.length) * 100) : 0;
 
   return (
     <div className="glass lift rounded-3xl p-4 sm:p-6 flex flex-col">
@@ -51,7 +54,7 @@ export function ComplaintsCard({ complaints }: { complaints: Complaint[] }) {
                     <div className="text-sm text-text-primary truncate">{c.customerName}</div>
                     <div className="text-xs text-text-muted truncate">{c.number} · {c.engineerName ?? "Unassigned"}</div>
                   </div>
-                  <span className={`text-xs shrink-0 ${age >= 7 ? "text-danger" : age >= 3 ? "text-warning" : "text-text-muted"}`}>
+                  <span className={`text-xs shrink-0 ${age >= COMPLAINT_OVERDUE_DAYS ? "text-danger" : age >= COMPLAINT_WARN_DAYS ? "text-warning" : "text-text-muted"}`}>
                     {age === 0 ? "today" : <><Num>{age}</Num>d</>}
                   </span>
                 </Link>

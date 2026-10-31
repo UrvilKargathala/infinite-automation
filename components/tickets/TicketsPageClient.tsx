@@ -183,7 +183,7 @@ export function TicketsPageClient() {
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <div className="relative w-full sm:w-auto">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <Search size={16} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-text-secondary" />
             <input
               className="w-full sm:w-64 glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search tickets..."

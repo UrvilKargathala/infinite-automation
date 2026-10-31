@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     });
 
     const recipients = await sql`SELECT id FROM users WHERE id != ${me.id} AND status = 'Active' AND ticket_alerts = true`;
-    await createNotifications(recipients.map((r) => r.id as number), `New ticket: ${created.subject}`, "#3A90C3");
+    await createNotifications(recipients.map((r) => r.id as number), `New ticket: ${created.subject}`, "#3A90C3", `/tickets?open=${created.id}`);
   }
 
   return NextResponse.json(created, { status: 201 });

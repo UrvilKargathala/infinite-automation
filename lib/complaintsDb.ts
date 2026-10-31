@@ -7,6 +7,8 @@ export function toComplaint(r: Record<string, unknown>): Complaint {
     number: (r.number as string) ?? "",
     customerName: r.customer_name as string,
     phone: r.phone as string,
+    siteAddress: (r.site_address as string) ?? "",
+    customerId: (r.customer_id as number) ?? null,
     remarks: r.remarks as string,
     engineerId: (r.engineer_id as number) ?? null,
     engineerName: (r.engineer_name as string) ?? null,
@@ -16,12 +18,14 @@ export function toComplaint(r: Record<string, unknown>): Complaint {
     createdByName: (r.created_by_name as string) ?? null,
     createdAt: r.created_at as string,
     completedAt: (r.completed_at as string) ?? null,
+    cancelReason: (r.cancel_reason as string) ?? "",
+    cancelledAt: (r.cancelled_at as string) ?? null,
   };
 }
 
 export async function getComplaint(id: number): Promise<Complaint | null> {
   const rows = await sql`
-    SELECT c.*, c.created_at::text AS created_at, c.completed_at::text AS completed_at,
+    SELECT c.*, c.created_at::text AS created_at, c.completed_at::text AS completed_at, c.cancelled_at::text AS cancelled_at,
            e.full_name AS engineer_name, cb.full_name AS created_by_name
     FROM complaints c
     LEFT JOIN users e ON e.id = c.engineer_id

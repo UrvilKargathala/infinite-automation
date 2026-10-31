@@ -179,7 +179,7 @@ export function AuditPageClient() {
           {users.map((u) => <option key={u.id} value={u.id}>{u.fullName} ({u.role})</option>)}
         </Select>
         <div className="relative flex-1 min-w-[220px]">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+          <Search size={16} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-text-secondary" />
           <input
             value={filters.search}
             onChange={(e) => updateFilter("search", e.target.value)}

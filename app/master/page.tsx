@@ -220,7 +220,7 @@ export default function MasterPage() {
           {/* Filters grow to fill their row; the buttons are a separate group so a wrap never strands them mid-gap. */}
           <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
           <div className="relative flex-1 min-w-[200px] max-w-sm">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <Search size={16} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-text-secondary" />
             <input
               className="w-full glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search products..."

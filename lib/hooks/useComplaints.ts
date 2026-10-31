@@ -15,7 +15,7 @@ async function call<T>(url: string, init?: RequestInit): Promise<T> {
 
 const json = (method: string, data: unknown): RequestInit => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(data) });
 
-export type ComplaintDraft = { customerName: string; phone: string; remarks: string; engineerId: number };
+export type ComplaintDraft = { customerName: string; phone: string; siteAddress: string; customerId: number | null; remarks: string; engineerId: number };
 
 /** Complaints visible to the signed-in user (admins: all; engineers: theirs), refreshed every 30s. */
 export function useComplaints() {
@@ -31,7 +31,7 @@ export function useComplaintEvents(id: number | null) {
   });
 }
 
-/** Create / edit / complete / reopen / delete — each refreshes the list and that complaint's history. */
+/** Create / edit / complete / cancel / reopen / delete — each refreshes the list and that complaint's history. */
 export function useComplaintActions() {
   const qc = useQueryClient();
   const refresh = (id?: number) => {
@@ -55,6 +55,11 @@ export function useComplaintActions() {
     onSuccess: (c) => { refresh(c.id); toast.success(`${c.number} marked completed`); },
     onError,
   });
+  const cancel = useMutation({
+    mutationFn: ({ id, reason }: { id: number; reason: string }) => call<Complaint>(`/api/complaints/${id}`, json("PATCH", { action: "cancel", reason })),
+    onSuccess: (c) => { refresh(c.id); toast.success(`${c.number} cancelled`); },
+    onError,
+  });
   const reopen = useMutation({
     mutationFn: ({ id, note }: { id: number; note: string }) => call<Complaint>(`/api/complaints/${id}`, json("PATCH", { action: "reopen", note })),
     onSuccess: (c) => { refresh(c.id); toast.success(`${c.number} reopened`); },
@@ -65,5 +70,5 @@ export function useComplaintActions() {
     onSuccess: () => { refresh(); toast.success("Complaint deleted"); },
     onError,
   });
-  return { create, edit, complete, reopen, remove };
+  return { create, edit, complete, cancel, reopen, remove };
 }

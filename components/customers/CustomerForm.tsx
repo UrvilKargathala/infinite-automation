@@ -63,9 +63,9 @@ export function CustomerFormFields({ form, customer, notesLabel = "Notes", autoF
 }) {
   const { f, set, bday, setBday } = form;
   const inputClass =
-    "w-full bg-white border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors";
-  const readOnlyClass = "w-full rounded-lg py-2.5 px-3 text-sm text-center bg-surface-alt border border-border text-text-secondary font-numeric tabular-nums";
-  const labelClass = "block text-sm text-text-primary mb-1";
+    "w-full bg-white border border-border rounded-lg py-2 px-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors";
+  const readOnlyClass = "w-full rounded-lg py-2 px-3 text-sm text-center bg-surface-alt border border-border text-text-secondary font-numeric tabular-nums";
+  const labelClass = "block text-xs text-text-secondary mb-1";
   const codePreview = customer?.customerCode || (f.firstName.trim() ? customerCodeBase(f.firstName, f.surname) : "—");
   const field = (label: string, key: keyof Fields, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <div>
@@ -74,8 +74,9 @@ export function CustomerFormFields({ form, customer, notesLabel = "Notes", autoF
     </div>
   );
 
+  // Compact on purpose: same fields as ever, packed two or three to a row so the form needs little scrolling.
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="grid grid-cols-3 gap-3">
         <div>
           <label className={labelClass}>SR No</label>
@@ -93,7 +94,7 @@ export function CustomerFormFields({ form, customer, notesLabel = "Notes", autoF
           {field("Name *", "firstName", { placeholder: "Rahul", autoFocus })}
           {field("Surname", "surname", { placeholder: "Verma" })}
         </div>
-        {!customer && <p className="text-xs text-text-muted mt-1.5">Customer Code is auto-generated from the first two letters of Name and Surname.</p>}
+        {!customer && <p className="text-xs text-text-muted mt-1">Customer Code is auto-generated from the first two letters of Name and Surname.</p>}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -101,8 +102,11 @@ export function CustomerFormFields({ form, customer, notesLabel = "Notes", autoF
         {field("Email", "email", { placeholder: "name@email.com", type: "email" })}
       </div>
 
-      <ArchitectField value={f.architect} onChange={(v) => set("architect", v)} inputClass={inputClass} labelClass={labelClass} />
-      {field("GST No", "gstNo", { placeholder: "22AAAAA0000A1Z5", className: `${inputClass} uppercase` })}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <ArchitectField value={f.architect} onChange={(v) => set("architect", v)} inputClass={inputClass} labelClass={labelClass} />
+        {field("GST No", "gstNo", { placeholder: "22AAAAA0000A1Z5", className: `${inputClass} uppercase` })}
+      </div>
+
       {field("Address", "address", { placeholder: "Street, area" })}
 
       <div className="grid grid-cols-3 gap-3">

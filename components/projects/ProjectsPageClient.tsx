@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
-import { Search, Plus, Download, SlidersHorizontal } from "lucide-react";
+import { Search, Plus, Download, SlidersHorizontal, UserPlus } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useProjectStore } from "@/lib/store/useProjectStore";
@@ -16,6 +16,8 @@ import { CrmTabs } from "@/components/layout/CrmTabs";
 import { StageModal } from "@/components/projects/StageModal";
 import { ProjectModal, type NewProjectData } from "@/components/projects/ProjectModal";
 import { ProjectPanel } from "@/components/projects/ProjectPanel";
+import { CustomerModal } from "@/components/customers/CustomerModal";
+import { useCustomerStore } from "@/lib/store/useCustomerStore";
 import { ProjectsSkeleton } from "@/components/projects/ProjectsSkeleton";
 import { usePipelineStages, STAGES_QUERY_KEY } from "@/lib/hooks/usePipelineStages";
 import { CANCELLED, STAGE_INQUIRY } from "@/lib/utils/pipeline";
@@ -37,6 +39,8 @@ export function ProjectsPageClient() {
   const [stageFilter, setStageFilter] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [customerModalOpen, setCustomerModalOpen] = useState(false);
+  const addCustomer = useCustomerStore((s) => s.add);
   const [defaultStage, setDefaultStage] = useState<ProjectStage>(STAGE_INQUIRY);
   const [panelProjectId, setPanelProjectId] = useState<number | null>(null);
   const panelProject = projects.find((p) => p.id === panelProjectId) ?? null;
@@ -65,7 +69,7 @@ export function ProjectsPageClient() {
 
   const filtered = useMemo(() => {
     let list = projects;
-    if (!showCancelled) list = list.filter((p) => p.stage !== CANCELLED);
+    if (!showCancelled && stageFilter !== CANCELLED) list = list.filter((p) => p.stage !== CANCELLED);
     if (assigneeFilter) list = list.filter((p) => p.assigned === assigneeFilter);
     if (stageFilter) list = list.filter((p) => p.stage === stageFilter);
     if (search.trim()) {
@@ -143,7 +147,10 @@ export function ProjectsPageClient() {
           <h1 className="text-3xl font-normal text-text-primary">CRM</h1>
           <p className="text-sm text-text-secondary mt-1">Inquiry to install — drag cards between stages</p>
         </div>
-        <Button icon={Plus} onClick={() => openAdd(STAGE_INQUIRY)}>New Inquiry</Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="secondary" icon={UserPlus} onClick={() => setCustomerModalOpen(true)}>New Customer</Button>
+          <Button icon={Plus} onClick={() => openAdd(STAGE_INQUIRY)}>New Inquiry</Button>
+        </div>
       </div>
 
       <CrmSummary projects={projects} stages={stages} />
@@ -177,7 +184,7 @@ export function ProjectsPageClient() {
         {/* Toolbar */}
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <div className="relative w-full sm:w-auto">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <Search size={16} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-text-secondary" />
             <input
               className="w-full sm:w-64 glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"
               placeholder="Search CRM..."
@@ -211,7 +218,9 @@ export function ProjectsPageClient() {
         <KanbanBoard
           projects={filtered}
           stages={stages}
-          showCancelled={showCancelled}
+          stageFilter={stageFilter}
+          hideEmpty={Boolean(assigneeFilter) || search.trim() !== ""}
+          showCancelled={showCancelled || stageFilter === CANCELLED}
           onMoveStage={updateStage}
           onAddProject={openAdd}
           onEditProject={openEdit}
@@ -226,6 +235,14 @@ export function ProjectsPageClient() {
         editing={stageModal.editing}
         stages={stages}
         onClose={() => setStageModal({ open: false, editing: null })}
+      />
+
+      {/* Same full customer form and store as the Customers page, so the new customer shows up there straight away. */}
+      <CustomerModal
+        open={customerModalOpen}
+        onClose={() => setCustomerModalOpen(false)}
+        customer={null}
+        onSave={(data) => { addCustomer(data).then((c) => toast.success(`${c.name} added to Customers`)).catch(() => {}); }}
       />
 
       <ProjectModal

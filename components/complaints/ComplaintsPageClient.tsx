@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { CheckCircle2, Clock, MessageSquareWarning, Plus, Search } from "lucide-react";
+import { Ban, CheckCircle2, Clock, MessageSquareWarning, Plus, Search } from "lucide-react";
 import { CrmTabs } from "@/components/layout/CrmTabs";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
@@ -10,17 +10,19 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import { ComplaintModal } from "./ComplaintModal";
-import { ComplaintPanel, STATUS_COLOR } from "./ComplaintPanel";
+import { ComplaintPanel } from "./ComplaintPanel";
 import { useComplaints } from "@/lib/hooks/useComplaints";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { AGE_TONE_CLASS, COMPLAINT_STATUS_COLOR, complaintAge } from "@/lib/utils/complaints";
 import { can } from "@/lib/utils/permissions";
 import type { Complaint, ComplaintStatus } from "@/types";
 import { StatCard } from "@/components/ui/StatCard";
 
 const FILTERS: { key: ComplaintStatus | "All"; label: string }[] = [
+  { key: "All", label: "All" },
   { key: "Pending", label: "Pending" },
   { key: "Completed", label: "Completed" },
-  { key: "All", label: "All" },
+  { key: "Cancelled", label: "Cancelled" },
 ];
 
 const shortDate = (iso: string) => new Date(iso).toLocaleDateString("en-AU", { day: "numeric", month: "short", year: "numeric" });
@@ -58,22 +60,26 @@ export function ComplaintsPageClient() {
     const q = search.trim().toLowerCase();
     return complaints.filter(
       (c) =>
-        (status === "All" || c.status === status) &&
+        // "All" is the live list — cancelled complaints have their own tab.
+        (status === "All" ? c.status !== "Cancelled" : c.status === status) &&
         (!engineer || String(c.engineerId) === engineer) &&
-        (!q || [c.number, c.customerName, c.phone, c.remarks].some((v) => v.toLowerCase().includes(q)))
+        (!q || [c.number, c.customerName, c.phone, c.siteAddress, c.remarks].some((v) => v.toLowerCase().includes(q)))
     );
   }, [complaints, status, engineer, search]);
 
   const pending = complaints.filter((c) => c.status === "Pending").length;
-  const completed = complaints.length - pending;
+  const completed = complaints.filter((c) => c.status === "Completed").length;
+  const cancelled = complaints.filter((c) => c.status === "Cancelled").length;
   const open = complaints.find((c) => c.id === openId) ?? null;
 
-  if (isLoading || !me) return <TablePageSkeleton statCards={3} />;
+  if (isLoading || !me) return <TablePageSkeleton statCards={4} />;
 
-  const tiles = [
-    { label: "Pending", value: pending, icon: Clock },
-    { label: "Completed", value: completed, icon: CheckCircle2 },
-    { label: isAdmin ? "Total complaints" : "Assigned to you", value: complaints.length, icon: MessageSquareWarning },
+  // Each card is also a shortcut to its tab. Total leaves out cancelled ones.
+  const tiles: { label: string; value: number; icon: typeof Clock; filter: ComplaintStatus | "All" }[] = [
+    { label: "Pending", value: pending, icon: Clock, filter: "Pending" },
+    { label: "Completed", value: completed, icon: CheckCircle2, filter: "Completed" },
+    { label: "Cancelled", value: cancelled, icon: Ban, filter: "Cancelled" },
+    { label: isAdmin ? "Total complaints" : "Assigned to you", value: pending + completed, icon: MessageSquareWarning, filter: "All" },
   ];
   const control = "glass-control border border-border rounded-lg py-2.5 px-3 text-sm text-text-primary focus:border-brand-blue focus:outline-none transition-colors";
 
@@ -90,9 +96,9 @@ export function ComplaintsPageClient() {
         {isAdmin && <Button icon={Plus} onClick={() => setModal({ open: true, complaint: null })}>New complaint</Button>}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-6 sm:mt-8">
-        {tiles.map(({ label, value, icon }) => (
-          <StatCard key={label} label={label} value={value} icon={icon} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mt-6 sm:mt-8">
+        {tiles.map(({ label, value, icon, filter }) => (
+          <StatCard key={label} label={label} value={value} icon={icon} active={status === filter} onClick={() => setStatus(filter)} />
         ))}
       </div>
 
@@ -110,8 +116,8 @@ export function ComplaintsPageClient() {
               </button>
             ))}
           </div>
-          <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[200px] sm:max-w-sm">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+          <div className="relative w-full sm:w-auto sm:flex-1 sm:min-w-[200px]">
+            <Search size={16} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-text-secondary" />
             <input className={`${control} w-full pl-9`} placeholder="Search name, phone, remarks…" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           {isAdmin && engineers.length > 1 && (
@@ -136,19 +142,27 @@ export function ComplaintsPageClient() {
                 <tr><td colSpan={7} className="text-center text-text-muted py-14 text-sm">
                   {complaints.length === 0
                     ? isAdmin ? "No complaints yet — raise the first one with “New complaint”." : "Nothing assigned to you yet."
-                    : status === "Pending" ? "No pending complaints 🎉" : "No complaints match these filters."}
+                    : status === "Pending" && !search.trim() && !engineer ? "No pending complaints 🎉"
+                    : status === "Cancelled" && !search.trim() && !engineer ? "No cancelled complaints."
+                    : "No complaints match these filters."}
                 </td></tr>
               ) : rows.map((c) => (
                 <tr key={c.id} onClick={() => setOpenId(c.id)} className="border-t border-border/60 hover:bg-white/50 cursor-pointer transition-colors text-sm">
                   <td className="px-4 py-3 font-numeric tabular-nums text-xs text-brand-blue">{c.number}</td>
-                  <td className="px-4 py-3 text-text-primary">{c.customerName}</td>
+                  <td className="px-4 py-3 text-text-primary">
+                    {c.customerName}
+                    {c.siteAddress && <div className="text-xs text-text-muted font-normal max-w-[220px] truncate" title={c.siteAddress}>{c.siteAddress}</div>}
+                  </td>
                   <td className="px-4 py-3 text-text-secondary font-numeric tabular-nums">{c.phone || "—"}</td>
                   <td className="px-4 py-3 text-text-secondary max-w-[280px] truncate" title={c.remarks}>{c.remarks}</td>
                   <td className="px-4 py-3">
                     {c.engineerName ? <span className="inline-flex items-center gap-2 text-text-primary"><Avatar name={c.engineerName} size="xs" />{c.engineerName}</span> : <span className="text-text-muted">—</span>}
                   </td>
-                  <td className="px-4 py-3"><Badge color={STATUS_COLOR[c.status]}>{c.status}</Badge></td>
-                  <td className="px-4 py-3 text-text-secondary text-xs">{shortDate(c.createdAt)}</td>
+                  <td className="px-4 py-3"><Badge color={COMPLAINT_STATUS_COLOR[c.status]}>{c.status}</Badge></td>
+                  <td className="px-4 py-3 text-text-secondary text-xs">
+                    {shortDate(c.createdAt)}
+                    {(() => { const age = complaintAge(c); return age && <div className={AGE_TONE_CLASS[age.tone]}>{age.label}</div>; })()}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -72,3 +72,13 @@ export function kitQuoteLine(kit: Kit, qty: number, productsById: Map<number, Pr
 export function kitContents(components: QuoteKitComponent[]): string {
   return components.map((c) => `${c.qty}× ${c.name}`).join(", ");
 }
+
+/**
+ * The brand(s) a kit line shows in the quote: "Unifi" when every component is one brand, "Infinite AUS + Unifi" when mixed.
+ * Read from the Master File each time (the frozen component snapshot holds no brand, so older quotes work too);
+ * falls back to "Kit" when no component's brand can be found.
+ */
+export function kitBrandLabel(components: QuoteKitComponent[], productsById: Map<number, Product>): string {
+  const brands = [...new Set(components.map((c) => productsById.get(c.productId)?.brand).filter((b): b is string => !!b))];
+  return brands.length ? brands.join(" + ") : "Kit";
+}

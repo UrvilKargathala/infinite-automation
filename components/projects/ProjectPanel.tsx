@@ -15,6 +15,10 @@ import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useCustomerStore } from "@/lib/store/useCustomerStore";
 import { useDictation } from "@/lib/hooks/useDictation";
+import { useChatAttachments } from "@/lib/hooks/useChatAttachments";
+import { AttachmentList } from "@/components/chat/AttachmentList";
+import { PendingAttachments } from "@/components/chat/PendingAttachments";
+import { ChatBackdrop } from "@/components/chat/ChatBackdrop";
 import { UNREAD_QUERY_KEY } from "@/lib/hooks/useProjectUnread";
 import { CustomerFormFields, useCustomerForm } from "@/components/customers/CustomerForm";
 import { calcQuoteTotal } from "@/lib/utils/quote";
@@ -97,8 +101,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
   const [starredOnly, setStarredOnly] = useState(false);
 
   const [text, setText] = useState("");
-  const [pendingFiles, setPendingFiles] = useState<Attachment[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const files = useChatAttachments(project ? `project-${project.id}` : null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<ProjectMessage | null>(null);
   const [forwardingMsg, setForwardingMsg] = useState<ProjectMessage | null>(null);
@@ -124,7 +127,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
     setActiveTab("chat");
     setStarredOnly(false);
     setText("");
-    setPendingFiles([]);
+    files.clear();
     setReplyingTo(null);
     setSearchOpen(false);
     setSearchQuery("");
@@ -148,7 +151,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
       const res = await fetch(`/api/projects/${project!.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.trim(), attachments: pendingFiles, replyToId: replyingTo?.id ?? null }),
+        body: JSON.stringify({ text: text.trim(), attachments: files.pending, replyToId: replyingTo?.id ?? null }),
       });
       if (!res.ok) throw new Error("Failed to send");
       return res.json() as Promise<ProjectMessage>;
@@ -156,7 +159,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
     onSuccess: (msg) => {
       queryClient.setQueryData<ProjectMessage[]>(["project-messages", project?.id], (prev = []) => [...prev, msg]);
       setText("");
-      setPendingFiles([]);
+      files.clear();
       setReplyingTo(null);
     },
   });
@@ -307,29 +310,22 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
     setMentionQuery(null);
   }
 
-  async function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
+  function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (files.length === 0 || !project) return;
-    setUploading(true);
-    try {
-      for (const file of files) {
-        const body = new FormData();
-        body.append("file", file);
-        const res = await fetch(`/api/projects/${project.id}/messages/upload`, { method: "POST", body });
-        if (!res.ok) throw new Error("Upload failed");
-        const attachment: Attachment = await res.json();
-        setPendingFiles((prev) => [...prev, attachment]);
-      }
-    } catch {
-      toast.error("File upload failed");
-    } finally {
-      setUploading(false);
-    }
+    if (picked.length > 0) files.addFiles(picked);
+  }
+
+  /** Pasting a screenshot or copied file into the message box attaches it. */
+  function handlePaste(e: React.ClipboardEvent) {
+    const pasted = Array.from(e.clipboardData.files);
+    if (pasted.length === 0) return;
+    e.preventDefault();
+    files.addFiles(pasted);
   }
 
   function handleSend() {
-    if (!text.trim() && pendingFiles.length === 0) return;
+    if ((!text.trim() && files.pending.length === 0) || files.busy) return;
     sendMutation.mutate();
   }
 
@@ -445,7 +441,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
 
         {editing ? (
           /* Edit view: the linked customer's full details, then this CRM record's fields */
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div className="flex-1 overflow-y-auto p-5 space-y-3">
             <div className="text-xs uppercase tracking-wider text-text-muted">Customer</div>
             {customer ? (
               <CustomerFormFields form={customerForm} customer={customer} notesLabel="Customer notes" />
@@ -457,15 +453,17 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
               <label className={labelClass}>Site address</label>
               <input className={inputClass} value={form.siteAddress} onChange={(e) => setForm({ ...form, siteAddress: e.target.value })} />
             </div>
-            <div>
-              <label className={labelClass}>Assigned to</label>
-              <Select className={inputClass} value={form.assigned} onChange={(e) => setForm({ ...form, assigned: e.target.value })}>
-                {supportTeam.map((s) => <option key={s} value={s}>{s}</option>)}
-              </Select>
-            </div>
-            <div>
-              <label className={labelClass}>Site architect</label>
-              <input className={inputClass} value={form.architect} onChange={(e) => setForm({ ...form, architect: e.target.value })} placeholder="Optional" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className={labelClass}>Assigned to</label>
+                <Select className={inputClass} value={form.assigned} onChange={(e) => setForm({ ...form, assigned: e.target.value })}>
+                  {supportTeam.map((s) => <option key={s} value={s}>{s}</option>)}
+                </Select>
+              </div>
+              <div>
+                <label className={labelClass}>Site architect</label>
+                <input className={inputClass} value={form.architect} onChange={(e) => setForm({ ...form, architect: e.target.value })} placeholder="Optional" />
+              </div>
             </div>
             <div>
               <label className={labelClass}>Linked quote</label>
@@ -484,12 +482,13 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
               <label className={labelClass}>Notes</label>
               <textarea
                 className={`${inputClass} resize-none`}
-                rows={5}
+                rows={2}
                 value={form.notes}
                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
               />
             </div>
-            <div className="flex items-center gap-2 pt-2">
+            {/* Pinned to the bottom of the scrolling form so Save is always in reach. */}
+            <div className="sticky -bottom-5 -mx-5 -mb-5 mt-1 px-5 py-3 flex items-center gap-2 bg-white/95 backdrop-blur border-t border-border">
               {!isCancelled && (
                 <Button variant="ghost" icon={Ban} onClick={handleCancel} className="text-danger hover:!text-danger mr-auto">Cancel record</Button>
               )}
@@ -556,7 +555,8 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
         ) : (
           <>
             {/* Chat feed on a patterned backdrop, with floating info / star / search controls */}
-            <div className="relative flex-1 min-h-0 chat-pattern">
+            <div className="relative flex-1 min-h-0">
+              <ChatBackdrop />
               <div className="absolute top-3 right-3 z-10 flex items-center gap-2">
                 {[
                   { label: "Details", icon: Info, active: false, onClick: () => setActiveTab("details") },
@@ -578,7 +578,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
               </div>
               {searchOpen && (
                 <div className="absolute top-3 left-3 right-[150px] z-10">
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                  <Search size={14} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-text-secondary" />
                   <input
                     autoFocus
                     value={searchQuery}
@@ -605,7 +605,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
               ) : (
                 grouped.map(([label, msgs]) => (
                   <div key={label}>
-                    <div className="text-center text-[11px] text-text-muted mb-3">{label}</div>
+                    <div className="text-center mb-3"><span className="inline-block px-2.5 py-0.5 rounded-full bg-white/70 text-[11px] text-text-secondary">{label}</span></div>
                     <div className="space-y-3">
                       {msgs.map((m) => (
                         <div key={m.id} className="group flex items-start gap-2">
@@ -738,29 +738,9 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                                     </div>
                                   )
                                 )}
-                                {m.attachments.length > 0 && (() => {
-                                  const images = m.attachments.filter((a) => a.type.startsWith("image/"));
-                                  return (
-                                    <div className="mt-2 grid grid-cols-2 gap-2 max-w-[280px]">
-                                      {m.attachments.map((a, i) =>
-                                        a.type.startsWith("image/") ? (
-                                          <button
-                                            key={i}
-                                            onClick={() => setPreview({ images, index: images.indexOf(a) })}
-                                            className="rounded-lg overflow-hidden border border-border"
-                                          >
-                                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                                            <img src={a.url} alt={a.name} className="w-full h-24 object-cover" />
-                                          </button>
-                                        ) : (
-                                          <a key={i} href={a.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-brand-blue bg-[#F9FAFB] rounded-lg px-2 py-1.5 border border-border">
-                                            <Paperclip size={12} /> {a.name}
-                                          </a>
-                                        )
-                                      )}
-                                    </div>
-                                  );
-                                })()}
+                                {m.attachments.length > 0 && (
+                                  <AttachmentList attachments={m.attachments} onPreviewImage={(images, index) => setPreview({ images, index })} />
+                                )}
                               </>
                             )}
                           </div>
@@ -802,22 +782,12 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 </div>
               )}
 
-              {pendingFiles.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {pendingFiles.map((f, i) => (
-                    <span key={i} className="flex items-center gap-1 text-xs bg-[#F9FAFB] border border-border rounded-full px-2.5 py-1 text-text-secondary">
-                      <Paperclip size={11} /> {f.name}
-                      <button onClick={() => setPendingFiles((p) => p.filter((_, idx) => idx !== i))} className="text-text-muted hover:text-danger ml-1">×</button>
-                    </span>
-                  ))}
-                </div>
-              )}
+              <PendingAttachments pending={files.pending} uploading={files.uploading} onRemove={files.remove} />
 
               <div className="flex items-center gap-2">
                 <input ref={fileRef} type="file" multiple className="hidden" onChange={handleFilePick} />
                 <button
                   onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
                   aria-label="Attach file"
                   title="Attach file"
                   className="w-10 h-10 rounded-full flex items-center justify-center text-text-secondary hover:bg-[#F3F5F7] shrink-0 transition-colors disabled:opacity-40"
@@ -830,6 +800,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                   rows={1}
                   value={text}
                   onChange={(e) => handleTextChange(e.target.value)}
+                  onPaste={handlePaste}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
@@ -851,7 +822,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 )}
                 <button
                   onClick={handleSend}
-                  disabled={(!text.trim() && pendingFiles.length === 0) || sendMutation.isPending}
+                  disabled={(!text.trim() && files.pending.length === 0) || files.busy || sendMutation.isPending}
                   className="w-11 h-11 rounded-full bg-brand-gradient flex items-center justify-center text-white shrink-0 shadow-iconBtn disabled:opacity-40 disabled:bg-none disabled:bg-text-primary/10 disabled:text-text-muted"
                   aria-label="Send"
                 >

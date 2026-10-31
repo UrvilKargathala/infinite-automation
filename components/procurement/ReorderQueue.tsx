@@ -76,7 +76,7 @@ export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => v
       <div className="glass rounded-3xl overflow-hidden">
         <div className="p-3 sm:p-4 border-b border-border flex items-center gap-3 flex-wrap">
           <div className="relative w-full sm:w-64">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+            <Search size={16} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-text-secondary" />
             <input className={`${control} w-full pl-9`} placeholder="Search products..." value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <Select className={control} value={brandFilter} onChange={(e) => setBrandFilter(e.target.value)}>

@@ -14,7 +14,7 @@ export async function GET() {
   if (!me) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   const all = can(me.role, "manageComplaints");
   const rows = await sql`
-    SELECT c.*, c.created_at::text AS created_at, c.completed_at::text AS completed_at,
+    SELECT c.*, c.created_at::text AS created_at, c.completed_at::text AS completed_at, c.cancelled_at::text AS cancelled_at,
            e.full_name AS engineer_name, cb.full_name AS created_by_name
     FROM complaints c
     LEFT JOIN users e ON e.id = c.engineer_id
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   if (!me) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   if (!can(me.role, "manageComplaints")) return NextResponse.json({ error: "Only Super Admins and Admins can raise complaints" }, { status: 403 });
 
-  const body = (await req.json()) as { customerName?: string; phone?: string; remarks?: string; engineerId?: number };
+  const body = (await req.json()) as { customerName?: string; phone?: string; siteAddress?: string; customerId?: number | null; remarks?: string; engineerId?: number };
   const customerName = body.customerName?.trim() ?? "";
   const remarks = body.remarks?.trim() ?? "";
   if (!customerName) return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -39,9 +39,16 @@ export async function POST(req: Request) {
   const [engineer] = await sql`SELECT id, full_name FROM users WHERE id = ${body.engineerId ?? 0} AND status = 'Active'`;
   if (!engineer) return NextResponse.json({ error: "Pick an active engineer" }, { status: 400 });
 
+  let customerId: number | null = null;
+  if (body.customerId) {
+    const [customer] = await sql`SELECT id FROM customers WHERE id = ${body.customerId}`;
+    if (!customer) return NextResponse.json({ error: "That customer no longer exists" }, { status: 400 });
+    customerId = customer.id as number;
+  }
+
   const [row] = await sql`
-    INSERT INTO complaints (customer_name, phone, remarks, engineer_id, created_by)
-    VALUES (${customerName}, ${body.phone?.trim() ?? ""}, ${remarks}, ${engineer.id}, ${me.id})
+    INSERT INTO complaints (customer_name, phone, site_address, customer_id, remarks, engineer_id, created_by)
+    VALUES (${customerName}, ${body.phone?.trim() ?? ""}, ${body.siteAddress?.trim() ?? ""}, ${customerId}, ${remarks}, ${engineer.id}, ${me.id})
     RETURNING id
   `;
   const id = row.id as number;
@@ -59,7 +66,7 @@ export async function POST(req: Request) {
     entityId: id,
     entityName: complaint.number,
     summary: `Raised complaint ${complaint.number} for ${customerName}, assigned to ${engineer.full_name}`,
-    changes: { after: { name: customerName, phone: complaint.phone, remarks, engineer: engineer.full_name, status: "Pending" } },
+    changes: { after: { name: customerName, phone: complaint.phone, siteAddress: complaint.siteAddress, remarks, engineer: engineer.full_name, status: "Pending" } },
     actor: me,
   });
   return NextResponse.json(complaint, { status: 201 });

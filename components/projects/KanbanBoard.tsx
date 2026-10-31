@@ -12,6 +12,8 @@ const COLUMN = "w-[260px] sm:w-72 lg:w-80 shrink-0 min-h-[400px] sm:min-h-[560px
 export function KanbanBoard({
   projects,
   stages,
+  stageFilter,
+  hideEmpty,
   showCancelled,
   onMoveStage,
   onAddProject,
@@ -23,6 +25,10 @@ export function KanbanBoard({
   projects: Project[];
   /** CRM pipeline columns in order (defaults + custom). */
   stages: PipelineStage[];
+  /** When set, only this stage's column is shown. */
+  stageFilter: string;
+  /** A team / search filter is active: hide stages that have no matching records. */
+  hideEmpty: boolean;
   showCancelled: boolean;
   onMoveStage: (id: number, stage: ProjectStage) => void;
   onAddProject: (stage: ProjectStage) => void;
@@ -39,10 +45,15 @@ export function KanbanBoard({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
   );
 
-  const columns: { name: ProjectStage; color: string; custom?: PipelineStage }[] = [
+  const allColumns: { name: ProjectStage; color: string; custom?: PipelineStage }[] = [
     ...stages.map((s) => ({ name: s.name, color: s.color, custom: s.isDefault ? undefined : s })),
     ...(showCancelled ? [{ name: CANCELLED, color: CANCELLED_COLOR }] : []),
   ];
+  // A filter naming a stage that no longer exists (renamed/deleted) falls back to the full board.
+  const byStage = stageFilter ? allColumns.filter((c) => c.name === stageFilter) : allColumns;
+  const base = byStage.length > 0 ? byStage : allColumns;
+  const columns = hideEmpty ? base.filter((c) => projects.some((p) => p.stage === c.name)) : base;
+  const filtering = hideEmpty || Boolean(stageFilter);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -64,6 +75,10 @@ export function KanbanBoard({
     );
   }
 
+  if (columns.length === 0) {
+    return <div className="glass-lane rounded-2xl py-16 text-center text-sm text-text-secondary">No records match these filters.</div>;
+  }
+
   return (
     <DndContext id={dndId} sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="flex gap-4 overflow-x-auto pb-2 scroll-hover">
@@ -80,7 +95,7 @@ export function KanbanBoard({
             onDeleteStage={onDeleteStage}
           />
         ))}
-        <button
+        {!filtering && <button
           onClick={onAddStage}
           className={`w-[200px] sm:w-56 shrink-0 min-h-[400px] sm:min-h-[560px] rounded-2xl border-2 border-dashed border-white/80 bg-white/20 hover:bg-white/40 text-text-secondary hover:text-brand-blue transition-colors flex flex-col items-center justify-center gap-2`}
         >
@@ -89,7 +104,7 @@ export function KanbanBoard({
           </span>
           <span className="text-sm">Add stage</span>
           <span className="text-xs text-text-muted px-6 text-center">Add your own column to the pipeline</span>
-        </button>
+        </button>}
       </div>
     </DndContext>
   );

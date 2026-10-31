@@ -71,7 +71,7 @@ export function SearchPanel({ onClose }: { onClose: () => void }) {
       className="absolute mt-2 right-0 w-[360px] max-h-[460px] flex flex-col rounded-2xl glass-pop p-3 z-50"
     >
       <div className="relative">
-        <SearchIcon size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+        <SearchIcon size={16} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-text-secondary" />
         <input
           ref={inputRef}
           className="w-full glass-control border border-border rounded-lg py-2.5 pl-9 pr-3 text-sm text-text-primary placeholder:text-text-muted focus:border-brand-blue focus:outline-none transition-colors"

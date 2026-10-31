@@ -8,6 +8,10 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
+import { useChatAttachments } from "@/lib/hooks/useChatAttachments";
+import { AttachmentList } from "@/components/chat/AttachmentList";
+import { PendingAttachments } from "@/components/chat/PendingAttachments";
+import { ChatBackdrop } from "@/components/chat/ChatBackdrop";
 import type { Ticket, TicketMessage, TicketStatus, TicketCategory, TicketPriority, Attachment } from "@/types";
 import { Select } from "@/components/ui/Select";
 import { DatePicker } from "@/components/ui/DatePicker";
@@ -76,8 +80,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
 
   const [editing, setEditing] = useState(false);
   const [text, setText] = useState("");
-  const [pendingFiles, setPendingFiles] = useState<Attachment[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const files = useChatAttachments(ticket ? `ticket-${ticket.id}` : null);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [replyingTo, setReplyingTo] = useState<TicketMessage | null>(null);
   const [forwardingMsg, setForwardingMsg] = useState<TicketMessage | null>(null);
@@ -105,7 +108,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
     }
     setEditing(false);
     setText("");
-    setPendingFiles([]);
+    files.clear();
     setReplyingTo(null);
     setSearchOpen(false);
     setSearchQuery("");
@@ -123,7 +126,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
       const res = await fetch(`/api/tickets/${ticket!.id}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: text.trim(), attachments: pendingFiles, replyToId: replyingTo?.id ?? null }),
+        body: JSON.stringify({ text: text.trim(), attachments: files.pending, replyToId: replyingTo?.id ?? null }),
       });
       if (!res.ok) throw new Error("Failed to send");
       return res.json() as Promise<TicketMessage>;
@@ -131,7 +134,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
     onSuccess: (msg) => {
       queryClient.setQueryData<TicketMessage[]>(["ticket-messages", ticket?.id], (prev = []) => [...prev, msg]);
       setText("");
-      setPendingFiles([]);
+      files.clear();
       setReplyingTo(null);
     },
   });
@@ -246,29 +249,22 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
     setMentionQuery(null);
   }
 
-  async function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []);
+  function handleFilePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const picked = Array.from(e.target.files ?? []);
     e.target.value = "";
-    if (files.length === 0 || !ticket) return;
-    setUploading(true);
-    try {
-      for (const file of files) {
-        const body = new FormData();
-        body.append("file", file);
-        const res = await fetch(`/api/tickets/${ticket.id}/messages/upload`, { method: "POST", body });
-        if (!res.ok) throw new Error("Upload failed");
-        const attachment: Attachment = await res.json();
-        setPendingFiles((prev) => [...prev, attachment]);
-      }
-    } catch {
-      toast.error("File upload failed");
-    } finally {
-      setUploading(false);
-    }
+    if (picked.length > 0) files.addFiles(picked);
+  }
+
+  /** Pasting a screenshot or copied file into the message box attaches it. */
+  function handlePaste(e: React.ClipboardEvent) {
+    const pasted = Array.from(e.clipboardData.files);
+    if (pasted.length === 0) return;
+    e.preventDefault();
+    files.addFiles(pasted);
   }
 
   function handleSend() {
-    if (!text.trim() && pendingFiles.length === 0) return;
+    if ((!text.trim() && files.pending.length === 0) || files.busy) return;
     sendMutation.mutate();
   }
 
@@ -350,7 +346,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
 
           {searchOpen && !editing && (
             <div className="relative mt-3">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+              <Search size={14} className="absolute left-3 top-1/2 z-10 -translate-y-1/2 pointer-events-none text-text-secondary" />
               <input
                 autoFocus
                 value={searchQuery}
@@ -415,7 +411,9 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
         ) : (
           <>
             {/* Chat feed */}
-            <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            <div className="relative flex-1 min-h-0">
+              <ChatBackdrop />
+            <div ref={listRef} className="absolute inset-0 overflow-y-auto px-4 py-4 space-y-4">
               <div className="flex items-center justify-center gap-2 text-xs text-text-muted">
                 <span className="px-2 py-1 rounded-full" style={{ backgroundColor: priorityColor + "18", color: priorityColor }}>
                   {ticket.priority}
@@ -430,7 +428,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
               ) : (
                 grouped.map(([label, msgs]) => (
                   <div key={label}>
-                    <div className="text-center text-[11px] text-text-muted mb-3">{label}</div>
+                    <div className="text-center mb-3"><span className="inline-block px-2.5 py-0.5 rounded-full bg-white/70 text-[11px] text-text-secondary">{label}</span></div>
                     <div className="space-y-3">
                       {msgs.map((m) => (
                         <div key={m.id} className="group flex items-start gap-2">
@@ -556,29 +554,9 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                                   </div>
                                 )
                               )}
-                              {m.attachments.length > 0 && (() => {
-                                const images = m.attachments.filter((a) => a.type.startsWith("image/"));
-                                return (
-                                  <div className="mt-2 grid grid-cols-2 gap-2 max-w-[280px]">
-                                    {m.attachments.map((a, i) =>
-                                      a.type.startsWith("image/") ? (
-                                        <button
-                                          key={i}
-                                          onClick={() => setPreview({ images, index: images.indexOf(a) })}
-                                          className="rounded-lg overflow-hidden border border-border"
-                                        >
-                                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                                          <img src={a.url} alt={a.name} className="w-full h-24 object-cover" />
-                                        </button>
-                                      ) : (
-                                        <a key={i} href={a.url} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-brand-blue bg-[#F9FAFB] rounded-lg px-2 py-1.5 border border-border">
-                                          <Paperclip size={12} /> {a.name}
-                                        </a>
-                                      )
-                                    )}
-                                  </div>
-                                );
-                              })()}
+                              {m.attachments.length > 0 && (
+                                <AttachmentList attachments={m.attachments} onPreviewImage={(images, index) => setPreview({ images, index })} />
+                              )}
                             </>
                           )}
                           </div>
@@ -588,6 +566,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                   </div>
                 ))
               )}
+            </div>
             </div>
 
             {/* Composer */}
@@ -619,22 +598,12 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                 </div>
               )}
 
-              {pendingFiles.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-2">
-                  {pendingFiles.map((f, i) => (
-                    <span key={i} className="flex items-center gap-1 text-xs bg-[#F9FAFB] border border-border rounded-full px-2.5 py-1 text-text-secondary">
-                      <Paperclip size={11} /> {f.name}
-                      <button onClick={() => setPendingFiles((p) => p.filter((_, idx) => idx !== i))} className="text-text-muted hover:text-danger ml-1">×</button>
-                    </span>
-                  ))}
-                </div>
-              )}
+              <PendingAttachments pending={files.pending} uploading={files.uploading} onRemove={files.remove} />
 
               <div className="flex items-end gap-2">
                 <input ref={fileRef} type="file" multiple className="hidden" onChange={handleFilePick} />
                 <button
                   onClick={() => fileRef.current?.click()}
-                  disabled={uploading}
                   aria-label="Attach file"
                   className="w-9 h-9 rounded-full flex items-center justify-center text-text-muted hover:bg-[#F9FAFB] shrink-0 transition-colors disabled:opacity-40"
                 >
@@ -646,6 +615,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                   rows={1}
                   value={text}
                   onChange={(e) => handleTextChange(e.target.value)}
+                  onPaste={handlePaste}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
@@ -655,7 +625,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                 />
                 <button
                   onClick={handleSend}
-                  disabled={(!text.trim() && pendingFiles.length === 0) || sendMutation.isPending}
+                  disabled={(!text.trim() && files.pending.length === 0) || files.busy || sendMutation.isPending}
                   className="w-9 h-9 rounded-full bg-brand-gradient flex items-center justify-center text-white shrink-0 disabled:opacity-40"
                   aria-label="Send"
                 >

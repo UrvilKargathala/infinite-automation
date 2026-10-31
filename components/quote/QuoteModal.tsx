@@ -33,7 +33,7 @@ import { Price } from "@/components/ui/Price";
 import { Num } from "@/components/ui/Num";
 import { calcLineTotal, calcSectionSubtotal, calcQuoteTotal } from "@/lib/utils/quote";
 import { printQuote } from "@/lib/utils/quotePdf";
-import { kitContents, kitQuoteLine } from "@/lib/utils/kits";
+import { kitBrandLabel, kitContents, kitQuoteLine } from "@/lib/utils/kits";
 import { useKits } from "@/lib/hooks/useKits";
 import { KitPickerList } from "./KitPickerList";
 import type { Quote, Section, QuoteItem, QuoteStatus, Product } from "@/types";
@@ -375,6 +375,7 @@ function SortableSection({
   const [selectedKits, setSelectedKits] = useState(() => new Map<number, number>());
   const { kits } = useKits();
   const products = useProductStore((s) => s.products);
+  const productsById = useMemo(() => new Map(products.map((p) => [p.id, p])), [products]);
   const isKits = pickerCat === KITS;
 
   const sn = sectionIndex + 1;
@@ -584,7 +585,7 @@ function SortableSection({
                       </>
                     ) : item.description || "—"}
                   </td>
-                  <td className="px-3 py-2 text-xs text-text-secondary whitespace-nowrap">{item.brand}</td>
+                  <td className={`px-3 py-2 text-xs text-text-secondary ${item.components ? "max-w-[140px]" : "whitespace-nowrap"}`}>{item.components ? kitBrandLabel(item.components, productsById) : item.brand}</td>
                   <td className="px-3 py-2 text-right">
                     {isEditing ? (
                       <input

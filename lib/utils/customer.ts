@@ -35,3 +35,9 @@ export function splitBirthday(b: string): { day: string; month: string; year: st
   if (!m) return { day: "", month: "", year: "" };
   return { day: String(Number(m[3])), month: String(Number(m[2])), year: m[1] === "-" ? "" : m[1] };
 }
+
+/** One-line site address from a customer's address fields: "12 Test St, Melbourne, VIC 3000". */
+export function customerSiteAddress(c: { address: string; city: string; state: string; postcode: string }): string {
+  const region = [c.state, c.postcode].filter(Boolean).join(" ");
+  return [c.address, c.city, region].map((p) => p.trim()).filter(Boolean).join(", ");
+}

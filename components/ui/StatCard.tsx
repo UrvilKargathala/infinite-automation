@@ -8,7 +8,7 @@ import { Num } from "@/components/ui/Num";
  *
  * Children rendered in `footer` can use `group-hover:` / `group-focus-visible:` to switch to white too.
  */
-export function StatCard({ label, value, icon: Icon, href, valueClass, footer }: {
+export function StatCard({ label, value, icon: Icon, href, onClick, active, valueClass, footer }: {
   label: string;
   /** A number is wrapped in <Num>; pass a node for anything else. */
   value: React.ReactNode;
@@ -16,6 +16,10 @@ export function StatCard({ label, value, icon: Icon, href, valueClass, footer }:
   icon?: LucideIcon;
   /** Makes the whole card a link. */
   href?: string;
+  /** Makes the whole card a button (e.g. to filter the table below it). */
+  onClick?: () => void;
+  /** Marks the card as the current filter: keeps the hover fill on. */
+  active?: boolean;
   /** Tint for the number at rest (e.g. text-success) — white on hover like the rest. */
   valueClass?: string;
   footer?: React.ReactNode;
@@ -42,9 +46,13 @@ export function StatCard({ label, value, icon: Icon, href, valueClass, footer }:
   );
 
   const cls = "group lift glass relative isolate overflow-hidden rounded-3xl p-5 text-text-primary transition-colors hover:text-white";
-  return href ? (
-    <Link href={href} className={`${cls} focus-visible:text-white focus-visible:outline-none`}>{body}</Link>
-  ) : (
-    <div className={cls}>{body}</div>
-  );
+  if (href) return <Link href={href} className={`${cls} focus-visible:text-white focus-visible:outline-none`}>{body}</Link>;
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} aria-pressed={active} className={`${cls} w-full text-left focus-visible:text-white focus-visible:outline-none ${active ? "ring-2 ring-brand-blue/50" : ""}`}>
+        {body}
+      </button>
+    );
+  }
+  return <div className={cls}>{body}</div>;
 }
