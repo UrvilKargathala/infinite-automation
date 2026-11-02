@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Printer, Send, PackageCheck, XCircle, CheckCheck } from "lucide-react";
+import { Printer, Send, PackageCheck, XCircle, CheckCheck, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Num } from "@/components/ui/Num";
@@ -32,7 +32,7 @@ function poTotal(po: VendorPO): number | null {
   return Math.round(po.items.reduce((s, i) => s + (i.unitCost ?? 0) * i.qtyOrdered, 0) * 100) / 100;
 }
 
-/** All vendor POs, newest first, with issue / receive / print / cancel / close-short actions. */
+/** All vendor POs, newest first, with issue / receive / print / cancel / close-short / delete-draft actions. */
 export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
   const { data: pos, isLoading, isError } = usePurchaseOrders();
   const products = useProductStore((s) => s.products);
@@ -58,6 +58,22 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
     queryClient.invalidateQueries({ queryKey: PO_QUERY_KEY });
     queryClient.invalidateQueries({ queryKey: STOCK_QUERY_KEY });
     toast.success(done);
+  }
+
+  /** Delete a PO that never moved stock (Draft, or Cancelled with nothing received). */
+  async function removePO(po: VendorPO) {
+    if (!window.confirm(`Delete ${po.number}? This can't be undone.`)) return;
+    setBusyId(po.id);
+    const res = await fetch(`/api/procurement/pos/${po.id}`, { method: "DELETE" });
+    const body = await res.json().catch(() => ({}));
+    setBusyId(null);
+    if (!res.ok) {
+      toast.error(body.error ?? "Couldn't delete the PO");
+      return;
+    }
+    queryClient.invalidateQueries({ queryKey: PO_QUERY_KEY });
+    queryClient.invalidateQueries({ queryKey: STOCK_QUERY_KEY });
+    toast.success(`${po.number} deleted`);
   }
 
   if (isLoading) return <SkeletonList rows={5} className="p-4 sm:p-6" />;
@@ -119,6 +135,10 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
                         {(po.status === "Draft" || po.status === "Issued") && (
                           <Button size="sm" variant="ghost" icon={XCircle} disabled={busyId === po.id}
                             onClick={() => act(po, "cancel", `Cancel ${po.number}?`, `${po.number} cancelled`)}>Cancel</Button>
+                        )}
+                        {(po.status === "Draft" || po.status === "Cancelled") && received === 0 && (
+                          <Button size="sm" variant="ghost" icon={Trash2} disabled={busyId === po.id}
+                            onClick={() => removePO(po)}>Delete</Button>
                         )}
                       </div>
                     </td>

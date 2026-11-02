@@ -63,3 +63,42 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     throw err;
   }
 }
+
+/**
+ * Deletes a PO that never moved stock: a Draft, or a Cancelled one with nothing received. Its product lines go
+ * with it (so the products are no longer tied to it). Issued and received POs are kept as the record.
+ */
+export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+  const me = await getCurrentAppUser();
+  if (!me) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  if (!can(me.role, "editStock")) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const id = Number(params.id);
+
+  try {
+    const removed = await withTransaction(async (db) => {
+      const [po] = (await db.query(`SELECT number, status, vendor_name FROM vendor_pos WHERE id = $1 FOR UPDATE`, [id])).rows;
+      if (!po) throw new HttpError(404, "Purchase order not found");
+      const [{ received }] = (await db.query(`SELECT COALESCE(SUM(qty_received), 0)::int AS received FROM vendor_po_items WHERE po_id = $1`, [id])).rows;
+      if ((po.status !== "Draft" && po.status !== "Cancelled") || received > 0) {
+        throw new HttpError(409, `${po.number} is ${po.status}${received > 0 ? " and has received stock" : ""}, so it can't be deleted. Only a Draft or Cancelled PO with nothing received can be.`);
+      }
+      await db.query(`DELETE FROM vendor_pos WHERE id = $1`, [id]);
+      return { number: po.number as string, status: po.status as string, vendor: po.vendor_name as string };
+    });
+
+    await logAction({
+      module: "Inventory",
+      action: "delete",
+      entityType: "vendor_po",
+      entityId: id,
+      entityName: removed.number,
+      summary: `Deleted ${removed.status} vendor PO ${removed.number} (${removed.vendor})`,
+      changes: { before: { status: removed.status } },
+      actor: me,
+    });
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    if (err instanceof HttpError) return NextResponse.json({ error: err.message }, { status: err.status });
+    throw err;
+  }
+}

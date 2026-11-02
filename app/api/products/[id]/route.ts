@@ -100,9 +100,11 @@ export async function DELETE(_req: Request, { params }: { params: { id: string }
   try {
     await sql`DELETE FROM products WHERE id = ${id}`;
   } catch (err) {
-    // 23503 = foreign key: the product is reserved on a confirmed project or listed on a vendor PO
-    if ((err as { code?: string }).code === "23503") {
-      return NextResponse.json({ error: "This product has stock reservations or purchase orders, so it can't be deleted. Set it to Inactive instead." }, { status: 409 });
+    // 23503 / 23001 = foreign key (ON DELETE RESTRICT reports as 23001): the product is reserved on a confirmed
+    // project, listed on a vendor PO or has stock movements.
+    const code = (err as { code?: string }).code;
+    if (code === "23503" || code === "23001") {
+      return NextResponse.json({ error: "This product has stock, reservations or purchase orders, so it can't be deleted. Set it to Inactive instead." }, { status: 409 });
     }
     throw err;
   }

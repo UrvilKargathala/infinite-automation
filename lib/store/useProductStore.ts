@@ -2,6 +2,12 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import type { Product } from "@/types";
 
+/** Fallback toast when the server sent no message: only a 403 is about permission. */
+function failureMessage(status: number): string {
+  return status === 403 ? "You don't have permission to do that" : "Something went wrong. Please try again.";
+}
+
+
 function normalizeCategory(raw: string): string {
   let v = raw.trim();
   v = v.replace(/Garrage/g, "Garage");
@@ -49,7 +55,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     const res = await fetch("/api/products", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(p) });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      toast.error(body.error ?? "You don't have permission to do that");
+      toast.error(body.error ?? failureMessage(res.status));
       throw new Error(body.error ?? "Failed to add product");
     }
     const created = await res.json();
@@ -59,7 +65,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     const res = await fetch(`/api/products/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(patch) });
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
-      toast.error(body.error ?? "You don't have permission to do that");
+      toast.error(body.error ?? failureMessage(res.status));
       throw new Error(body.error ?? "Failed to update product");
     }
     const updated = await res.json();
@@ -72,7 +78,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     if (!res.ok) {
       set({ products: prev });
       const body = await res.json().catch(() => ({}));
-      toast.error(body.error ?? "You don't have permission to do that");
+      toast.error(body.error ?? failureMessage(res.status));
       throw new Error(body.error ?? "Failed to delete product");
     }
   },
@@ -81,7 +87,7 @@ export const useProductStore = create<ProductStore>((set, get) => ({
     const bulkRes = await fetch("/api/products/bulk", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: normalized, filename }) });
     if (!bulkRes.ok) {
       const body = await bulkRes.json().catch(() => ({}));
-      toast.error(body.error ?? "You don't have permission to do that");
+      toast.error(body.error ?? failureMessage(bulkRes.status));
       throw new Error(body.error ?? "Failed to import products");
     }
     const res = await fetch("/api/products");
