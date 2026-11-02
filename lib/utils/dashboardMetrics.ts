@@ -1,5 +1,5 @@
 import type { Ticket, Quote, Customer, CustomerSegment, Complaint, PipelineStage, Project } from "@/types";
-import { CANCELLED } from "@/lib/utils/pipeline";
+import { CANCELLED, stagePhase } from "@/lib/utils/pipeline";
 import { calcQuoteTotal } from "@/lib/utils/quote";
 
 export function inMonth(dateStr: string, month: number, year: number): boolean {
@@ -38,11 +38,9 @@ function trend<T>(items: T[], date: (x: T) => string | null | undefined): MonthT
 
 /** Headline numbers for the dashboard cards: complaints, CRM records, quotes, installs. */
 export function computeHeadline(projects: Project[], quotes: Quote[], complaints: Complaint[], stages: PipelineStage[]) {
-  const lastStage = [...stages].sort((a, b) => a.position - b.position).at(-1)?.name ?? "Install";
   const live = projects.filter((p) => p.stage !== CANCELLED);
-  const installed = projects.filter((p) => p.stage === lastStage);
+  const installed = projects.filter((p) => stagePhase(stages, p.stage) === "done");
   return {
-    lastStage,
     pendingComplaints: complaints.filter((c) => c.status === "Pending").length,
     complaintsRaised: trend(complaints, (c) => c.createdAt),
     activeRecords: live.length,

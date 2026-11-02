@@ -3,6 +3,7 @@ import { withTransaction, HttpError } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { can } from "@/lib/utils/permissions";
 import { logAction } from "@/lib/api/audit";
+import { createNotifications } from "@/lib/api/notifications";
 import { loadPurchaseOrders, viaTx } from "@/lib/inventoryDb";
 
 /**
@@ -77,6 +78,9 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       metadata: { received: lines },
       actor: me,
     });
+    if (result.updated.createdBy && result.updated.createdBy !== me.id) {
+      await createNotifications([result.updated.createdBy], `${me.fullName} received ${result.units} unit(s) on ${result.updated.number} (${result.updated.status})`, "#10B981", `/procurement?open=${id}`);
+    }
     return NextResponse.json(result.updated);
   } catch (err) {
     if (err instanceof HttpError) return NextResponse.json({ error: err.message }, { status: err.status });

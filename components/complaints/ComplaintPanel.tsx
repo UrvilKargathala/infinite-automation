@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useEffect, useState } from "react";
 import { Ban, CheckCircle2, MapPin, Pencil, Phone, RotateCcw, Trash2, X } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
@@ -63,7 +64,7 @@ export function ComplaintPanel({ complaint, onClose, onEdit }: { complaint: Comp
                 <>
                   <button onClick={() => onEdit(complaint)} aria-label="Edit" title="Edit / reassign" className={iconBtn}><Pencil size={16} /></button>
                   <button
-                    onClick={() => { if (window.confirm(`Delete ${complaint.number}? This can't be undone.`)) remove.mutate(complaint.id, { onSuccess: onClose }); }}
+                    onClick={async () => { if (await confirmDialog({ title: `Delete ${complaint.number}?`, message: "This can't be undone.", confirmLabel: "Delete", tone: "danger" })) remove.mutate(complaint.id, { onSuccess: onClose }); }}
                     aria-label="Delete" title="Delete" className={`${iconBtn} hover:!text-danger`}
                   >
                     <Trash2 size={16} />

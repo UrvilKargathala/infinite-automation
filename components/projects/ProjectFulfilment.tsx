@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -15,7 +16,7 @@ export function ProjectFulfilment({ project }: { project: Project }) {
   const [busy, setBusy] = useState(false);
 
   async function handleConfirm() {
-    if (!window.confirm("Confirm this deal? The linked quote is marked Accepted and its items are reserved from stock.")) return;
+    if (!(await confirmDialog({ title: "Confirm this deal?", message: "The linked quote is marked Accepted and its items are reserved from stock.", confirmLabel: "Confirm" }))) return;
     setBusy(true);
     const error = await confirm(project.id);
     setBusy(false);

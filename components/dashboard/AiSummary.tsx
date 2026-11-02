@@ -38,8 +38,7 @@ export function AiSummary({ projects, stages, complaints, quotes, products, curr
   const live = projects.filter((p) => p.stage !== CANCELLED);
   const newThisMonth = live.filter((p) => inMonth(p.createdAt, m, y)).length;
   const atLast = live.filter((p) => stagePhase(stages, p.stage) === "done").length;
-  const lastName = [...stages].sort((a, b) => a.position - b.position).at(-1)?.name ?? "Install";
-  sentences.push(<>{plural(live.length, "active CRM record")} — <N tone={newThisMonth > 0 ? "good" : undefined}>{newThisMonth}</N> new this month, <N>{atLast}</N> at {lastName}.</>);
+  sentences.push(<>{plural(live.length, "active CRM record")} — <N tone={newThisMonth > 0 ? "good" : undefined}>{newThisMonth}</N> new this month, <N>{atLast}</N> installed.</>);
 
   // Complaints
   const pending = complaints.filter((c) => c.status === "Pending").sort((a, b) => a.createdAt.localeCompare(b.createdAt));

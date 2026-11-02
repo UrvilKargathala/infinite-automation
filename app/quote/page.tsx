@@ -1,5 +1,7 @@
 "use client";
 
+import { useOpenParam } from "@/lib/hooks/useOpenParam";
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useState, useMemo, useEffect, useRef } from "react";
 import { TablePageSkeleton } from "@/components/ui/TablePageSkeleton";
 import { Search, FileText, Send, CheckCircle, XCircle, Plus, Eye, Pencil, Trash2, Printer, Upload, Download } from "lucide-react";
@@ -69,7 +71,8 @@ export default function QuotePage() {
           q.client.toLowerCase().includes(s)
       );
     }
-    return list;
+    // Newest first, so a quote you just created is at the top of page 1 instead of the end of the last page.
+    return [...list].sort((a, b) => b.id - a.id);
   }, [quotes, statusFilter, search]);
 
   const PAGE_SIZE = 10;
@@ -85,6 +88,9 @@ export default function QuotePage() {
     { label: "Accepted", value: quotes.filter((q) => q.status === "Accepted").length, icon: CheckCircle, valueClass: "text-success" },
     { label: "Rejected", value: quotes.filter((q) => q.status === "Rejected").length, icon: XCircle, valueClass: "text-danger" },
   ];
+
+  // ?open=<id> (search, links) shows that quote.
+  useOpenParam(!loading, (id) => { const q = quotes.find((x) => x.id === id); if (q) openView(q); });
 
   function openEdit(q: Quote) {
     setEditQuote(q);
@@ -102,8 +108,8 @@ export default function QuotePage() {
     printQuote(q, products, customers);
   }
 
-  function handleDelete(id: number) {
-    if (window.confirm("Delete this quote?")) {
+  async function handleDelete(id: number) {
+    if (await confirmDialog({ title: "Delete this quote?", message: "This can't be undone.", confirmLabel: "Delete", tone: "danger" })) {
       remove(id).then(() => toast.success("Quote deleted")).catch(() => {
         // error toast already shown by the store
       });

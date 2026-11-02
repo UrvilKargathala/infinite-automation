@@ -1,3 +1,4 @@
+import { auditChat } from "@/lib/api/chatAudit";
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
@@ -68,6 +69,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     RETURNING id, created_at::text AS created_at
   `;
   const messageId = rows[0].id as number;
+  await auditChat({ kind: "ticket", recordId: ticketId, messageId, action: "create", actor: me, text, attachments });
 
   // Let the assignee, earlier participants and anyone @mentioned know (notification links straight into this chat).
   const [record] = await sql.query(`SELECT COALESCE(NULLIF(subject, ''), name) AS label, assigned FROM tickets WHERE id = $1`, [ticketId]);

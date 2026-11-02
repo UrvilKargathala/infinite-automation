@@ -1,3 +1,4 @@
+import { notifyAssignee } from "@/lib/api/notifications";
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
       changes: { after: { customerName: created.customerName, siteAddress: created.siteAddress, assigned: created.assigned, architect: created.architect, stage: created.stage } },
       actor: me,
     });
+    await notifyAssignee(created.assigned, me.id, `${me.fullName} assigned you a new CRM record: ${created.customerName}`, "#F59E0B", `/crm?open=${created.id}`);
   }
 
   return NextResponse.json(created, { status: 201 });

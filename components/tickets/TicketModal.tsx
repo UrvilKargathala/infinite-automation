@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
@@ -97,8 +98,8 @@ export function TicketModal({ open, onClose, ticket, defaultStatus, onSave, onDe
             <span>Edit ticket</span>
             {onDelete && (
               <button
-                onClick={() => {
-                  if (window.confirm("Delete this ticket?")) {
+                onClick={async () => {
+                  if (await confirmDialog({ title: "Delete this ticket?", message: "This can't be undone.", confirmLabel: "Delete", tone: "danger" })) {
                     onDelete(ticket.id);
                     onClose();
                   }

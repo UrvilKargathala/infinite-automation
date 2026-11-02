@@ -1,5 +1,7 @@
 "use client";
 
+import { useOpenParam } from "@/lib/hooks/useOpenParam";
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Search, Package, CheckCircle, Layers, AlertCircle, Upload, Download, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -82,13 +84,16 @@ export default function MasterPage() {
   // Missing = no price in the user's Settings currency (a product may still be priced in others).
   const missingPrice = products.filter((p) => priceIn(p, currency) == null).length;
 
+  // ?open=<id> (search, links) opens that product.
+  useOpenParam(!loading, (id) => { const p = products.find((x) => x.id === id); if (p && canManage) handleEdit(p); });
+
   function handleEdit(p: Product) {
     setEditProduct(p);
     setModalOpen(true);
   }
 
-  function handleDelete(id: number) {
-    if (window.confirm("Delete this product?")) {
+  async function handleDelete(id: number) {
+    if (await confirmDialog({ title: "Delete this product?", message: "This can't be undone.", confirmLabel: "Delete", tone: "danger" })) {
       remove(id).then(() => toast.success("Product deleted")).catch(() => {
         // error toast already shown by the store
       });

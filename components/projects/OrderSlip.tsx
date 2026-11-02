@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -61,7 +62,7 @@ export function OrderSlip({ projectId }: { projectId: number }) {
 
   async function handleShip() {
     const units = toShip.reduce((s, l) => s + l.qty, 0);
-    if (!window.confirm(`Mark ${units} unit(s) as shipped? They will be taken out of physical stock.`)) return;
+    if (!(await confirmDialog({ title: `Mark ${units} unit(s) as shipped?`, message: "They will be taken out of physical stock.", confirmLabel: "Mark shipped" }))) return;
     setShipping(true);
     const res = await fetch(`/api/projects/${projectId}/ship`, {
       method: "POST",

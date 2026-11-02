@@ -1,5 +1,6 @@
 "use client";
 
+import { useOpenParam } from "@/lib/hooks/useOpenParam";
 import { useEffect, useState } from "react";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { usePurchaseOrders } from "@/lib/hooks/usePurchaseOrders";
@@ -21,6 +22,9 @@ export default function ProcurementPage() {
   useEffect(() => {
     fetchAll();
   }, [fetchAll]);
+
+  // ?open=<id> (search, links) shows that PO in the Vendor POs tab.
+  useOpenParam(loaded, (id) => { setTab("pos"); setHighlightId(id); });
 
   if (!loaded) return <TablePageSkeleton statCards={0} />;
 

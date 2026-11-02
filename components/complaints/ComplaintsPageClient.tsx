@@ -1,8 +1,9 @@
 "use client";
 
+import { exportSheet } from "@/lib/utils/tableExport";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Ban, CheckCircle2, Clock, MessageSquareWarning, Plus, Search } from "lucide-react";
+import { Ban, CheckCircle2, Clock, Download, MessageSquareWarning, Plus, Search } from "lucide-react";
 import { CrmTabs } from "@/components/layout/CrmTabs";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
@@ -39,17 +40,14 @@ export function ComplaintsPageClient() {
 
   // Notifications link here as /complaints?open=<id> — watched so it also works when already on this page.
   const searchParams = useSearchParams();
-  // ?new=1 (Dashboard "New complaint") opens the form for admins.
   useEffect(() => {
     const id = Number(searchParams.get("open"));
     if (id) {
       setOpenId(id);
       setStatus("All");
-    } else if (searchParams.get("new") === "1" && isAdmin) {
-      setModal({ open: true, complaint: null });
     } else return;
     window.history.replaceState(null, "", "/complaints");
-  }, [searchParams, isAdmin]);
+  }, [searchParams]);
 
   const engineers = useMemo(
     () => [...new Map(complaints.filter((c) => c.engineerId).map((c) => [c.engineerId, c.engineerName ?? ""])).entries()],
@@ -66,6 +64,17 @@ export function ComplaintsPageClient() {
         (!q || [c.number, c.customerName, c.phone, c.siteAddress, c.remarks].some((v) => v.toLowerCase().includes(q)))
     );
   }, [complaints, status, engineer, search]);
+
+  function handleExport() {
+    exportSheet(
+      rows.map((c) => ({
+        Number: c.number, Customer: c.customerName, Phone: c.phone, "Site address": c.siteAddress, Remarks: c.remarks,
+        Engineer: c.engineerName ?? "", Status: c.status, Raised: c.createdAt.slice(0, 10), "Raised by": c.createdByName ?? "",
+        Completed: c.completedAt?.slice(0, 10) ?? "", "What was done": c.resolution, Cancelled: c.cancelledAt?.slice(0, 10) ?? "", "Cancel reason": c.cancelReason,
+      })),
+      "Complaints", "infinite_complaints_export.xlsx", "complaints",
+    );
+  }
 
   const pending = complaints.filter((c) => c.status === "Pending").length;
   const completed = complaints.filter((c) => c.status === "Completed").length;
@@ -126,6 +135,7 @@ export function ComplaintsPageClient() {
               {engineers.map(([id, name]) => <option key={String(id)} value={String(id)}>{name}</option>)}
             </Select>
           )}
+          <Button variant="secondary" icon={Download} onClick={handleExport} className="sm:ml-auto">Export</Button>
         </div>
 
         <div className="overflow-x-auto">

@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { useChatAttachments } from "@/lib/hooks/useChatAttachments";
+import { TICKET_UNREAD_QUERY_KEY } from "@/lib/hooks/useTicketUnread";
 import { AttachmentList } from "@/components/chat/AttachmentList";
 import { PendingAttachments } from "@/components/chat/PendingAttachments";
 import { ChatBackdrop } from "@/components/chat/ChatBackdrop";
@@ -193,6 +195,14 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
+  // Reading the chat clears this ticket's unread badge — re-marked as messages arrive while it's open.
+  useEffect(() => {
+    if (!open || !ticket) return;
+    fetch(`/api/tickets/${ticket.id}/messages/read`, { method: "POST" })
+      .then(() => queryClient.invalidateQueries({ queryKey: TICKET_UNREAD_QUERY_KEY }))
+      .catch(() => {});
+  }, [open, ticket?.id, messages.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
       if (e.key === "Escape") {
@@ -320,7 +330,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                 <Pencil size={15} />
               </button>
               <button
-                onClick={() => { if (window.confirm("Delete this ticket?")) { onDelete(ticket.id); onClose(); } }}
+                onClick={async () => { if (await confirmDialog({ title: "Delete this ticket?", message: "This can't be undone.", confirmLabel: "Delete", tone: "danger" })) { onDelete(ticket.id); onClose(); } }}
                 aria-label="Delete ticket"
                 className="w-8 h-8 rounded-full flex items-center justify-center text-text-muted hover:text-danger hover:bg-[#F9FAFB] transition-colors"
               >
@@ -488,7 +498,7 @@ export function TicketPanel({ open, onClose, ticket, tickets, onSave, onDelete }
                                     )}
                                     {m.userId === myId && (
                                       <button
-                                        onClick={() => { setMenuOpenId(null); if (window.confirm("Delete this message?")) deleteMutation.mutate(m.id); }}
+                                        onClick={async () => { setMenuOpenId(null); if (await confirmDialog({ title: "Delete this message?", confirmLabel: "Delete", tone: "danger" })) deleteMutation.mutate(m.id); }}
                                         className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-[#F9FAFB] transition-colors"
                                       >
                                         <Trash2 size={14} /> Delete

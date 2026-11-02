@@ -1,6 +1,6 @@
 import type { AppNotification } from "@/types";
 
-export type NotificationModule = "Complaints" | "CRM" | "Tickets" | "Quotes" | "Other";
+export type NotificationModule = "Complaints" | "CRM" | "Tickets" | "Quotes" | "Procurement" | "Other";
 
 /**
  * Which module a notification belongs to. Notifications don't store a type, so it's read from where they link
@@ -11,6 +11,7 @@ export function notificationModule(n: Pick<AppNotification, "href" | "text">): N
   if (n.href.startsWith("/crm")) return "CRM";
   if (n.href.startsWith("/tickets")) return "Tickets";
   if (n.href.startsWith("/quote")) return "Quotes";
+  if (n.href.startsWith("/procurement")) return "Procurement";
   if (/^New ticket/i.test(n.text)) return "Tickets";
   if (/^Quote /i.test(n.text)) return "Quotes";
   return "Other";

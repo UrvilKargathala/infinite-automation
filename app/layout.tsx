@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Urbanist } from "next/font/google";
 import { Toaster } from "sonner";
+import { ConfirmHost } from "@/components/ui/ConfirmDialog";
 import "./globals.css";
 import { LayoutShell } from "@/components/layout/LayoutShell";
 import { ReactQueryProvider } from "@/components/providers/ReactQueryProvider";
@@ -31,6 +32,7 @@ export default function RootLayout({
         <ReactQueryProvider>
           <LayoutShell>{children}</LayoutShell>
         </ReactQueryProvider>
+        <ConfirmHost />
         <Toaster
           position="top-right"
           richColors

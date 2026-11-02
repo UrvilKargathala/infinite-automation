@@ -41,15 +41,12 @@ export function TicketsPageClient() {
   const [panelTicket, setPanelTicket] = useState<Ticket | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
 
-  // ?new=1 opens the New Ticket form; ?open=<id> (from a chat notification) opens that ticket's panel.
+  // ?open=<id> (from a notification or search result) opens that ticket's panel.
   const searchParams = useSearchParams();
   useEffect(() => {
     if (!loaded) return;
     const openId = Number(searchParams.get("open"));
-    if (searchParams.get("new") === "1") {
-      setDefaultStatus("Open");
-      setModalOpen(true);
-    } else if (openId) {
+    if (openId) {
       const ticket = tickets.find((t) => t.id === openId);
       if (ticket) { setPanelTicket(ticket); setPanelOpen(true); }
     } else return;

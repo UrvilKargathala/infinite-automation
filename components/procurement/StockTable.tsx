@@ -1,7 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/Button";
+import { exportSheet } from "@/lib/utils/tableExport";
 import { useMemo, useState } from "react";
-import { Search, PackagePlus } from "lucide-react";
+import { Search, PackagePlus, Download } from "lucide-react";
 import { Num } from "@/components/ui/Num";
 import { Pagination } from "@/components/ui/Pagination";
 import { useProductStore } from "@/lib/store/useProductStore";
@@ -46,6 +48,20 @@ export function StockTable() {
   const paged = rows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
   const lowCount = products.filter((p) => byProduct.get(p.id)?.low).length;
 
+  function handleExport() {
+    exportSheet(
+      rows.map((p) => {
+        const s = byProduct.get(p.id);
+        return {
+          Product: p.name, SKU: p.sku, Brand: p.brand, Category: p.category,
+          "In stock": s?.physical ?? 0, Promised: s?.allocated ?? 0, "Free to sell": s?.available ?? 0,
+          "On order": s?.incoming ?? 0, "Keep at least": s?.minBuffer ?? 0, Status: s?.low ? "Low stock" : "OK",
+        };
+      }),
+      "Stock", "infinite_stock_export.xlsx", "products",
+    );
+  }
+
   if (isError) return <div className="text-center text-danger text-sm py-16">Couldn&apos;t load stock levels</div>;
 
   // Dialogs sit outside the card: backdrop-blur makes the card the containing block for position:fixed.
@@ -65,6 +81,7 @@ export function StockTable() {
           <input type="checkbox" checked={lowOnly} onChange={(e) => { setLowOnly(e.target.checked); setPage(1); }} className="accent-brand-blue" />
           Low stock only <span className="text-text-muted">(<Num>{lowCount}</Num>)</span>
         </label>
+        <Button variant="secondary" icon={Download} onClick={handleExport} className="sm:ml-auto">Export</Button>
       </div>
 
       <div className="overflow-x-auto">

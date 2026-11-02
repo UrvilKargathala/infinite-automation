@@ -1,3 +1,4 @@
+import { notifyAssignee } from "@/lib/api/notifications";
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
@@ -76,6 +77,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         changes: otherChanges,
         actor: me,
       });
+    }
+
+    const href = `/crm?open=${updated.id}`;
+    if (updated.assigned !== current.assigned) {
+      await notifyAssignee(updated.assigned, me.id, `${me.fullName} assigned you CRM record: ${updated.customerName}`, "#F59E0B", href);
+    } else if (stageChanged) {
+      await notifyAssignee(updated.assigned, me.id, `${me.fullName} moved ${updated.customerName} to ${updated.stage}`, "#3A90C3", href);
     }
   }
 

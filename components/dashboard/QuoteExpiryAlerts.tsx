@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import Link from "next/link";
 import { toast } from "sonner";
 import { AlertTriangle, Clock, XCircle } from "lucide-react";
@@ -19,7 +20,7 @@ export function QuoteExpiryAlerts({ quotes }: { quotes: Quote[] }) {
   const soon = open.filter((x) => x.days >= 0 && x.days <= 7).sort((a, b) => a.days - b.days);
 
   async function reject(q: Quote) {
-    if (!window.confirm(`Mark ${q.number} (${q.client}) as Rejected?`)) return;
+    if (!(await confirmDialog({ title: `Mark ${q.number} as Rejected?`, message: q.client, confirmLabel: "Mark rejected", tone: "danger" }))) return;
     try {
       await update(q.id, { status: "Rejected" });
       toast.success(`${q.number} marked Rejected`);

@@ -197,14 +197,6 @@ export interface ComplaintEvent {
   createdAt: string;
 }
 
-export interface ChatMessage {
-  id: number;
-  text: string;
-  createdAt: string;
-  userId: number;
-  fullName: string;
-}
-
 export interface Attachment {
   url: string;
   name: string;

@@ -7,6 +7,7 @@ import { useTicketStore } from "@/lib/store/useTicketStore";
 import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useComplaints } from "@/lib/hooks/useComplaints";
 import { useProjectUnread } from "@/lib/hooks/useProjectUnread";
+import { useTicketUnread } from "@/lib/hooks/useTicketUnread";
 import { useStock } from "@/lib/hooks/useStock";
 import { useAuditUnreadCount } from "@/lib/hooks/useAuditUnreadCount";
 import { daysUntil } from "@/lib/utils/dashboardMetrics";
@@ -36,6 +37,7 @@ export function useAttention(): { rows: AttentionRow[]; total: number; markAudit
   const isAdmin = can(role, "manageComplaints");
   const { complaints, isLoading: complaintsLoading } = useComplaints();
   const unread = useProjectUnread();
+  const ticketUnread = useTicketUnread();
   const tickets = useTicketStore((s) => s.tickets);
   const quotes = useQuoteStore((s) => s.quotes);
   const { byProduct, isLoading: stockLoading } = useStock();
@@ -44,6 +46,7 @@ export function useAttention(): { rows: AttentionRow[]; total: number; markAudit
   const rows = useMemo<AttentionRow[]>(() => {
     const pendingComplaints = complaints.filter((c) => c.status === "Pending").length;
     const unreadChats = Object.values(unread).reduce((sum, n) => sum + n, 0);
+    const unreadTicketChats = Object.values(ticketUnread).reduce((sum, n) => sum + n, 0);
     const openTickets = tickets.filter((t) => t.status === "Open" || t.status === "In Progress").length;
     const open = quotes.filter((q) => q.status === "Draft" || q.status === "Sent").map((q) => daysUntil(q.validUntil));
     const expired = open.filter((d) => d < 0).length;
@@ -53,13 +56,14 @@ export function useAttention(): { rows: AttentionRow[]; total: number; markAudit
     const list: AttentionRow[] = [
       { key: "complaints", label: isAdmin ? "Pending complaints" : "Complaints assigned to you", icon: MessageSquareWarning, href: "/complaints", count: pendingComplaints, tone: "warn", loading: complaintsLoading },
       { key: "crm", label: "Unread CRM chats", icon: MessageCircle, href: "/crm", count: unreadChats, tone: "info" },
+      { key: "ticketChats", label: "Unread ticket chats", icon: MessageCircle, href: "/tickets", count: unreadTicketChats, tone: "info" },
       { key: "tickets", label: "Open tickets", icon: Inbox, href: "/tickets", count: openTickets, tone: "warn" },
       { key: "quotes", label: "Quotes to follow up", icon: FileText, href: "/quote", count: followUps, tone: expired > 0 ? "danger" : "warn" },
       { key: "procurement", label: "Items to reorder", icon: Package, href: "/procurement", count: toReorder, tone: "warn", loading: stockLoading },
     ];
     if (audit.canView) list.push({ key: "audit", label: "New audit log entries", icon: ScrollText, href: "/audit", count: audit.count, tone: "info" });
     return list;
-  }, [complaints, complaintsLoading, unread, tickets, quotes, byProduct, stockLoading, isAdmin, audit.canView, audit.count]);
+  }, [complaints, complaintsLoading, unread, ticketUnread, tickets, quotes, byProduct, stockLoading, isAdmin, audit.canView, audit.count]);
 
   // Audit entries are activity to browse, not work waiting on you, so they don't add to the headline total.
   const total = rows.filter((r) => r.key !== "audit").reduce((sum, r) => sum + r.count, 0);

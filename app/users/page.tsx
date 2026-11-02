@@ -1,8 +1,11 @@
 "use client";
 
+import { exportSheet } from "@/lib/utils/tableExport";
+import { useOpenParam } from "@/lib/hooks/useOpenParam";
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
-import { Search, Users as UsersIcon, CheckCircle, Shield, Plus } from "lucide-react";
+import { Search, Users as UsersIcon, CheckCircle, Shield, Plus, Download } from "lucide-react";
 import { useUserStore } from "@/lib/store/useUserStore";
 import { useAuthStore } from "@/lib/store/useAuthStore";
 import { can } from "@/lib/utils/permissions";
@@ -32,6 +35,9 @@ export default function UsersPage() {
   const totalActive = users.filter((u) => u.status === "Active").length;
   const totalAdmins = users.filter((u) => u.role === "Super Admin" || u.role === "Admin").length;
 
+  // ?open=<id> (search, links) opens that user.
+  useOpenParam(!loading, (id) => { const u = users.find((x) => x.id === id); if (u) handleEdit(u); });
+
   if (loading) return <TablePageSkeleton statCards={3} />;
 
   if (!can(currentRole, "viewUsers")) {
@@ -58,6 +64,13 @@ export default function UsersPage() {
     return can(currentRole, "deleteUser");
   }
 
+  function handleExport() {
+    exportSheet(
+      filtered.map((u) => ({ Name: u.fullName, Email: u.email, Role: u.role, Status: u.status, Currency: u.currency })),
+      "Users", "infinite_users_export.xlsx", "users",
+    );
+  }
+
   function handleAdd() {
     setEditUser(null);
     setModalOpen(true);
@@ -68,8 +81,8 @@ export default function UsersPage() {
     setModalOpen(true);
   }
 
-  function handleDelete(id: number) {
-    if (window.confirm("Delete this user?")) {
+  async function handleDelete(id: number) {
+    if (await confirmDialog({ title: "Delete this user?", message: "This can't be undone.", confirmLabel: "Delete", tone: "danger" })) {
       remove(id).then(() => toast.success("User deleted")).catch(() => {
         // error toast already shown by the store
       });
@@ -118,7 +131,8 @@ export default function UsersPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="secondary" icon={Download} onClick={handleExport}>Export</Button>
             <Button icon={Plus} onClick={handleAdd}>
               Add user
             </Button>

@@ -6,20 +6,20 @@ import { StatCard } from "@/components/ui/StatCard";
 
 /**
  * CRM summary cards, grouped by where each stage sits (so custom stages count automatically):
- * pre-sale = before Confirm Order, in delivery = Confirm Order up to the last stage, done = the last stage (Install).
+ * pre-sale = Inquiry and everything before Confirm Order, in delivery = Confirm Order up to just before Install,
+ * done = Install and any stage after it. Every active record is in exactly one of pre-sale / in delivery / done.
  */
 export function CrmSummary({ projects, stages }: { projects: Project[]; stages: PipelineStage[] }) {
   const now = new Date();
-  const lastStage = [...stages].sort((a, b) => a.position - b.position).at(-1)?.name ?? "Install";
   const count = (phase: ReturnType<typeof stagePhase>) => projects.filter((p) => stagePhase(stages, p.stage) === phase).length;
 
   const tiles = [
     { label: "Total Active", value: projects.filter((p) => p.stage !== CANCELLED).length, icon: Briefcase },
-    { label: "Pre-Sale", value: count("preSale"), icon: FileEdit },
+    { label: "Pre-Sale", value: count("inquiry") + count("preSale"), icon: FileEdit },
     { label: "In Delivery", value: count("delivery"), icon: Truck },
     {
-      label: lastStage === "Install" ? "Installed This Month" : `${lastStage} This Month`,
-      value: projects.filter((p) => p.stage === lastStage && inMonth(p.lastStageChange.slice(0, 10), now.getMonth(), now.getFullYear())).length,
+      label: "Installed This Month",
+      value: projects.filter((p) => stagePhase(stages, p.stage) === "done" && inMonth(p.lastStageChange.slice(0, 10), now.getMonth(), now.getFullYear())).length,
       icon: CheckCircle2,
     },
   ];

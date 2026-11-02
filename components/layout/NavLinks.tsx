@@ -19,6 +19,7 @@ import { useQuoteStore } from "@/lib/store/useQuoteStore";
 import { useCustomerStore } from "@/lib/store/useCustomerStore";
 import { useProductStore } from "@/lib/store/useProductStore";
 import { can } from "@/lib/utils/permissions";
+import { useAttention } from "@/lib/hooks/useAttention";
 
 export type NavItem = {
   label: string;
@@ -26,7 +27,12 @@ export type NavItem = {
   icon: LucideIcon;
   group: "Workspace" | "Catalogue" | "Admin";
   activeMatch?: string[];
+  /** Total shown as the badge when the sidebar is open. */
   count?: number;
+  /** Things waiting on the user (from useAttention): this alone decides the dot when the sidebar is collapsed. */
+  attention?: number;
+  /** What the attention count is, for the tooltip. Defaults to "need attention". */
+  attentionNoun?: string;
 };
 
 const NAV_GROUPS = ["Workspace", "Catalogue", "Admin"] as const;
@@ -43,16 +49,18 @@ export function useNavItems(): NavItem[] {
   const activeQuotes = useQuoteStore((s) => s.quotes.filter((q) => q.status === "Draft" || q.status === "Sent").length);
   const customers = useCustomerStore((s) => s.customers.length);
   const products = useProductStore((s) => s.products.length);
+  const { rows } = useAttention();
+  const waiting = (key: string) => rows.find((r) => r.key === key)?.count ?? 0;
 
   const items: NavItem[] = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutGrid, group: "Workspace" },
-    { label: "CRM", href: "/crm", icon: Briefcase, group: "Workspace", activeMatch: ["/tickets", "/crm", "/complaints"], count: activeProjects },
+    { label: "CRM", href: "/crm", icon: Briefcase, group: "Workspace", activeMatch: ["/tickets", "/crm", "/complaints"], count: activeProjects, attention: waiting("complaints") + waiting("crm") + waiting("ticketChats") + waiting("tickets") },
     { label: "Customers", href: "/customers", icon: Users, group: "Workspace", count: customers },
-    { label: "Quote", href: "/quote", icon: FileText, group: "Workspace", count: activeQuotes },
+    { label: "Quote", href: "/quote", icon: FileText, group: "Workspace", count: activeQuotes, attention: waiting("quotes") },
     { label: "Master File", href: "/master", icon: Database, group: "Catalogue", count: products },
-    { label: "Procurement", href: "/procurement", icon: Package, group: "Catalogue" },
+    { label: "Procurement", href: "/procurement", icon: Package, group: "Catalogue", attention: waiting("procurement") },
     { label: "Users", href: "/users", icon: UserCog, group: "Admin" },
-    { label: "Audit Log", href: "/audit", icon: History, group: "Admin" },
+    { label: "Audit Log", href: "/audit", icon: History, group: "Admin", attention: waiting("audit"), attentionNoun: "new entries" },
   ];
 
   return items.filter((item) => {
@@ -93,7 +101,7 @@ export function NavLinks({
                     key={item.href}
                     href={item.href}
                     onClick={onNavigate}
-                    title={collapsed ? item.label : undefined}
+                    title={collapsed ? (item.attention ? `${item.label} · ${item.attention} ${item.attentionNoun ?? "need attention"}` : item.label) : undefined}
                     className={`relative flex items-center h-10 rounded-xl text-sm transition-colors ${
                       collapsed ? "justify-center px-0" : "gap-3 px-3"
                     } ${
@@ -119,8 +127,8 @@ export function NavLinks({
                         {item.count}
                       </span>
                     )}
-                    {collapsed && !!item.count && (
-                      <span className="absolute top-1.5 right-2 w-1.5 h-1.5 rounded-full bg-brand-green" />
+                    {collapsed && !!item.attention && (
+                      <span aria-label={`${item.attention} ${item.attentionNoun ?? "need attention"}`} className="absolute top-1.5 right-2 w-1.5 h-1.5 rounded-full bg-warning" />
                     )}
                   </Link>
                 );

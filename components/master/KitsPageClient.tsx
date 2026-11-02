@@ -1,5 +1,7 @@
 "use client";
 
+import { useOpenParam } from "@/lib/hooks/useOpenParam";
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, Boxes, CheckCircle, Download, Pencil, Plus, Search, Trash2, Upload } from "lucide-react";
@@ -45,6 +47,9 @@ export function KitsPageClient() {
       .filter((k) => !q || k.sku.toLowerCase().includes(q) || k.name.toLowerCase().includes(q) || k.items.some((i) => byId.get(i.productId)?.name.toLowerCase().includes(q)))
       .map((k) => ({ kit: k, pricing: kitPricing(k, byId, currency), warnings: kitWarnings(k, byId, currency), canBuild: kitCanBuild(k, (id) => byProduct.get(id)?.available) }));
   }, [kits, status, search, byId, currency, byProduct]);
+
+  // ?open=<id> (search, links) opens that kit.
+  useOpenParam(!isLoading && productsLoaded, (id) => { const kit = kits.find((k) => k.id === id); if (kit && canManage) setModal({ open: true, kit }); });
 
   if (isLoading || !productsLoaded) return <TablePageSkeleton statCards={3} />;
 
@@ -144,7 +149,7 @@ export function KitsPageClient() {
                     {canManage && (
                       <div className="flex items-center justify-end gap-1">
                         <button onClick={() => setModal({ open: true, kit })} aria-label="Edit kit" className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:bg-white"><Pencil size={14} /></button>
-                        <button onClick={() => window.confirm(`Delete kit ${kit.name}? Its products stay in the Master File.`) && remove.mutate(kit.id)} aria-label="Delete kit"
+                        <button onClick={async () => { if (await confirmDialog({ title: `Delete kit ${kit.name}?`, message: "Its products stay in the Master File.", confirmLabel: "Delete", tone: "danger" })) remove.mutate(kit.id); }} aria-label="Delete kit"
                           className="w-8 h-8 rounded-full flex items-center justify-center text-text-secondary hover:text-danger hover:bg-white"><Trash2 size={14} /></button>
                       </div>
                     )}

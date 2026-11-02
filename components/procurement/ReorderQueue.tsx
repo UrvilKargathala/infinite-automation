@@ -1,7 +1,8 @@
 "use client";
 
+import { exportSheet } from "@/lib/utils/tableExport";
 import { useMemo, useState } from "react";
-import { FilePlus2, Search } from "lucide-react";
+import { Download, FilePlus2, Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Num } from "@/components/ui/Num";
 import { useProductStore } from "@/lib/store/useProductStore";
@@ -60,6 +61,17 @@ export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => v
     setSelBrand(Object.keys(next).length > 0 ? brand : null);
   }
 
+  function handleExport() {
+    exportSheet(
+      rows.map(({ product, s }) => ({
+        Product: product.name, SKU: product.sku, Brand: product.brand, "Free to sell": s.available, "In stock": s.physical,
+        "Keep at least": s.minBuffer, Owed: s.shortage, Refill: s.bufferGap, "For open quotes": Math.round(s.pipelineShare * 10) / 10,
+        "On order": s.incoming, "Suggested order": s.suggested,
+      })),
+      "Reorder queue", "infinite_reorder_queue_export.xlsx", "low-stock products",
+    );
+  }
+
   function openDraft() {
     setModalLines(allRows.filter((r) => r.product.id in selected).map((r) => ({ product: r.product, qty: Number(selected[r.product.id]) || 1 })));
   }
@@ -84,7 +96,8 @@ export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => v
             {brands.map((b) => <option key={b} value={b}>{b}</option>)}
           </Select>
           <span className="text-sm text-text-muted"><Num>{allRows.length}</Num> low</span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="secondary" icon={Download} onClick={handleExport}>Export</Button>
             <Button icon={FilePlus2} disabled={picked === 0} onClick={openDraft}>
               {picked > 0 ? <>Draft PO · {selBrand} (<Num>{picked}</Num>)</> : "Draft PO"}
             </Button>

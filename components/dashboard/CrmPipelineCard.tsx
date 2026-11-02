@@ -4,7 +4,7 @@ import { Num } from "@/components/ui/Num";
 import { CANCELLED, stagePhase } from "@/lib/utils/pipeline";
 import type { PipelineStage, Project } from "@/types";
 
-/** One CRM card: % done (records at the last stage) and a bar per stage. Replaces "CRM progress" + "CRM by stage". */
+/** One CRM card: % done (records at Install or later) and a bar per stage. Replaces "CRM progress" + "CRM by stage". */
 export function CrmPipelineCard({ projects, stages }: { projects: Project[]; stages: PipelineStage[] }) {
   const live = projects.filter((p) => p.stage !== CANCELLED);
   const done = live.filter((p) => stagePhase(stages, p.stage) === "done").length;
@@ -24,7 +24,7 @@ export function CrmPipelineCard({ projects, stages }: { projects: Project[]; sta
 
       <div className="mt-4 flex items-end gap-3">
         <Num className="text-4xl text-text-primary">{pct}%</Num>
-        <span className="text-xs text-text-muted pb-1.5">reached {ordered.at(-1)?.name ?? "the last stage"} (<Num>{done}</Num> of <Num>{live.length}</Num>)</span>
+        <span className="text-xs text-text-muted pb-1.5">installed (<Num>{done}</Num> of <Num>{live.length}</Num>)</span>
       </div>
 
       <div className="mt-5 space-y-3 flex-1">

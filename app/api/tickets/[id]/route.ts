@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction, diffFields } from "@/lib/api/audit";
+import { notifyAssignee } from "@/lib/api/notifications";
 import type { Ticket } from "@/types";
 
 function toTicket(row: Record<string, unknown>): Ticket {
@@ -57,6 +58,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
         changes,
         actor: me,
       });
+    }
+
+    const href = `/tickets?open=${updated.id}`;
+    if (updated.assigned !== before.assigned) {
+      await notifyAssignee(updated.assigned, me.id, `${me.fullName} assigned you ticket: ${updated.subject}`, "#F59E0B", href);
+    } else if (updated.status !== before.status) {
+      await notifyAssignee(updated.assigned, me.id, `${me.fullName} moved ticket "${updated.subject}" to ${updated.status}`, "#3A90C3", href);
     }
   }
 

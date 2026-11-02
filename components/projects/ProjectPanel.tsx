@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -337,7 +338,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
 
   async function handleCancel() {
     if (!project) return;
-    if (window.confirm("Cancel this record? It will be removed from the active CRM board.")) {
+    if (await confirmDialog({ title: "Cancel this record?", message: "It will be removed from the active CRM board.", confirmLabel: "Cancel record", cancelLabel: "Keep it", tone: "danger" })) {
       await onSave(project.id, { stage: CANCELLED });
       queryClient.invalidateQueries({ queryKey: ["project-history", project.id] });
     }
@@ -408,7 +409,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                 <Pencil size={16} />
               </button>
               <button
-                onClick={() => { if (window.confirm("Delete this CRM record?")) { onDelete(project.id); onClose(); } }}
+                onClick={async () => { if (await confirmDialog({ title: "Delete this CRM record?", message: "This also removes its stock reservation. It can't be undone.", confirmLabel: "Delete", tone: "danger" })) { onDelete(project.id); onClose(); } }}
                 aria-label="Delete"
                 title="Delete"
                 className="w-9 h-9 rounded-full flex items-center justify-center text-text-secondary hover:bg-[#F3F5F7] hover:text-text-primary transition-colors hover:!text-danger"
@@ -672,7 +673,7 @@ export function ProjectPanel({ open, onClose, project, projects, onSave, onDelet
                                       )}
                                       {m.userId === myId && (
                                         <button
-                                          onClick={() => { setMenuOpenId(null); if (window.confirm("Delete this message?")) deleteMutation.mutate(m.id); }}
+                                          onClick={async () => { setMenuOpenId(null); if (await confirmDialog({ title: "Delete this message?", confirmLabel: "Delete", tone: "danger" })) deleteMutation.mutate(m.id); }}
                                           className="w-full flex items-center gap-2 px-3 py-2 text-sm text-danger hover:bg-[#F9FAFB] transition-colors"
                                         >
                                           <Trash2 size={14} /> Delete

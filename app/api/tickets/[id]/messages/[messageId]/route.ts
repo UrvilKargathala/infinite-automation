@@ -1,3 +1,4 @@
+import { auditChat } from "@/lib/api/chatAudit";
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
@@ -22,6 +23,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string; me
   }
 
   await sql`UPDATE ticket_messages SET text = ${trimmed}, edited = true WHERE id = ${messageId}`;
+  await auditChat({ kind: "ticket", recordId: Number(params.id), messageId, action: "update", actor: me, text: trimmed });
   return NextResponse.json({ ok: true, text: trimmed });
 }
 
@@ -37,5 +39,6 @@ export async function DELETE(_req: Request, { params }: { params: { id: string; 
   }
 
   await sql`UPDATE ticket_messages SET deleted = true WHERE id = ${messageId}`;
+  await auditChat({ kind: "ticket", recordId: Number(params.id), messageId, action: "delete", actor: me });
   return NextResponse.json({ ok: true });
 }

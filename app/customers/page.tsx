@@ -1,5 +1,7 @@
 "use client";
 
+import { useOpenParam } from "@/lib/hooks/useOpenParam";
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useState, useMemo, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import { Search, Users2, Building2, Plus, Upload, Download } from "lucide-react";
@@ -45,6 +47,9 @@ export default function CustomersPage() {
     }
     return list;
   }, [customers, segmentFilter, search]);
+
+  // ?open=<id> (search, links) opens that customer's detail panel.
+  useOpenParam(!loading, (id) => { if (customers.some((c) => c.id === id)) setViewCustomerId(id); });
 
   const totalSegments = new Set(customers.map((c) => c.segment)).size;
 
@@ -101,8 +106,8 @@ export default function CustomersPage() {
     setModalOpen(true);
   }
 
-  function handleDelete(id: number) {
-    if (window.confirm("Delete this customer? Linked tickets, projects, and quotes will keep their history but lose the link.")) {
+  async function handleDelete(id: number) {
+    if (await confirmDialog({ title: "Delete this customer?", message: "Linked tickets, projects, and quotes will keep their history but lose the link.", confirmLabel: "Delete", tone: "danger" })) {
       remove(id).then(() => toast.success("Customer deleted")).catch(() => {
         // error toast already shown by the store
       });

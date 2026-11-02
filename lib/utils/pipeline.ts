@@ -4,6 +4,8 @@ import type { PipelineStage, ProjectStage } from "@/types";
 // custom stages slot in between them and are grouped by position.
 export const STAGE_INQUIRY = "Inquiry";
 export const STAGE_CONFIRM_ORDER = "Confirm Order";
+/** From this stage on a record counts as done (stages a user adds after it, e.g. After Sales Support, are done too). */
+export const STAGE_INSTALL = "Install";
 /** Cancelled is a status, not a column — reachable from any stage. */
 export const CANCELLED: ProjectStage = "Cancelled";
 export const CANCELLED_COLOR = "#EF4444";
@@ -20,14 +22,16 @@ export type StagePhase = "inquiry" | "preSale" | "delivery" | "done" | "cancelle
 
 /**
  * Where a stage sits in the funnel, by position: Inquiry → pre-sale (before Confirm Order) →
- * delivery (Confirm Order up to the last stage) → done (the last stage — Install by default).
+ * delivery (Confirm Order up to just before Install) → done (Install and anything placed after it).
+ * If there is no Install stage, the last stage is the done one.
  */
 export function stagePhase(stages: PipelineStage[], name: ProjectStage): StagePhase {
   if (name === CANCELLED) return "cancelled";
   const ordered = [...stages].sort((a, b) => a.position - b.position);
   const idx = ordered.findIndex((s) => s.name === name);
   if (idx <= 0) return "inquiry";
-  if (idx === ordered.length - 1) return "done";
+  const installIdx = ordered.findIndex((s) => s.name === STAGE_INSTALL);
+  if (idx >= (installIdx >= 0 ? installIdx : ordered.length - 1)) return "done";
   const confirmIdx = ordered.findIndex((s) => s.name === STAGE_CONFIRM_ORDER);
   return confirmIdx >= 0 && idx < confirmIdx ? "preSale" : "delivery";
 }

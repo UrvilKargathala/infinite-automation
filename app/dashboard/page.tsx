@@ -64,7 +64,7 @@ export default function DashboardPage() {
     { label: "Pending Complaints", icon: MessageSquareWarning, value: <Num>{head.pendingComplaints}</Num>, trend: head.complaintsRaised, trendLabel: "raised", higherIsGood: false, href: "/complaints" },
     { label: "Active CRM Records", icon: Briefcase, value: <Num>{head.activeRecords}</Num>, trend: head.recordsCreated, trendLabel: "new", higherIsGood: true, href: "/crm" },
     { label: "Active Quotes", icon: FileText, value: <Num>{head.activeQuotes}</Num>, trend: head.quotesCreated, trendLabel: "created", higherIsGood: true, href: "/quote" },
-    { icon: PackageCheck, label: head.lastStage === "Install" ? "Installed This Month" : `${head.lastStage} This Month`, value: <Num>{head.installed.cur}</Num>, trend: head.installed, trendLabel: "", higherIsGood: true, href: "/crm" },
+    { icon: PackageCheck, label: "Installed This Month", value: <Num>{head.installed.cur}</Num>, trend: head.installed, trendLabel: "", higherIsGood: true, href: "/crm" },
   ];
 
   if (loading) return <DashboardSkeleton />;

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withTransaction, HttpError } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction } from "@/lib/api/audit";
+import { notifyAssignee, notifyQuoteStatus } from "@/lib/api/notifications";
 import { QUOTE_PRODUCT_LINES, toProject } from "@/lib/inventoryDb";
 
 /**
@@ -60,6 +61,10 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
       changes: { before: { confirmed: false }, after: { confirmed: true, quote: result.quoteNumber } },
       actor: me,
     });
+
+    // The quote went Accepted here (not on the Quote page), so send the same quote alert, and tell the assignee.
+    if (result.project.quoteId) await notifyQuoteStatus({ id: result.project.quoteId, number: result.quoteNumber }, "Accepted", me.id);
+    await notifyAssignee(result.project.assigned, me.id, `${me.fullName} confirmed ${result.project.customerName} — ${result.units} unit(s) reserved`, "#10B981", `/crm?open=${result.project.id}`);
 
     return NextResponse.json(result.project);
   } catch (err) {

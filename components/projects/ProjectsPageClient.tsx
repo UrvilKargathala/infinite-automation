@@ -1,5 +1,6 @@
 "use client";
 
+import { confirmDialog } from "@/components/ui/ConfirmDialog";
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Search, Plus, Download, SlidersHorizontal, UserPlus } from "lucide-react";
@@ -46,15 +47,12 @@ export function ProjectsPageClient() {
   const panelProject = projects.find((p) => p.id === panelProjectId) ?? null;
   const [panelOpen, setPanelOpen] = useState(false);
 
-  // ?new=1 opens the New Inquiry form; ?open=<id> (from a chat notification) opens that record's chat.
+  // ?open=<id> (from a notification or search result) opens that record's chat.
   // Watches the query so a notification clicked while already on /crm still opens the right record.
   const searchParams = useSearchParams();
   useEffect(() => {
     const openId = Number(searchParams.get("open"));
-    if (searchParams.get("new") === "1") {
-      setDefaultStage(STAGE_INQUIRY);
-      setModalOpen(true);
-    } else if (openId) {
+    if (openId) {
       setPanelProjectId(openId);
       setPanelOpen(true);
     } else return;
@@ -82,7 +80,7 @@ export function ProjectsPageClient() {
   }, [projects, showCancelled, assigneeFilter, stageFilter, search]);
 
   async function deleteStage(stage: PipelineStage) {
-    if (!window.confirm(`Delete the "${stage.name}" stage? This can't be undone.`)) return;
+    if (!(await confirmDialog({ title: `Delete the "${stage.name}" stage?`, message: "This can't be undone.", confirmLabel: "Delete", tone: "danger" }))) return;
     const res = await fetch(`/api/pipeline-stages/${stage.id}`, { method: "DELETE" });
     const body = await res.json().catch(() => ({}));
     if (!res.ok) return toast.error(body.error ?? "Couldn't delete the stage");

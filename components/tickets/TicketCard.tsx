@@ -1,7 +1,9 @@
 "use client";
 
 import { useDraggable } from "@dnd-kit/core";
+import { MessageCircle } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
+import { useTicketUnread } from "@/lib/hooks/useTicketUnread";
 import type { Ticket, TicketPriority } from "@/types";
 
 const priorityColors: Record<TicketPriority, string> = {
@@ -15,6 +17,7 @@ export function TicketCard({ ticket, onClick }: { ticket: Ticket; onClick: () =>
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: ticket.id,
   });
+  const unread = useTicketUnread()[ticket.id] ?? 0;
 
   const style = transform
     ? {
@@ -66,6 +69,14 @@ export function TicketCard({ ticket, onClick }: { ticket: Ticket; onClick: () =>
       <div className="mt-3 pt-3 border-t border-border flex items-center">
         <Avatar name={ticket.assigned} size="xs" />
         <span className="ml-2 text-xs text-text-secondary">{ticket.assigned}</span>
+        {unread > 0 && (
+          <span
+            className="ml-auto inline-flex items-center gap-1 rounded-full bg-brand-gradient text-white text-[11px] px-2 py-0.5 shadow-iconBtn shrink-0"
+            title={`${unread} unread message${unread === 1 ? "" : "s"}`}
+          >
+            <MessageCircle size={11} /> <span className="font-numeric tabular-nums">{unread}</span>
+          </span>
+        )}
       </div>
     </div>
   );

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction } from "@/lib/api/audit";
-import { createNotifications } from "@/lib/api/notifications";
+import { createNotifications, userIdsByName } from "@/lib/api/notifications";
 import type { Ticket } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -52,8 +52,11 @@ export async function POST(req: Request) {
       actor: me,
     });
 
+    // The assignee hears "assigned to you"; everyone else who wants ticket alerts hears "new ticket".
+    const assignees = (await userIdsByName(created.assigned)).filter((id) => id !== me.id);
+    await createNotifications(assignees, `${me.fullName} assigned you a new ticket: ${created.subject}`, "#F59E0B", `/tickets?open=${created.id}`);
     const recipients = await sql`SELECT id FROM users WHERE id != ${me.id} AND status = 'Active' AND ticket_alerts = true`;
-    await createNotifications(recipients.map((r) => r.id as number), `New ticket: ${created.subject}`, "#3A90C3", `/tickets?open=${created.id}`);
+    await createNotifications(recipients.map((r) => r.id as number).filter((id) => !assignees.includes(id)), `New ticket: ${created.subject}`, "#3A90C3", `/tickets?open=${created.id}`);
   }
 
   return NextResponse.json(created, { status: 201 });

@@ -1,9 +1,11 @@
 "use client";
 
+import { exportSheet } from "@/lib/utils/tableExport";
+import { confirmDialog, type ConfirmOptions } from "@/components/ui/ConfirmDialog";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Printer, Send, PackageCheck, XCircle, CheckCheck, Trash2 } from "lucide-react";
+import { Printer, Send, PackageCheck, XCircle, CheckCheck, Trash2, Download } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Num } from "@/components/ui/Num";
@@ -41,8 +43,8 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
   const [receiving, setReceiving] = useState<VendorPO | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
 
-  async function act(po: VendorPO, action: "issue" | "cancel" | "close", confirmText: string, done: string) {
-    if (!window.confirm(confirmText)) return;
+  async function act(po: VendorPO, action: "issue" | "cancel" | "close", ask: ConfirmOptions, done: string) {
+    if (!(await confirmDialog(ask))) return;
     setBusyId(po.id);
     const res = await fetch(`/api/procurement/pos/${po.id}`, {
       method: "PATCH",
@@ -62,7 +64,7 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
 
   /** Delete a PO that never moved stock (Draft, or Cancelled with nothing received). */
   async function removePO(po: VendorPO) {
-    if (!window.confirm(`Delete ${po.number}? This can't be undone.`)) return;
+    if (!(await confirmDialog({ title: `Delete ${po.number}?`, message: "This can't be undone.", confirmLabel: "Delete", tone: "danger" }))) return;
     setBusyId(po.id);
     const res = await fetch(`/api/procurement/pos/${po.id}`, { method: "DELETE" });
     const body = await res.json().catch(() => ({}));
@@ -74,6 +76,18 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
     queryClient.invalidateQueries({ queryKey: PO_QUERY_KEY });
     queryClient.invalidateQueries({ queryKey: STOCK_QUERY_KEY });
     toast.success(`${po.number} deleted`);
+  }
+
+  function handleExport() {
+    exportSheet(
+      (pos ?? []).map((po) => ({
+        PO: po.number, Vendor: po.vendorName, Brand: po.brand, Status: po.status, Currency: po.currency,
+        Items: po.items.map((i) => `${nameOf.get(i.productId) ?? "#" + i.productId} ×${i.qtyOrdered}`).join(", "),
+        "Units ordered": po.items.reduce((s, i) => s + i.qtyOrdered, 0), "Units received": po.items.reduce((s, i) => s + i.qtyReceived, 0),
+        Created: po.createdAt.slice(0, 10), Notes: po.notes,
+      })),
+      "Vendor POs", "infinite_vendor_pos_export.xlsx", "purchase orders",
+    );
   }
 
   if (isLoading) return <SkeletonList rows={5} className="p-4 sm:p-6" />;
@@ -89,7 +103,11 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
           <div className="text-sm text-text-muted mt-1">Draft one from the Reorder queue.</div>
         </div>
       ) : (
-        <div className="overflow-x-auto">
+        <div>
+          <div className="flex justify-end mb-3">
+            <Button variant="secondary" size="sm" icon={Download} onClick={handleExport}>Export</Button>
+          </div>
+          <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px]">
             <thead>
               <tr className="border-b border-border/60">
@@ -122,19 +140,19 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
                       <div className="flex items-center justify-end gap-1.5 flex-wrap">
                         {po.status === "Draft" && (
                           <Button size="sm" icon={Send} disabled={busyId === po.id}
-                            onClick={() => act(po, "issue", `Issue ${po.number} to ${po.vendorName}? It will count as incoming stock.`, `${po.number} issued`)}>Issue</Button>
+                            onClick={() => act(po, "issue", { title: `Issue ${po.number} to ${po.vendorName}?`, message: "It will count as incoming stock.", confirmLabel: "Issue" }, `${po.number} issued`)}>Issue</Button>
                         )}
                         {(po.status === "Issued" || po.status === "Partially Received") && (
                           <Button size="sm" icon={PackageCheck} onClick={() => setReceiving(po)}>Receive</Button>
                         )}
                         {po.status === "Partially Received" && (
                           <Button size="sm" variant="secondary" icon={CheckCheck} disabled={busyId === po.id}
-                            onClick={() => act(po, "close", `Close ${po.number} short? Anything still outstanding stops counting as incoming.`, `${po.number} closed`)}>Close short</Button>
+                            onClick={() => act(po, "close", { title: `Close ${po.number} short?`, message: "Anything still outstanding stops counting as incoming.", confirmLabel: "Close short" }, `${po.number} closed`)}>Close short</Button>
                         )}
                         <Button size="sm" variant="secondary" icon={Printer} onClick={() => printPO(po, products)}>PDF</Button>
                         {(po.status === "Draft" || po.status === "Issued") && (
                           <Button size="sm" variant="ghost" icon={XCircle} disabled={busyId === po.id}
-                            onClick={() => act(po, "cancel", `Cancel ${po.number}?`, `${po.number} cancelled`)}>Cancel</Button>
+                            onClick={() => act(po, "cancel", { title: `Cancel ${po.number}?`, confirmLabel: "Cancel PO", cancelLabel: "Keep it", tone: "danger" }, `${po.number} cancelled`)}>Cancel</Button>
                         )}
                         {(po.status === "Draft" || po.status === "Cancelled") && received === 0 && (
                           <Button size="sm" variant="ghost" icon={Trash2} disabled={busyId === po.id}
@@ -147,6 +165,7 @@ export function VendorPOList({ highlightId }: { highlightId?: number | null }) {
               })}
             </tbody>
           </table>
+          </div>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withTransaction, HttpError } from "@/lib/db";
 import { getCurrentAppUser } from "@/lib/currentAppUser";
 import { logAction } from "@/lib/api/audit";
+import { notifyAssignee } from "@/lib/api/notifications";
 import { loadSlipLines, viaTx } from "@/lib/inventoryDb";
 
 /**
@@ -19,7 +20,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   try {
     const result = await withTransaction(async (db) => {
-      const [p] = (await db.query(`SELECT customer_name, stage, confirmed_at FROM projects WHERE id = $1 FOR UPDATE`, [id])).rows;
+      const [p] = (await db.query(`SELECT customer_name, assigned, stage, confirmed_at FROM projects WHERE id = $1 FOR UPDATE`, [id])).rows;
       if (!p) throw new HttpError(404, "Project not found");
       if (!p.confirmed_at) throw new HttpError(409, "Confirm the project before shipping");
       if (p.stage === "Cancelled") throw new HttpError(409, "A cancelled project can't ship");
@@ -56,7 +57,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
         units += r.qty;
       }
 
-      return { customerName: p.customer_name as string, units, lines: await loadSlipLines(viaTx(db), id) };
+      return { customerName: p.customer_name as string, assigned: p.assigned as string, units, lines: await loadSlipLines(viaTx(db), id) };
     });
 
     await logAction({
@@ -69,6 +70,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       metadata: { shipped: requested },
       actor: me,
     });
+
+    await notifyAssignee(result.assigned, me.id, `${me.fullName} shipped ${result.units} unit(s) for ${result.customerName}`, "#10B981", `/crm?open=${id}`);
 
     return NextResponse.json({ lines: result.lines });
   } catch (err) {
