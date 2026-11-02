@@ -98,14 +98,14 @@ export function ReorderQueue({ onPOCreated }: { onPOCreated: (po: VendorPO) => v
                 <th className={`${th} w-10`} />
                 <th className={th}>Product</th>
                 <th className={th}>Brand</th>
-                <th className={th} title="Available (physical minus reserved) / physical">Avail / Phys</th>
-                <th className={th}>Min buffer</th>
-                <th className={th} title="Confirmed orders with no stock behind them">Shortage</th>
-                <th className={th} title="Units to bring available back up to min buffer">Buffer gap</th>
-                <th className={th} title={`${PIPELINE_FACTOR * 100}% of units on Draft/Sent quotes`}>Pipeline</th>
-                <th className={th} title="Already on issued POs">Incoming</th>
-                <th className={th}>Suggested</th>
-                <th className={th}>Order qty</th>
+                <th className={th} title="Free to sell (in stock minus promised) / what you have in stock">Free / Stock</th>
+                <th className={th} title="Keep at least: the lowest Free to sell you want to hold">Keep</th>
+                <th className={th} title="Owed to customers: units confirmed deals need that you do not have">Owed</th>
+                <th className={th} title="Units needed to get Free to sell back up to Keep">Refill</th>
+                <th className={th} title={`Quotes: ${PIPELINE_FACTOR * 100}% of units on Draft/Sent quotes`}>Quotes</th>
+                <th className={th} title="Already on issued vendor orders">On order</th>
+                <th className={th} title="Owed + Refill + Quotes − On order">Suggest</th>
+                <th className={th} title="How many you will order. Starts at the suggested number; you can change it.">Order</th>
               </tr>
             </thead>
             <tbody>
